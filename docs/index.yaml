@@ -1,3 +1,11 @@
-title: Home
+title: Confium
 redirectFrom: []
 media: []
+contents:
+  doc:
+    type: doc
+    content:
+      - type: paragraph
+        content:
+          - type: text
+            text: Confium
