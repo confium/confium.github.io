@@ -1,4 +1,4 @@
-title: Confium
+title: Confium -- Cross-platform trust store
 redirectFrom: []
 media: []
 contents:
@@ -8,4 +8,62 @@ contents:
       - type: paragraph
         content:
           - type: text
-            text: Confium
+            text: >-
+              Confium provides an abstraction that supports new cryptographic
+              families
+      - type: bullet_list
+        content:
+          - type: list_item
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: 'Provide a '
+                  - type: text
+                    marks:
+                      - type: em
+                    text: 'generalized platform for cryptographic implementations '
+                  - type: text
+                    text: >-
+                      – cryptographic execution environment – primitives for
+                      networking and other OS resources
+          - type: list_item
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: Extensible architecture for new cryptographic usage
+          - type: list_item
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: >-
+                      crypto provider plugins to bridge existing crypto
+                      libraries
+          - type: list_item
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: >-
+                      crypto storage plugins to support different key types and
+                      parameters
+          - type: list_item
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: >-
+                      Allow decoupling of dependencies between cryptographic
+                      design, implementation, distribution and adoption
+          - type: list_item
+            content:
+              - type: paragraph
+                content:
+                  - type: text
+                    text: >-
+                      Platform-independent, interoperable and compartmentalized
+                      key storage, ease of use / backup / restore, sharable
+                      between applications, gives applications control of
+                      extension activity
