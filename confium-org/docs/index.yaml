@@ -5,65 +5,81 @@ contents:
   doc:
     type: doc
     content:
-      - type: paragraph
+      - type: section
+        attrs:
+          id: what-is-confium
         content:
-          - type: text
-            text: >-
-              Confium provides an abstraction that supports new cryptographic
-              families
-      - type: bullet_list
+          - type: section_header
+            content:
+              - type: text
+                text: What is Confium?
+          - type: paragraph
+            content:
+              - type: text
+                text: >-
+                  Confium is an open-source framework providing a cross-platform
+                  trust store and generalized platform for cryptographic
+                  implementation.
+      - type: section
+        attrs:
+          id: features
         content:
-          - type: list_item
+          - type: section_header
             content:
-              - type: paragraph
-                content:
-                  - type: text
-                    text: 'Provide a '
-                  - type: text
-                    marks:
-                      - type: em
-                    text: 'generalized platform for cryptographic implementations '
-                  - type: text
-                    text: >-
-                      – cryptographic execution environment – primitives for
-                      networking and other OS resources
-          - type: list_item
+              - type: text
+                text: Features
+          - type: bullet_list
             content:
-              - type: paragraph
+              - type: list_item
                 content:
-                  - type: text
-                    text: Extensible architecture for new cryptographic usage
-          - type: list_item
-            content:
-              - type: paragraph
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: First-class support for Threshold Cryptography (TC)
+              - type: list_item
                 content:
-                  - type: text
-                    text: >-
-                      crypto provider plugins to bridge existing crypto
-                      libraries
-          - type: list_item
-            content:
-              - type: paragraph
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: Hardware Security Module (HSM) / SmartCard support
+              - type: list_item
                 content:
-                  - type: text
-                    text: >-
-                      crypto storage plugins to support different key types and
-                      parameters
-          - type: list_item
-            content:
-              - type: paragraph
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: >-
+                          Plugins for leveraging existing crypto libraries
+                          (OpenSSL, Botan)
+              - type: list_item
                 content:
-                  - type: text
-                    text: >-
-                      Allow decoupling of dependencies between cryptographic
-                      design, implementation, distribution and adoption
-          - type: list_item
-            content:
-              - type: paragraph
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: >-
+                          Extensible architecture for future cryptographic
+                          families
+              - type: list_item
                 content:
-                  - type: text
-                    text: >-
-                      Platform-independent, interoperable and compartmentalized
-                      key storage, ease of use / backup / restore, sharable
-                      between applications, gives applications control of
-                      extension activity
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: >-
+                          Interoperable with other languages via a stable
+                          Foreign Function Interface (FFI)
+              - type: list_item
+                content:
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: >-
+                          Allows decoupling of dependencies between
+                          cryptographic design, implementation, distribution,
+                          and adoption
+              - type: list_item
+                content:
+                  - type: paragraph
+                    content:
+                      - type: text
+                        text: >-
+                          Platform-independent compartmentalized key storage
+                          with support for various formats and backends
