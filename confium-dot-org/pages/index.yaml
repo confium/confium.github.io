@@ -91,6 +91,14 @@ contents:
               src: nlnet-banner.svg
           - type: figure_caption
       - type: paragraph
+      - type: figure
+        content:
+          - type: image
+            attrs:
+              alt: NGI Zero PET logo
+              src: ngi-zeropet-banner.svg
+          - type: figure_caption
+      - type: paragraph
       - type: paragraph
         content:
           - type: text
