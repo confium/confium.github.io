@@ -83,3 +83,29 @@ contents:
                         text: >-
                           Platform-independent compartmentalized key storage
                           with support for various formats and backends
+      - type: paragraph
+        content:
+          - type: text
+            text: "This project was funded through the\_"
+          - type: link
+            attrs:
+              schemaID: web
+              reference: https://nlnet.nl/PET
+              hRef: https://nlnet.nl/PET
+              title: null
+            content:
+              - type: text
+                text: NGI0 PET Fund
+          - type: text
+            text: ", a fund established by NLnet with financial support from the European Commission's\_"
+          - type: link
+            attrs:
+              schemaID: web
+              reference: https://ngi.eu/
+              hRef: https://ngi.eu/
+              title: null
+            content:
+              - type: text
+                text: Next Generation Internet
+          - type: text
+            text: "\_programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 825310."
