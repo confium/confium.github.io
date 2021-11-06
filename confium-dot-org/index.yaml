@@ -1,0 +1,9 @@
+title: Confium — Cross-platform trust store
+welcomeNotice:
+  doc:
+    type: doc
+    content:
+      - type: paragraph
+        content:
+          - type: text
+            text: Confium is an open-source framework providing a cross-platform trust store and generalized platform for cryptographic implementation.
