@@ -1,7 +1,7 @@
 
         import path from 'path'
 
-        const DOCS_PATH = path.join(__dirname, 'docs');
+        const DOCS_PATH = path.join(__dirname, 'pages');
 
         export default {
           entry: path.join(__dirname, 'src', 'index.tsx'),
