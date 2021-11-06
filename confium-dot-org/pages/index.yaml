@@ -83,6 +83,14 @@ contents:
                         text: >-
                           Platform-independent compartmentalized key storage
                           with support for various formats and backends
+      - type: figure
+        content:
+          - type: image
+            attrs:
+              alt: NLNet foundation logo
+              src: nlnet-banner.svg
+          - type: figure_caption
+      - type: paragraph
       - type: paragraph
         content:
           - type: text
