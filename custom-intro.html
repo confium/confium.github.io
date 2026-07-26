@@ -1,20 +1,51 @@
 <section class="summary">
   <p>
-    Confium is an open-source framework providing a cross-platform trust store and generalized platform for cryptographic implementation.
+    Confium is an open-source framework for <strong>multi-stakeholder threshold cryptography</strong>
+    — a reference implementation for NIST MPTS standardization, anchored by the
+    OIML CNML flagship deployment under the OIML SMART program operated by Ribose.
   </p>
 </section>
+
 <section class="features">
-  <header>Features</header>
+  <header>Three deployment modes</header>
   <ul>
-    <li>First-class support for Threshold Cryptography (TC)</li>
-    <li>Hardware Security Module (HSM) / SmartCard support</li>
-    <li>Plugins for leveraging existing crypto libraries (OpenSSL, Botan)</li>
-    <li>Extensible architecture for future cryptographic families</li>
-    <li>Interoperable with other languages via a stable Foreign Function Interface (FFI)</li>
-    <li>Allows decoupling of dependencies between cryptographic design, implementation, distribution, and adoption</li>
-    <li>Platform-independent compartmentalized key storage with support for various formats and backends</li>
+    <li><strong>Mode 1 — Peer-to-peer threshold cryptography</strong>: nodes do TC directly, no PKI required (MPC, distributed custody, BFT consensus signing)</li>
+    <li><strong>Mode 2 — TC PKI replacement (drop-in)</strong>: existing PKI consumers (web TLS, code signing, PKCS#11 apps) replace single-party keys with threshold keys without changing their ecosystem. Includes PQC migration path.</li>
+    <li><strong>Mode 3 — TC Certificate PKI</strong>: organizations with their own certificate formats and workflow semantics (OIML CNML, BIPM calibration, pharma approvals, accreditation, treaty organizations).</li>
   </ul>
 </section>
+
+<section class="features">
+  <header>What Confium provides</header>
+  <ul>
+    <li>Real cryptographic primitives: P-256 Shamir+ECDSA, threshold ElGamal, threshold ECIES with ECDH+AES-GCM, real CMS DER encoding, real Canonical XML, real RFC 6962 Merkle proofs</li>
+    <li>Async session coordinator for globally distributed signers (no simultaneity required)</li>
+    <li>Share re-sharing that preserves the public key — director rotation without re-issuance cascade</li>
+    <li>PKCS#11 v3.0 dispatch layer (Mode 2 cornerstone — every PKCS#11 app is a potential consumer)</li>
+    <li>OpenSSL 3.0 provider, JCE provider, TLS 1.3 signer — drop-in for existing PKI</li>
+    <li>Standards-only hardware interfaces (PKCS#11, OpenPGP card, TPM 2.0, WebAuthn) — no vendor SDK lock-in</li>
+    <li>Append-only Merkle transparency log with Bitcoin OTS anchoring — catches compelled issuance</li>
+    <li>43-crate workspace with 744+ tests, comprehensive documentation, full publishing pipeline</li>
+  </ul>
+</section>
+
+<section class="features">
+  <header>Flagship reference deployment</header>
+  <p>
+    The <strong>OIML Certificat Numérique de Métrologie Légale (CNML)</strong> — type approval certificates for measuring instruments used in legal metrology, deployed across 60+ OIML member states. Partnerships: Ribose operates OIML SMART, BIML is the institutional partner, NIST partners on MPTS evaluation.
+  </p>
+</section>
+
+<section class="features">
+  <header>Get started</header>
+  <ul>
+    <li><a href="https://github.com/confium/confium">Source code on GitHub</a></li>
+    <li><a href="https://docs.confium.org">Documentation (RustDoc)</a></li>
+    <li><a href="https://github.com/confium/confium/blob/main/TODO.roadmap/26-confium-framework.md">Framework vision document</a></li>
+    <li><a href="https://github.com/confium/confium/blob/main/TODO.roadmap/27-cnml-deployment.md">CNML flagship deployment case study</a></li>
+  </ul>
+</section>
+
 <figure>
   <img alt="NLNet foundation logo" src="assets/nlnet-banner.svg">
   <p></p>
@@ -23,4 +54,3 @@
 <p>
   This project was funded through the <a href="https://nlnet.nl/PET">NGI0 PET Fund</a>, a fund established by NLnet with financial support from the European Commission's <a href="https://ngi.eu/">Next Generation Internet</a> programme, under the aegis of DG Communications Networks, Content and Technology under grant agreement No 825310.
 </p>
-
