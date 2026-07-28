@@ -1,0 +1,57 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+
+const allUseCases = (await getCollection('use_cases')).sort((a, b) => {
+  const aOrder = a.data.order ?? 99;
+  const bOrder = b.data.order ?? 99;
+  return aOrder - bOrder;
+});
+
+const byMode = (mode: number | 'cross') =>
+  allUseCases.filter((u) => u.data.mode === mode);
+
+const sections: { heading: string; items: typeof allUseCases }[] = [
+  { heading: 'Mode 1 — Peer-to-Peer TC', items: byMode(1) },
+  { heading: 'Mode 2 — PKI Drop-in', items: byMode(2) },
+  { heading: 'Mode 3 — Sovereign PKI', items: byMode(3) },
+  { heading: 'Cross-mode', items: byMode('cross') },
+].filter((s) => s.items.length > 0);
+---
+
+<BaseLayout title="Use cases" description="Six scenarios spanning Confium's three deployment modes. Web TLS, code signing, distributed custody, Sovereign PKI, PQ migration, supply chain.">
+  <PageHero
+    eyebrow="Use cases"
+    title="Six scenarios, three modes"
+    description="Where Confium is already the right shape — from threshold TLS signing to institutional Sovereign PKI."
+  />
+
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+    {sections.map((section, si) => (
+      <section>
+        <Reveal delayMs={si * 80}>
+          <h2 class="text-2xl font-bold tracking-tight">{section.heading}</h2>
+        </Reveal>
+        <div class="mt-6 grid md:grid-cols-2 gap-4">
+          {section.items.map((u, ui) => (
+            <Reveal delayMs={si * 60 + ui * 40}>
+              <a
+                href={`/use-cases/${u.id}/`}
+                class="group block h-full rounded-lg border border-line bg-card p-6 hover:border-brand-300 dark:hover:border-brand-700 transition-colors shadow-card"
+              >
+                <h3 class="text-lg font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300">
+                  {u.data.title}
+                </h3>
+                {u.data.description && (
+                  <p class="mt-2 text-sm text-muted-foreground">{u.data.description}</p>
+                )}
+              </a>
+            </Reveal>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

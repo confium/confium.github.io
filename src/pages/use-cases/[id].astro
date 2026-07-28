@@ -1,0 +1,32 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+export async function getStaticPaths() {
+  const items = await getCollection('use_cases');
+  return items.map((u) => ({
+    params: { id: u.id },
+    props: { doc: u, allItems: items },
+  }));
+}
+
+const { doc, allItems } = Astro.props;
+const { Content, headings } = await render(doc);
+
+const sidebar = allItems
+  .sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99))
+  .map((u) => ({
+    label: u.data.title,
+    href: `/use-cases/${u.id}/`,
+    current: u.id === doc.id,
+  }));
+---
+
+<DocsLayout
+  title={doc.data.title}
+  description={doc.data.description}
+  sidebar={sidebar}
+  headings={headings}
+>
+  <Content />
+</DocsLayout>
