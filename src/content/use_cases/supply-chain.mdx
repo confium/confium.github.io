@@ -1,0 +1,86 @@
+---
+title: Supply-chain provenance
+description: Manufacturing step attestation anchored in a public transparency log. End-to-end provenance from raw material to consumer.
+mode: cross
+order: 6
+---
+
+# Supply-chain provenance
+
+Supply-chain provenance is the problem of proving that an artifact
+(a physical product, a software binary, a document) went through a
+specific sequence of authorized steps. Each step — manufacturer,
+distributor, regulator, retailer — can sign an attestation. The
+result is a chain of signatures that a consumer can verify.
+
+## What you get
+
+- Every step in the supply chain produces a signed attestation
+  anchored in a public transparency log.
+- Consumers (or regulators) can verify the full chain from raw
+  material to finished product.
+- Any tampering — a missing step, an unauthorized actor, a
+  backdated signature — is cryptographically detectable.
+- Quorum policies apply per step: "manufacturing step requires 2-of-3
+  line managers; QA step requires 3-of-5 inspectors".
+
+## Deployment shape
+
+```
+[ Manufacturer ] --attestation--> [ Step 1 ] ----+
+[ QA lab ]      --attestation--> [ Step 2 ] ----+
+[ Distributor ] --attestation--> [ Step 3 ] ----+
+[ Retailer ]    --attestation--> [ Step 4 ] ----+
+                                                  |
+                                                  v
+                                          [ Transparency log ]
+                                                  |
+                                                  v
+                                       [ Consumer / regulator verifies ]
+```
+
+Each step includes:
+
+- Artifact hash (what was produced / inspected / shipped).
+- Actor identity (manufacturer, lab, distributor).
+- Timestamp (when the step happened).
+- Location (where the step happened).
+- Quorum signature (T-of-N threshold).
+
+The transparency log records every step. Inclusion proofs let any
+consumer verify their product's history against the public log.
+
+## Combining with composite signatures
+
+Supply-chain signatures are long-lived (a product's history should
+be verifiable for its entire lifespan, potentially decades). This
+makes them a prime candidate for [PQ migration](/use-cases/pq-migration/)
+via composite signatures. Each step's signature can carry both
+classical and PQ components from day one of deployment.
+
+## Attribute-based policies
+
+Real supply chains have policy nuance:
+
+- "Manufacturing must occur in region X."
+- "QA inspection must come from an accredited lab in jurisdiction Y."
+- "Distribution step requires 2-of-3 line managers."
+
+The [attribute-based threshold DSL](/concepts/attribute-based-threshold/)
+expresses these policies; the coordinator enforces them.
+
+## When to choose this use case
+
+- You're a manufacturer tracking components through a multi-stage
+  production process.
+- You're a regulator verifying that products went through required
+  inspections.
+- You're a consumer (or consumer-facing service) that needs to
+  verify provenance claims.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Transparency logs](/concepts/transparency-logs/)
+- [Attribute-based threshold](/concepts/attribute-based-threshold/)
+- [PQ migration](/use-cases/pq-migration/)

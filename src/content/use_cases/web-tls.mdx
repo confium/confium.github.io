@@ -1,0 +1,70 @@
+---
+title: Web TLS signing
+description: Threshold TLS signing via the Confium OpenSSL 3.0 provider. Replace single-key TLS terminators with multi-party signing without touching the application.
+mode: 2
+order: 1
+---
+
+import Prose from '../../components/astro/Prose.astro';
+
+# Web TLS signing
+
+A typical TLS terminator holds a single private key per certificate.
+Compromise that key and an attacker can impersonate the site until
+the certificate expires and is reissued.
+
+The Confium OpenSSL 3.0 provider replaces that single-key signing
+with a threshold scheme. The TLS stack keeps talking OpenSSL
+(`EVP_PKEY_sign`, `SSL_CTX_use_certificate`, the usual API); every
+signature operation is dispatched into a Confium coordinator that
+runs a threshold session behind the scenes.
+
+## What you get
+
+- Every TLS handshake now requires T parties to sign (e.g. 3 of 5
+  HSM-fronted signers across regions).
+- The signature produced is a standard ECDSA-P256 or Ed25519
+  signature — verifiers don't change.
+- The TLS terminator keeps running OpenSSL, BoringSSL, or
+  whatever else speaks the OpenSSL provider API.
+
+## Deployment shape
+
+```
+[ TLS terminator (nginx, Apache, custom) ]
+            |
+            | EVP_PKEY_sign()
+            v
+[ Confium OpenSSL 3.0 provider ]
+            |
+            v
+[ Confium coordinator ]
+   |          |          |
+[Signer 1] [Signer 2] [Signer N]
+```
+
+The signers run on independent machines in independent regions.
+Each holds one share of the TLS signing key. The coordinator
+collects their partial signatures per handshake.
+
+## Latency
+
+A FROST-P256 threshold signing session across 3 parties in 3 regions
+completes in ~150ms over TCP, ~50ms over QUIC. For most TLS
+handshakes this is invisible to end users; for high-throughput
+terminators, share batching amortizes the round-trip cost across
+many handshakes.
+
+## When to choose this use case
+
+- You terminate TLS for a high-value domain (banking, government,
+  identity provider) where the cost of key compromise is high.
+- You operate across multiple regions and want the signing key
+  split across them.
+- You're already using OpenSSL 3.0 (or a consumer of it) and want
+  minimal changes to your stack.
+
+## See also
+
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [Architecture](/docs/architecture/)

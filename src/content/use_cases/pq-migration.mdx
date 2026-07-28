@@ -1,0 +1,85 @@
+---
+title: PQ migration
+description: Migrate from classical to post-quantum signatures without re-issuing every certificate. Composite signatures, software-only upgrade path.
+mode: cross
+order: 5
+---
+
+# PQ migration
+
+Every signature algorithm in production today is breakable by a
+sufficiently large quantum computer. The new post-quantum
+algorithms (ML-DSA, SLH-DSA) replace them, but you can't re-issue
+every certificate on a single flag day — installed-base verifiers
+won't all upgrade simultaneously.
+
+Confium's answer: composite signatures. A composite signature
+contains both the classical and PQ components; verifiers check
+both. Migration becomes a software upgrade, not an HSM replacement.
+
+## What you get
+
+- New signatures are classical + PQ from day one of migration.
+- Legacy verifiers accept the classical component and continue
+  functioning.
+- Upgraded verifiers check both components — if either is later
+  broken, the other still holds.
+- No new hardware. No re-issuance. No flag day.
+
+## Migration phases
+
+1. **Classical only** — today's baseline.
+2. **Hybrid** — start emitting composite signatures. Legacy
+   verifiers fall back to classical; upgraded verifiers check both.
+3. **PQ required** — policy tightens; new signatures must include a
+   PQ component.
+4. **PQ only** — eventually the classical component can be removed
+   for new signatures (retained for archival verification).
+
+## How it's deployed
+
+### Mode 1: New system (peer-to-peer)
+
+If you control both signer and verifier, both upgrade simultaneously
+and you can move directly to PQ-only signatures.
+
+### Mode 2: PKI drop-in
+
+For existing PKI consumers (TLS terminators, code signers), the
+PKCS#11 / OpenSSL / JCE adapter is updated to emit composite
+signatures. The application keeps running unchanged.
+
+### Mode 3: Sovereign PKI
+
+Institutional deployments can require composite signatures via
+jurisdictional policy. Old-format signatures continue to verify;
+new-issuance policy requires both components.
+
+## Caller-supplied PQ verifiers
+
+For PQ algorithms without a bundled pure-Rust verifier, Confium
+accepts a caller-supplied verifier callback. The deployment wires
+its preferred ML-DSA / SLH-DSA implementation into the composite
+verifier.
+
+```ruby
+sig = Confium::Composite::Signature.new(components)
+result = sig.verify(message, {
+  "ML-DSA-65" => ->(pk, msg, sig) { my_ml_dsa_verifier.verify(pk, msg, sig) },
+})
+```
+
+A missing verifier is a hard failure — never a silent soft-accept.
+
+## When to choose this use case
+
+- You sign anything that will be verified for decades (code,
+  documents, certificates).
+- You want defense-in-depth against future algorithm breaks.
+- You're preparing for NIST PQ standardization finalization.
+
+## See also
+
+- [PQ migration docs](/docs/pq-migration/)
+- [Composite signatures concept](/concepts/composite-signatures/)
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
