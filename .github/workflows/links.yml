@@ -2,35 +2,39 @@ name: links
 
 on:
   push:
-    branches: [main]
+    branches:
+    - main
   pull_request:
 
 jobs:
   link_checker:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
 
-      - name: Install dependencies
-        run: npm ci
+    - name: Install dependencies
+      run: npm ci
 
-      - name: Fetch vendor sources
-        run: npm run fetch-sources
+    - name: Fetch software documentation sources
+      run: npm run fetch-sources
 
-      - name: Build site
-        run: npm run build
+    - name: Build with Astro
+      # prebuild clones the software docs sources into vendor/;
+      # postbuild runs Pagefind indexing. Output: './dist'.
+      run: npm run build
+      env:
+        CI: true
 
-      - name: Link Checker
-        uses: lycheeverse/lychee-action@v2.9.0
-        with:
-          args: --verbose --no-progress --exclude-file .lycheeignore -- 'dist/**/*.html'
-          fail: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Link Checker
+      id: lychee
+      uses: lycheeverse/lychee-action@v2
+      with:
+        # --root-dir resolves root-relative links against the local build;
+        # lychee.toml holds accept codes and exclusions (self, bot-blocked sites).
+        args: --root-dir ${{ github.workspace }}/dist --config lychee.toml --no-progress 'dist/**/*.html'
+        fail: true
