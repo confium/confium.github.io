@@ -118,6 +118,65 @@ body {
   background: linear-gradient(90deg, var(--color-brand), var(--color-teal));
 }
 
+/* Header chrome. The base palette uses semantic tokens so light/dark come
+   for free. The `header-overlay` modifier (homepage top, over the dark
+   hero gradient) flips to white so icons + wordmark stay legible. */
+.site-logo {
+  color: var(--fg);
+  transition: color 0.2s;
+}
+.nav-link {
+  color: var(--fg-soft);
+}
+.nav-link:hover {
+  color: var(--fg);
+  background: var(--surface-dim);
+}
+.icon-btn {
+  color: var(--fg-soft);
+}
+.icon-btn:hover {
+  color: var(--fg);
+  background: var(--surface-dim);
+}
+.search-btn {
+  border-color: var(--line);
+  background: var(--background);
+  color: var(--fg-faint);
+}
+.search-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.header-overlay .site-logo {
+  color: #fff;
+}
+.header-overlay .nav-link {
+  color: rgb(255 255 255 / 0.82);
+}
+.header-overlay .nav-link:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.14);
+}
+.header-overlay .icon-btn {
+  color: rgb(255 255 255 / 0.82);
+}
+.header-overlay .icon-btn:hover {
+  color: #fff;
+  background: rgb(255 255 255 / 0.14);
+}
+.header-overlay .search-btn {
+  border-color: rgb(255 255 255 / 0.45);
+  background: rgb(255 255 255 / 0.1);
+  color: #fff;
+}
+.header-overlay .search-btn:hover {
+  border-color: #fff;
+  background: rgb(255 255 255 / 0.2);
+  color: #fff;
+}
+
 /* Page hero background: pastel tint wash over a 30px graph paper grid,
    masked to fade toward the bottom. Matches RNP's page-hero-bg exactly. */
 .page-hero-bg {

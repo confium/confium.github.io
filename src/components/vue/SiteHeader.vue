@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { CONFUM_EVENTS, dispatch, on } from '@lib/events';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+import ThemeToggle from './ThemeToggle.vue';
+import { dispatch, CONFUM_EVENTS } from '@lib/events';
+
+const props = defineProps<{ overlay?: boolean }>();
 
 const nav = [
   { label: 'Docs', href: '/docs/' },
@@ -15,6 +18,8 @@ const nav = [
 const isMobileOpen = ref(false);
 const isScrolled = ref(false);
 let lastScrollY = 0;
+
+const isOverlay = computed(() => !!props.overlay && !isScrolled.value);
 
 function openSearch() {
   dispatch(CONFUM_EVENTS.openSearch);
@@ -51,15 +56,16 @@ onUnmounted(() => {
 <template>
   <header
     :class="[
-      'fixed top-0 inset-x-0 z-40 transition-all duration-200',
+      'site-header fixed top-0 inset-x-0 z-40 transition-all duration-200',
       isScrolled
         ? 'bg-background/85 backdrop-blur-md border-b border-line shadow-card'
-        : 'bg-transparent border-b border-transparent',
+        : 'border-b border-transparent',
+      isOverlay ? 'header-overlay' : '',
     ]"
   >
     <div class="mx-auto w-full max-w-6xl px-6">
       <div class="flex h-16 items-center justify-between">
-        <a href="/" class="font-sans text-lg font-bold tracking-tight lowercase flex items-center gap-2">
+        <a href="/" class="site-logo font-sans text-lg font-bold tracking-tight lowercase flex items-center gap-2">
           <span class="w-8 h-5 inline-block">
             <svg viewBox="0 0 275.37 167.48" class="w-full h-full" aria-hidden="true">
               <path fill="#1a7bec" d="M95.79,83.73a95.44,95.44,0,0,1,31.82-71.27,83.73,83.73,0,1,0,0,142.54A95.44,95.44,0,0,1,95.79,83.73Z" transform="translate(0.08 0.01)" />
@@ -75,7 +81,7 @@ onUnmounted(() => {
             v-for="item in nav"
             :key="item.href"
             :href="item.href"
-            class="rounded-full px-3.5 py-1.5 font-sans text-[0.92rem] text-muted hover:text-foreground hover:bg-surface-dim transition-colors"
+            class="nav-link rounded-full px-3.5 py-1.5 font-sans text-[0.92rem] transition-colors"
           >
             {{ item.label }}
           </a>
@@ -84,7 +90,7 @@ onUnmounted(() => {
         <div class="flex items-center gap-2">
           <button
             type="button"
-            class="hidden sm:inline-flex items-center gap-2 rounded-full border border-line bg-background px-3 py-1.5 text-xs font-mono hover:border-accent hover:text-accent transition-colors"
+            class="search-btn hidden sm:inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-mono transition-colors"
             @click="openSearch"
           >
             <span>Search</span>
@@ -93,7 +99,7 @@ onUnmounted(() => {
 
           <a
             href="https://github.com/confium"
-            class="hidden md:inline-flex items-center justify-center w-9 h-9 rounded-full hover:bg-surface-dim transition-colors"
+            class="icon-btn hidden md:inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors"
             aria-label="GitHub"
           >
             <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -101,9 +107,11 @@ onUnmounted(() => {
             </svg>
           </a>
 
+          <ThemeToggle />
+
           <button
             type="button"
-            class="md:hidden p-2 rounded-full hover:bg-surface-dim transition-colors"
+            class="icon-btn md:hidden p-2 rounded-full transition-colors"
             :aria-expanded="isMobileOpen"
             @click="isMobileOpen = !isMobileOpen"
           >

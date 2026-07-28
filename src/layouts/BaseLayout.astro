@@ -15,13 +15,16 @@ interface Props {
   description?: string;
   ogImage?: string;
   bodyClass?: string;
+  /** Header floats with white text/icons over a dark/bright hero band (home page). */
+  headerOverlay?: boolean;
 }
 
 const {
   title,
   description = 'Threshold-native trust infrastructure for a post-quantum world.',
-  ogImage = '/assets/symbol.svg',
+  ogImage = '/assets/og-image.png',
   bodyClass = '',
+  headerOverlay = false,
 } = Astro.props;
 
 const siteName = 'Confium';
@@ -66,7 +69,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     </script>
   </head>
   <body class={bodyClass}>
-    <SiteHeader client:load />
+    <SiteHeader client:load overlay={headerOverlay} />
     <SiteSearch client:only="vue" />
     <main data-pagefind-body>
       <slot />

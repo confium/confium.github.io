@@ -1,0 +1,84 @@
+---
+/**
+ * Card — the homepage's most-reused visual primitive. Wraps the
+ * shared `.card .card-hover` styling plus the hover-state machine.
+ *
+ * Use for: feature cards, blog teaser cards, audience cards, mode
+ * cards, differentiator cards. Replaces ~50 lines of duplicated
+ * markup across 8+ sections of the homepage and the doc index.
+ *
+ * Polymorphic: `href` makes the card a link; omit for a static
+ * panel. The optional `accent` applies a colored left border on
+ * hover to draw attention to priority cards.
+ */
+export interface Props {
+  title: string;
+  description?: string;
+  href?: string;
+  /** Optional accent color applied to the title on hover. */
+  accent?: 'accent' | 'accent2' | 'gold';
+  /** Whether the link opens in a new tab. */
+  external?: boolean;
+  /** Optional mono-label eyebrow (e.g. category). */
+  eyebrow?: string;
+  /** Optional bullet list rendered below the description. */
+  bullets?: string[];
+  /** Extra Tailwind classes appended to the root. */
+  class?: string;
+}
+
+const {
+  title,
+  description,
+  href,
+  accent = 'accent',
+  external = false,
+  eyebrow,
+  bullets,
+  class: className = '',
+} = Astro.props;
+
+const Tag = href ? 'a' : 'div';
+const tagProps = href
+  ? {
+      href,
+      ...(external
+        ? { target: '_blank', rel: 'noopener noreferrer' }
+        : {}),
+    }
+  : {};
+
+const accentClass = {
+  accent: 'group-hover:text-brand-700 dark:group-hover:text-brand-300',
+  accent2: 'group-hover:text-accent2',
+  gold: 'group-hover:text-gold-ink',
+}[accent];
+---
+
+<Tag
+  class={`card card-hover group block h-full p-6 ${className}`}
+  {...tagProps}
+>
+  {eyebrow && (
+    <p class={`mono-label !text-${accent}`}>{eyebrow}</p>
+  )}
+  <h3 class={`font-sans text-lg font-bold ${accentClass}`}>{title}</h3>
+  {description && (
+    <p class="mt-2 text-sm leading-relaxed text-muted">{description}</p>
+  )}
+  {bullets && bullets.length > 0 && (
+    <ul class="mt-4 space-y-1.5 text-sm">
+      {bullets.map((b) => (
+        <li class="flex gap-2 text-muted">
+          <span class={`text-${accent} mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0`} aria-hidden="true"></span>
+          <span>{b}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+  {href && (
+    <p class={`mt-3 text-xs ${accent === 'gold' ? 'text-gold-ink' : `text-${accent}`} group-hover:underline`}>
+      Read more →
+    </p>
+  )}
+</Tag>

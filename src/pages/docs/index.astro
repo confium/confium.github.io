@@ -1,42 +1,30 @@
 ---
-import { getCollection, render } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import PageHero from '../../components/astro/PageHero.astro';
+import { byOrder, toCardItems, buildSidebar } from '../../lib/nav';
 
-const docs = (await getCollection('docs')).sort((a, b) => {
-  const aOrder = a.data.order ?? 99;
-  const bOrder = b.data.order ?? 99;
-  return aOrder - bOrder;
-});
-
-interface SidebarItem { label: string; href: string; current?: boolean; }
-
-const sidebar: SidebarItem[] = docs.map((d) => ({
-  label: d.data.title,
-  href: `/docs/${d.id}/`,
-}));
-
-// Index page has no entry to highlight.
-const indexSidebar = sidebar.map((s) => ({ ...s, current: false }));
+const docs = byOrder(await import('astro:content').then((m) => m.getCollection('docs')));
+const sidebar = await buildSidebar('docs');
+const cards = toCardItems(docs);
 ---
 
-<DocsLayout title="Docs" description="Technical documentation for Confium — architecture, modes, components, security, PQ migration." sidebar={indexSidebar}>
+<DocsLayout title="Docs" description="Technical documentation for Confium — architecture, modes, components, security, PQ migration." sidebar={sidebar}>
   <PageHero
     eyebrow="Documentation"
     title="Docs"
     description="Technical documentation for the Confium engine, its three deployment modes, and the principles that shape every crate."
   />
 
-  <ul class="mt-8 space-y-4">
-    {docs.map((doc) => (
+  <ul class="mt-8 grid gap-4 sm:grid-cols-2">
+    {cards.map((card) => (
       <li>
-        <a href={`/docs/${doc.id}/`} class="group block rounded-lg border border-line bg-card p-5 hover:border-brand-300 dark:hover:border-brand-700 transition-colors">
+        <a href={card.href} class="group block h-full rounded-lg border border-line bg-card p-5 hover:border-brand-300 dark:hover:border-brand-700 transition-colors">
           <div class="flex items-baseline justify-between gap-2">
-            <h2 class="text-lg font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300">{doc.data.title}</h2>
+            <h2 class="text-lg font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300">{card.title}</h2>
             <span aria-hidden="true" class="text-muted-foreground group-hover:text-brand-600">→</span>
           </div>
-          {doc.data.description && (
-            <p class="mt-1 text-sm text-muted-foreground">{doc.data.description}</p>
+          {card.description && (
+            <p class="mt-1 text-sm text-muted-foreground">{card.description}</p>
           )}
         </a>
       </li>
