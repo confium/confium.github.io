@@ -1,0 +1,55 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+
+export async function getStaticPaths() {
+  const software = await getCollection('software');
+  const allDocs = await getCollection('softwareDocs');
+  const paths = [];
+
+  for (const sw of software) {
+    if (!sw.data.docs_repo) continue;
+    const vendorId = sw.id;
+    const docs = allDocs.filter((d) => d.id.includes(`/${vendorId}/docs/`));
+    for (const doc of docs) {
+      const slug = doc.id
+        .split(`/${vendorId}/docs/`)[1]
+        ?.replace(/\.mdx?$/, '') || '';
+      if (!slug || slug.includes('/')) continue; // skip nested for now
+      paths.push({
+        params: { id: sw.id, slug },
+        props: { sw, doc },
+      });
+    }
+  }
+  return paths;
+}
+
+const { sw, doc } = Astro.props;
+const { Content, headings } = await render(doc);
+
+// Sidebar built from sibling docs in the same vendor.
+const allDocs = await getCollection('softwareDocs');
+const vendorId = sw.id;
+const siblingDocs = allDocs.filter((d) => d.id.includes(`/${vendorId}/docs/`));
+const sidebar = siblingDocs
+  .sort((a, b) => a.id.localeCompare(b.id))
+  .map((d) => {
+    const slug = d.id.split(`/${vendorId}/docs/`)[1]?.replace(/\.mdx?$/, '') || '';
+    return {
+      label: d.data.title ?? slug,
+      href: `/software/${sw.id}/docs/${slug}/`,
+      current: d.id === doc.id,
+    };
+  });
+---
+
+<DocsLayout
+  title={`${doc.data.title ?? 'Doc'} · ${sw.data.name}`}
+  description={doc.data.description}
+  sidebar={sidebar}
+  headings={headings}
+  sourcePath={`${sw.data.docs_repo}/blob/${sw.data.docs_ref}/${sw.data.docs_subtree}`}
+>
+  <Content />
+</DocsLayout>
