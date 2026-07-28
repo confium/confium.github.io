@@ -6,6 +6,7 @@ import QuorumPlayground from '../components/vue/QuorumPlayground.vue';
 import InstallTabs from '../components/vue/InstallTabs.vue';
 import Reveal from '../components/vue/Reveal.vue';
 import ThreeModeDiagram from '../components/brand/ThreeModeDiagram.astro';
+import SymbolLogo from '../components/brand/SymbolLogo.astro';
 
 const differences = [
   {
@@ -93,11 +94,20 @@ const deployments = [
   <!-- ===================== Hero ===================== -->
   <section class="hero-gradient relative overflow-hidden text-white">
     <div class="hero-grid absolute inset-0" aria-hidden="true"></div>
-    <div class="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-32 md:pb-28 md:pt-40">
-      <div class="grid items-center gap-12 lg:grid-cols-[1.15fr_1fr]">
+    <!-- Floating logo watermark -->
+    <div class="absolute top-32 right-8 w-32 h-32 opacity-15 hidden lg:block" aria-hidden="true">
+      <SymbolLogo class="w-full h-full" />
+    </div>
+    <div class="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-28 md:pb-24 md:pt-36">
+      <div class="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
         <div>
-          <p class="mono-label text-white/70">Threshold cryptography · Post-quantum ready · Open source</p>
-          <h1 class="mt-4 text-balance font-sans text-4xl font-bold leading-[1.12] tracking-tight text-white md:text-5xl md:leading-[1.08]">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 inline-block drop-shadow-lg">
+              <SymbolLogo class="w-full h-full" />
+            </span>
+            <p class="mono-label text-white/80">Threshold cryptography · Post-quantum ready · Open source</p>
+          </div>
+          <h1 class="text-balance font-sans text-4xl font-bold leading-[1.12] tracking-tight text-white md:text-5xl md:leading-[1.08]">
             <HeroDecrypt client:visible text="Threshold-native trust infrastructure" />
             <span class="block text-white/90 mt-2">
               for a post-quantum world.
@@ -131,6 +141,30 @@ const deployments = [
         <div class="lg:justify-self-end">
           <!-- Three-mode architecture SVG diagram -->
           <ThreeModeDiagram class="w-full max-w-md lg:w-[34rem] drop-shadow-2xl" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== Stats band ===================== -->
+  <section class="border-b border-line bg-surface-dim">
+    <div class="mx-auto w-full max-w-6xl px-6 py-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div>
+          <p class="font-sans text-3xl md:text-4xl font-bold text-accent">43</p>
+          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Rust crates</p>
+        </div>
+        <div>
+          <p class="font-sans text-3xl md:text-4xl font-bold text-accent2">725+</p>
+          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Tests passing</p>
+        </div>
+        <div>
+          <p class="font-sans text-3xl md:text-4xl font-bold text-gold-ink">3</p>
+          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Deployment modes</p>
+        </div>
+        <div>
+          <p class="font-sans text-3xl md:text-4xl font-bold text-accent">10+</p>
+          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Protocol implementations</p>
         </div>
       </div>
     </div>
@@ -371,8 +405,41 @@ const deployments = [
           in under five minutes.
         </p>
       </Reveal>
-      <div class="mt-8 max-w-2xl">
-        <InstallTabs client:visible />
+      <div class="mt-10 grid lg:grid-cols-[1.3fr_1fr] gap-8 items-start">
+        <Reveal>
+          <InstallTabs client:visible />
+        </Reveal>
+        <Reveal delayMs={80}>
+          <div class="card p-6 bg-surface-dim border-accent/20">
+            <p class="mono-label !text-accent">Five-minute path</p>
+            <h3 class="mt-2 font-sans text-lg font-bold">Verify a signature, end to end</h3>
+            <ol class="mt-4 space-y-3 text-sm text-muted">
+              <li class="flex gap-3">
+                <span class="font-mono text-accent font-bold flex-shrink-0">1.</span>
+                <span><code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">gem install confium</code> — installs the gem and builds the native extension.</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-mono text-accent font-bold flex-shrink-0">2.</span>
+                <span>Require and parse a certificate: <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">Confium::PKI::Certificate.from_pem(...)</code></span>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-mono text-accent font-bold flex-shrink-0">3.</span>
+                <span>Validate the chain via <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">PathValidator</code>.</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-mono text-accent font-bold flex-shrink-0">4.</span>
+                <span>Verify a composite signature with the per-algorithm callbacks.</span>
+              </li>
+              <li class="flex gap-3">
+                <span class="font-mono text-accent font-bold flex-shrink-0">5.</span>
+                <span>Anchor the verification event in a transparency log.</span>
+              </li>
+            </ol>
+            <a href="/audiences/developers/" class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-deep">
+              Full developer guide <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </Reveal>
       </div>
     </div>
   </section>
@@ -406,6 +473,43 @@ const deployments = [
           Read the Sovereign PKI use case →
         </a>
       </p>
+    </div>
+  </section>
+
+  <!-- ===================== Latest from the blog ===================== -->
+  <section class="border-b border-line bg-surface-dim">
+    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+      <Reveal>
+        <div class="flex items-baseline justify-between flex-wrap gap-3">
+          <div>
+            <p class="mono-label">From the blog</p>
+            <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
+              Recent writing
+            </h2>
+          </div>
+          <a href="/blog/" class="text-sm font-semibold text-accent hover:text-accent-deep">
+            All posts →
+          </a>
+        </div>
+      </Reveal>
+      <div class="mt-10 grid md:grid-cols-3 gap-4">
+        {[
+          { href: '/blog/2026-07-28-introducing-confium/', title: 'Introducing Confium', excerpt: 'Why we built a threshold-native trust infrastructure framework, and what ships today.', category: 'Announcement' },
+          { href: '/blog/2026-07-28-sovereign-pki-launch/', title: 'Sovereign PKI launch', excerpt: 'Mode 3 deep dive — institutional trust without a single point of failure.', category: 'Deep dive' },
+          { href: '/blog/2026-07-28-pq-migration-walkthrough/', title: 'PQ migration walkthrough', excerpt: 'How composite signatures turn migration into a software upgrade.', category: 'Walkthrough' },
+        ].map((post, i) => (
+          <Reveal delayMs={i * 60}>
+            <a href={post.href} class="card card-hover group block h-full p-6">
+              <p class="mono-label !text-accent">{post.category}</p>
+              <h3 class="mt-2 font-sans text-lg font-bold group-hover:text-accent transition-colors">
+                {post.title}
+              </h3>
+              <p class="mt-2 text-sm leading-relaxed text-muted">{post.excerpt}</p>
+              <p class="mt-4 text-xs text-accent group-hover:underline">Read post →</p>
+            </a>
+          </Reveal>
+        ))}
+      </div>
     </div>
   </section>
 
