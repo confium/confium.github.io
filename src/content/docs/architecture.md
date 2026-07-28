@@ -5,7 +5,6 @@ audience: developer
 order: 1
 ---
 
-import Prose from '../../components/astro/Prose.astro';
 
 # Architecture
 
