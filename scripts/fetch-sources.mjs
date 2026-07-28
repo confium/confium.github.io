@@ -84,10 +84,9 @@ function fetchSoftwareDocs() {
     const fm = loadFrontmatter(join(softwareDir, file));
     if (!fm || !fm.docs_repo) continue;
     const id = file.replace(/\.(md|mdx)$/, '');
-    const bare = fm.docs_repo.replace(/^github\.com\//, '');
-    const repoHttps = `https://${bare.replace(/^[\/@]+/, '').replace(':', '/')}.git`;
-    const sparsePaths = ['README*', `/${fm.docs_subtree || 'docs'}/`];
-    sparseClone(repoHttps, fm.docs_ref || 'main', join(VENDOR, id), sparsePaths);
+    const repoHttps = normalizeRepoUrl(fm.docs_repo);
+    const subtree = (fm.docs_subtree || 'docs').replace(/^\/+|\/+$/g, '');
+    sparseClone(repoHttps, fm.docs_ref || 'main', join(VENDOR, id), [subtree]);
   }
 }
 
@@ -97,7 +96,25 @@ function fetchSpecs() {
     console.log('[fetch-sources] no src/content/specs/ — skipping specs');
     return;
   }
-  sparseClone(SPECS_REPO, SPECS_REF, join(VENDOR, 'specs'), ['specs/', 'README*']);
+  sparseClone(SPECS_REPO, SPECS_REF, join(VENDOR, 'specs'), ['specs/']);
+}
+
+/**
+ * Accepts either "github.com/owner/repo" or "owner/repo" and returns
+ * the canonical HTTPS clone URL.
+ * @param {string} repo
+ * @returns {string}
+ */
+function normalizeRepoUrl(repo) {
+  const trimmed = repo.replace(/^\/+|\/+$/g, '');
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+    return trimmed.endsWith('.git') ? trimmed : `${trimmed}.git`;
+  }
+  if (trimmed.startsWith('git@')) {
+    return trimmed;
+  }
+  const cleaned = trimmed.replace(/^github\.com\//, '');
+  return `https://github.com/${cleaned}${cleaned.endsWith('.git') ? '' : '.git'}`;
 }
 
 console.log('[fetch-sources] starting');

@@ -1,19 +1,22 @@
 import { defineConfig } from 'astro/config';
 import vue from '@astrojs/vue';
 import sitemap from '@astrojs/sitemap';
-import mdx from '@astrojs/mdx';
 import tailwindcss from '@tailwindcss/vite';
 
 // Confium public website.
 //
-// Static output, trailing slash always, sitemap, MDX content collections,
-// Vue islands, and Tailwind 4 via the Vite plugin (not an Astro
-// integration — same architecture as the sister RNP site at rnpgp.org).
+// Mirrors the sister RNP site architecture (rnpgp.org):
+// Astro 7 + Vue 3 + Tailwind 4 (Vite plugin) + Pagefind search.
+//
+// Content format: plain Markdown (.md). MDX is intentionally NOT used
+// (the @astrojs/mdx integration does not yet cleanly interoperate with
+// Astro 7's rolldown-vite build). Plain Markdown covers everything
+// the content needs; component composition happens in .astro pages.
 export default defineConfig({
   site: 'https://www.confium.org',
   trailingSlash: 'always',
   compressHTML: true,
-  integrations: [vue(), sitemap(), mdx()],
+  integrations: [vue(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
   },

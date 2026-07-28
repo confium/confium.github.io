@@ -1,7 +1,12 @@
-import { defineCollection, globLoader, z } from 'astro:content';
+import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
 
 /**
  * Six hand-written collections + three vendor-pulled collections.
+ *
+ * Content format: plain Markdown (.md). The MDX integration was removed
+ * because @astrojs/mdx does not yet cleanly interoperate with Astro 7's
+ * rolldown-vite build. Plain Markdown covers everything the content needs.
  *
  * Vendor-pulled collections read from `vendor/` (populated by
  * scripts/fetch-sources.mjs at build time). If vendor/ is empty, the
@@ -42,15 +47,14 @@ const specsFrontmatter = z.object({
   category: z.string().default('spec'),
 });
 
-// Hand-written content collections.
 export const collections = {
   blog: defineCollection({
-    loader: globLoader({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/blog', pattern: '**/*.md' }),
     schema: adocFrontmatter,
   }),
 
   docs: defineCollection({
-    loader: globLoader({ base: './src/content/docs', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/docs', pattern: '**/*.md' }),
     schema: adocFrontmatter.extend({
       audience: z.enum(['developer', 'executive', 'evaluator', 'researcher']).optional(),
       order: z.number().default(0),
@@ -58,17 +62,17 @@ export const collections = {
   }),
 
   concepts: defineCollection({
-    loader: globLoader({ base: './src/content/concepts', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/concepts', pattern: '**/*.md' }),
     schema: adocFrontmatter,
   }),
 
   use_cases: defineCollection({
-    loader: globLoader({ base: './src/content/use_cases', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/use_cases', pattern: '**/*.md' }),
     schema: mdFrontmatter,
   }),
 
   glossary: defineCollection({
-    loader: globLoader({ base: './src/content/glossary', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/glossary', pattern: '**/*.md' }),
     schema: mdFrontmatter.extend({
       term: z.string(),
       see_also: z.array(z.string()).default([]),
@@ -76,18 +80,18 @@ export const collections = {
   }),
 
   software: defineCollection({
-    loader: globLoader({ base: './src/content/software', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/software', pattern: '**/*.md' }),
     schema: softwareFrontmatter,
   }),
 
   specs: defineCollection({
-    loader: globLoader({ base: './src/content/specs', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './src/content/specs', pattern: '**/*.md' }),
     schema: specsFrontmatter,
   }),
 
   // Vendor-pulled: per-repo implementation docs.
   softwareDocs: defineCollection({
-    loader: globLoader({ base: './vendor', pattern: '**/docs/**/*.{md,mdx}' }),
+    loader: glob({ base: './vendor', pattern: '**/docs/**/*.md' }),
     schema: adocFrontmatter.partial().extend({
       source_repo: z.string().optional(),
       upstream_path: z.string().optional(),
@@ -96,7 +100,7 @@ export const collections = {
 
   // Vendor-pulled: authoritative specs from github.com/confium/specs.
   specDocs: defineCollection({
-    loader: globLoader({ base: './vendor/specs', pattern: '**/*.{md,mdx}' }),
+    loader: glob({ base: './vendor/specs', pattern: '**/*.md' }),
     schema: adocFrontmatter.partial().extend({
       spec_id: z.string().optional(),
     }),
