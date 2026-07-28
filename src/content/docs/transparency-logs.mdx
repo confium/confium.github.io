@@ -1,0 +1,120 @@
+---
+title: Transparency logs
+description: RFC 6962 Merkle transparency logs. Inclusion proofs, consistency proofs, witness gossip, OTS anchoring. How split-view attacks are detected.
+audience: developer
+order: 9
+---
+
+# Transparency logs
+
+Every signing operation in a Confium deployment can anchor into an
+append-only Merkle transparency log implementing RFC 6962 semantics.
+The log provides cryptographic inclusion proofs and consistency
+proofs that any verifier can check independently.
+
+## Why transparency matters
+
+A certificate by itself proves "this was signed by the issuer". It
+doesn't prove "this is the only certificate the issuer ever signed
+for this subject", or "this is the same certificate every other
+verifier sees". A malicious or compromised CA can issue certificates
+silently — Verisign issued certificates for domains it didn't own
+in 2015, and the affected parties had no way to know.
+
+A transparency log solves this by making every issuance public and
+append-only. Anyone can audit the log and see what's been issued. A
+verifier can demand an inclusion proof that the certificate it's
+verifying is in the log.
+
+## Merkle tree basics
+
+The log is a Merkle tree:
+
+- Each leaf is `SHA-256(0x01 || entry_hash)`.
+- Each internal node is `SHA-256(0x02 || left_child || right_child)`.
+- The root hash commits to the entire set of leaves.
+
+The `0x01` / `0x02` domain separation prevents leaf values from
+being interpreted as internal nodes and vice versa.
+
+## Inclusion proofs (RFC 6962 §2.1.1)
+
+An inclusion proof cryptographically demonstrates that a specific
+entry is in the log, without revealing anything else about the log.
+The proof is a sequence of `(sibling_hash, side)` pairs. The verifier
+starts with the leaf hash, combines it with each sibling in order,
+and checks the final result equals the published root.
+
+## Consistency proofs (RFC 6962 §2.1.2)
+
+A consistency proof shows that tree head N+1 extends tree head N —
+i.e., the first N entries are identical between the two tree states.
+This is what makes split-view attacks detectable.
+
+If a log operator presents tree head N to verifier A and a different
+tree head N to verifier B, at least one of them will fail a
+consistency check against the true history — **as long as they
+communicate**.
+
+## The split-view attack
+
+Without consistency proofs, a transparency log operator can present
+two different tree heads to different verifiers, and nobody can
+detect it. This is the split-view attack:
+
+1. Verifier A receives tree head N from the log.
+2. Verifier B receives a different tree head N' (with a different root).
+3. Both verifiers can verify their own inclusion proofs against their
+   own heads. Neither knows the other's head exists.
+4. The log operator can insert or omit entries selectively per
+   audience.
+
+## Defense in depth
+
+Consistency proofs alone are necessary but not sufficient — verifiers
+must also communicate (gossip) so they know about each other's heads.
+Three layers:
+
+### Layer 1 — Consistency proofs
+
+Every new tree head extends the previous one. Implemented in
+`confium-transparency::merkle::MerkleTree::consistency_proof`.
+
+### Layer 2 — Witness gossip
+
+Coordinators share tree heads with each other periodically. If two
+coordinators have different heads for the same tree size, the
+witnesses detect the inconsistency.
+
+Confium's `confium-tc-coordinator` serves as a gossip endpoint for
+Mode 3 deployments. Each institutional coordinator shares its tree
+head with the institutional anchor's coordinator, which acts as the
+global witness.
+
+### Layer 3 — OTS anchoring
+
+Even with consistency proofs + gossip, a determined adversary who
+controls the log operator AND all witnesses can still split views.
+**OpenTimestamps (OTS)** anchors tree heads in the Bitcoin blockchain,
+providing an irrefutable time-stamped record of "what head existed
+at time T".
+
+Confium's `confium-ots` client supports this.
+
+## Recommended Mode 3 deployment
+
+For Mode 3 (highest assurance):
+
+1. Every transparency tree head is published with a consistency proof
+   from the previous head.
+2. Every coordinator gossips its tree head to the institutional
+   anchor every hour (configurable).
+3. The anchor anchors its current tree head in Bitcoin via OTS daily.
+4. Any verifier can independently verify the full chain: consistency
+   from the OTS-anchored head to the current head.
+
+## See also
+
+- [Concepts: Transparency logs](/concepts/transparency-logs/)
+- [Security model](./security-model.mdx)
+- [Mode 3 — Sovereign PKI](./mode3-sovereign-pki.mdx)
