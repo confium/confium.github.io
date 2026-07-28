@@ -1,0 +1,229 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+---
+
+<BaseLayout
+  title="For compliance officers"
+  description="FIPS 140 mode, jurisdictional algorithm policies, audit log format, and regulatory mapping to eIDAS, HIPAA, and FedRAMP."
+>
+  <PageHero
+    eyebrow="For compliance officers"
+    title="Regulatory alignment"
+    description="Confium ships hooks for FIPS 140 mode, jurisdictional algorithm allow-lists, and structured audit logging. This page maps those features to eIDAS, HIPAA, FedRAMP, and other common frameworks."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>FIPS 140 mode</h2>
+      <p>
+        FIPS mode routes every cryptographic operation through a
+        FIPS-validated plugin (typically Botan in FIPS mode). The
+        engine refuses to use non-FIPS-validated primitives even if
+        they\'re installed.
+      </p>
+      <pre><code class="language-ruby">Confium::Policy.fips_mode = true</code></pre>
+      <p>
+        In FIPS mode:
+      </p>
+      <ul>
+        <li>SHA-1, RSA-1024, and other legacy algorithms are rejected even if allow-listed.</li>
+        <li>The Botan plugin (when built against a FIPS-validated Botan) is the preferred backend.</li>
+        <li>Random number generation uses the FIPS-approved DRBG.</li>
+        <li>Self-tests run at startup and periodically per FIPS 140-2 §4.9.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Jurisdictional algorithm policies</h2>
+      <p>
+        Beyond FIPS, individual jurisdictions have specific algorithm
+        requirements. Confium expresses these as allow-lists:
+      </p>
+
+      <h3>European Union (P-384+)</h3>
+      <pre><code class="language-ruby">Confium::Policy.configure do |p|
+  p.allowed_signature_algorithms = %w[ECDSA-P384 ECDSA-P521]
+  p.allowed_hash_algorithms = %w[SHA-384 SHA-512]
+end</code></pre>
+
+      <h3>United States (P-256 acceptable)</h3>
+      <pre><code class="language-ruby">Confium::Policy.configure do |p|
+  p.allowed_signature_algorithms = %w[ECDSA-P256 ECDSA-P384 Ed25519]
+  p.allowed_hash_algorithms = %w[SHA-256 SHA-384 SHA-512]
+end</code></pre>
+
+      <h3>China (SM2 / SM3)</h3>
+      <pre><code class="language-ruby">Confium::Policy.configure do |p|
+  p.allowed_signature_algorithms = %w[SM2]
+  p.allowed_hash_algorithms = %w[SM3]
+end</code></pre>
+      <p>
+        SM2/SM3 support requires the SM plugin bundle; the engine
+        rejects these algorithms if the plugin is not loaded.
+      </p>
+
+      <h3>Post-quantum-required (forward-looking)</h3>
+      <pre><code class="language-ruby">Confium::Policy.configure do |p|
+  p.require_pq_component = true
+  p.allowed_signature_algorithms = %w[
+    ECDSA-P256
+    Ed25519
+    ML-DSA-65
+  ]
+end</code></pre>
+      <p>
+        With <code>require_pq_component = true</code>, the engine only
+        accepts composite signatures that include at least one
+        post-quantum algorithm. Useful for long-lived signatures
+        (code signing, archival) where migration to PQ is a
+        regulatory or business requirement.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Audit log format</h2>
+      <p>
+        Every signing operation produces a structured audit record.
+        The format is JSON, suitable for ingestion into SIEM systems
+        (Splunk, Elastic, Datadog, etc.).
+      </p>
+      <pre><code class="language-json" set:html={`{
+  "event_id": "evt_01H8X9...",
+  "timestamp": "2026-07-28T14:23:42.118Z",
+  "session_id": "sess_8a92...",
+  "coordinator": "coord-eu.internal",
+  "operation": "sign",
+  "algorithm": "ECDSA-P256",
+  "message_hash": "sha256:9b1d...",
+  "signature_hash": "sha256:7c3e...",
+  "transparency_sequence": 18437,
+  "quorum": {
+    "required": 3,
+    "participating": 3,
+    "signers": ["director-1", "director-3", "director-5"]
+  },
+  "attributes": {
+    "region": ["na", "eu", "apac"]
+  },
+  "policy_version": "deploy.toml@abc123",
+  "fips_mode": true
+}`}></code></pre>
+      <p>
+        The transparency log anchors each audit record\'s
+        <code>event_id</code> as a Merkle leaf. The inclusion proof
+        cryptographically binds the audit record to a public,
+        verifiable timeline.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Regulatory framework mapping</h2>
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>Relevant Confium features</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>eIDAS (EU, electronic signatures)</td>
+            <td>
+              <ul>
+                <li>Jurisdictional policy enforcing P-384+ for Qualified Electronic Signatures.</li>
+                <li>Audit log with signer identity + attributes.</li>
+                <li>Transparency log for long-term verifiability (eIDAS Article 50).</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>HIPAA (US, healthcare)</td>
+            <td>
+              <ul>
+                <li>Audit trail of every signing operation (§164.312(b)).</li>
+                <li>FIPS 140 mode for cryptographic primitives (§164.312(a)(2)(iv)).</li>
+                <li>Threshold key escrow pattern for break-glass access.</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>FedRAMP (US, federal cloud)</td>
+            <td>
+              <ul>
+                <li>FIPS 140-2 validated cryptography.</li>
+                <li>Structured audit log ingestible into SIEM.</li>
+                <li>Attribute-based access control for signer authorization.</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>Common Criteria (EAL4+)</td>
+            <td>
+              <ul>
+                <li>Open-source codebase for full audit.</li>
+                <li>#![forbid(unsafe_code)] for memory safety.</li>
+                <li>Type-safe errors (no string-error attack surface).</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>GDPR (data minimization)</td>
+            <td>
+              <ul>
+                <li>Audit log records hashes, not message contents.</li>
+                <li>No personal data in transparency log entries (only event hashes).</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td>SOC 2 Type II</td>
+            <td>
+              <ul>
+                <li>Transparency log provides immutable audit trail.</li>
+                <li>Attribute-based quorum for separation of duties.</li>
+                <li>Structured audit log for monitoring controls.</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        This table is informational, not a certification. Each
+        deployment must complete its own compliance assessment.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Deployment manifest as policy artifact</h2>
+      <p>
+        The TOML deployment manifest is the canonical policy
+        artifact. Treat it like any other audited configuration:
+      </p>
+      <ul>
+        <li>Version it in git.</li>
+        <li>Require code review for changes.</li>
+        <li>Sign it (Confium can verify its own manifest signature at boot).</li>
+        <li>Audit changes against the change-management control of your compliance framework.</li>
+      </ul>
+      <pre><code class="language-toml" set:html={`[policy]
+fips_mode = true
+allowed_signature_algorithms = ["ECDSA-P384", "Ed25519"]
+allowed_hash_algorithms = ["SHA-384", "SHA-512"]
+require_pq_component = false
+
+[quorum]
+threshold = 3
+total = 5
+diversity = { regions = 3 }`}></code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/security/">Security disclosure policy</a></li>
+        <li><a href="/docs/security-model/">Security model deep dive</a></li>
+        <li><a href="/docs/compliance/">Compliance documentation</a> (in the Rust workspace)</li>
+        <li><a href="/audiences/architects/">Architect\'s guide</a> — for the technical counterpart.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

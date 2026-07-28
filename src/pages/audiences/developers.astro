@@ -1,0 +1,215 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import InstallTabs from '../../components/vue/InstallTabs.vue';
+---
+
+<BaseLayout
+  title="For developers"
+  description="Pick a binding, get to a working verify in five minutes, understand the typed error model, and ship."
+>
+  <PageHero
+    eyebrow="For developers"
+    title="Build on Confium in your language"
+    description="Three bindings ship today: Ruby (full API surface via native extension), Rust (the source of truth), and WASM (browser/Node.js verifier). Each gets you to a working verify in under five minutes."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>Pick a binding</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Binding</th>
+            <th>Use when</th>
+            <th>Sign</th>
+            <th>Verify</th>
+            <th>Install</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Ruby</strong></td>
+            <td>Ruby/Rails/Sinatra app; you want a friendly API and don't need bare-metal perf.</td>
+            <td>Yes</td>
+            <td>Yes</td>
+            <td><code>gem install confium</code></td>
+          </tr>
+          <tr>
+            <td><strong>Rust</strong></td>
+            <td>You need maximum performance, custom integrations, or are building a Confium plugin.</td>
+            <td>Yes</td>
+            <td>Yes</td>
+            <td><code>cargo add confium-core</code></td>
+          </tr>
+          <tr>
+            <td><strong>WASM</strong></td>
+            <td>Browser / Node.js verifier. Composite sigs, transparency proofs, X.509 / CMS parsing.</td>
+            <td>No</td>
+            <td>Yes</td>
+            <td><code>npm install @confium/confium-wasm</code></td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        The WASM package is <strong>verifier-only</strong> by design.
+        Signing requires the full Rust or Ruby stack; browsers verify,
+        servers sign.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Install</h2>
+      <div class="not-prose my-6">
+        <InstallTabs client:visible />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Five-minute quickstart: verify a composite signature in Ruby</h2>
+      <p>
+        The most common developer task: someone hands you a composite
+        signature and you need to verify it. Here's a complete Sinatra
+        app that does it in ~50 lines.
+      </p>
+      <pre><code class="language-ruby" set:html={`# app.rb
+require "sinatra/base"
+require "confium"
+
+class VerifyApp < Sinatra::Base
+  before { content_type :json }
+
+  post "/verify" do
+    payload = JSON.parse(request.body.read)
+    message = payload["message"].b
+    sig = Confium::Composite::Signature.from_json(payload["signature"].to_json)
+
+    result = sig.verify(message, {
+      "Ed25519"     => :builtin,
+      "ECDSA-P256"  => :builtin,
+      "ML-DSA-65"   => ->(pk, msg, s) { my_pq_verifier.verify(pk, msg, s) },
+    })
+
+    {
+      valid:        result.all_verified?,
+      per_component: result.per_component,
+    }.to_json
+  rescue Confium::ParseError => e
+    halt 400, { error: "parse_failed", details: e.details }.to_json
+  rescue Confium::VerificationError => e
+    halt 422, { error: "verification_failed", details: e.details }.to_json
+  end
+end`}></code></pre>
+      <p>
+        Run it: <code>ruby app.rb</code>. Test it:
+        <code>curl -X POST http://localhost:4567/verify -d @payload.json</code>.
+      </p>
+      <p>
+        For the full walkthrough (install, parse cert, validate chain,
+        anchor in transparency log), see the
+        <a href="https://github.com/confium/confium-ruby/tree/main/docs/quickstarts/sinatra-verifier.mdx">Sinatra verifier quickstart</a>
+        in the Ruby gem docs.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Five-minute quickstart: threshold signing in Rust</h2>
+      <p>
+        The second most common task: split a key across N parties and
+        produce a signature without ever reconstructing the secret.
+      </p>
+      <pre><code class="language-rust">use confium_tc_frost_p256::FrostP256;
+
+// 1. Generate a keypair.
+let kp = FrostP256::generate_keypair()?;
+
+// 2. Split into 5 shares, threshold 3.
+let shares = FrostP256::split_secret(&amp;kp.private_key, 3, 5)?;
+
+// 3. Distribute shares[i] to party i. The original secret can
+//    now be destroyed — it will never be needed again.
+
+// 4. Recover the secret from any 3 shares (demonstration only —
+//    in production you never reconstruct; you co-sign instead).
+let recovered = FrostP256::recover_secret(&amp;[
+    shares[0].as_ref(),
+    shares[2].as_ref(),
+    shares[4].as_ref(),
+])?;
+assert_eq!(recovered, kp.private_key);
+
+// 5. Sign with the original key (in production, sign with shares).
+let sig = FrostP256::sign(&amp;kp.private_key, b"threshold test")?;
+println!("der: {}, fixed: {}", sig.der.len(), sig.fixed.len());</code></pre>
+      <p>
+        The full end-to-end walkthrough lives in the
+        <a href="https://github.com/confium/confium/tree/main/docs/examples/threshold-signing.mdx">threshold-signing example</a>
+        in the Rust workspace docs.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Five-minute quickstart: WASM verifier in a browser</h2>
+      <pre><code class="language-javascript" set:html={`import init, { CompositeSignature } from "@confium/confium-wasm";
+
+await init();
+
+const sig = CompositeSignature.from_json(jsonString);
+const result = sig.verify(messageBytes, {
+  "Ed25519": "builtin",
+  "ECDSA-P256": "builtin",
+  "ML-DSA-65": (pk, msg, sig) => myExternalVerifier(pk, msg, sig),
+});
+
+console.log(result.all_verified);      // true
+console.log(result.per_component);     // { Ed25519: true, ... }`}></code></pre>
+      <p>
+        The WASM package ships with per-subsystem Cargo features
+        (<code>verify-composite</code>, <code>verify-transparency</code>,
+        <code>verify-attributes</code>, <code>verify-pki</code>) so you
+        can tree-shake down to just what you need.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>The typed error model</h2>
+      <p>
+        Every failure mode has a typed error class. There are no bare
+        <code>RuntimeError</code> raises.
+      </p>
+      <pre><code class="language-ruby">Confium::Error                  # root — rescue this as catch-all
+├── ParseError                  # malformed PEM / DER / JSON input
+├── ValidationError             # well-formed but invalid (e.g. expired cert)
+├── VerificationError           # signature / proof / inclusion check failed
+├── ThresholdError              # threshold protocol failure (bad share, no quorum)
+├── CryptoError                 # underlying primitive failure
+├── NotFoundError               # requested signer / cert / share not found
+├── IndexError                  # sequence number out of range
+├── UnresolvedSignerError       # required signer could not be resolved
+└── PolicyViolationError        # jurisdictional / FIPS policy violation</code></pre>
+      <p>
+        Every error carries <code>.details</code> — a Hash with
+        structured context (which cert, which algorithm, which check
+        failed). Code that reads <code>.details</code> should treat
+        the keys as advisory and defensively check for presence.
+      </p>
+      <p>
+        See the <a href="https://github.com/confium/confium-ruby/tree/main/docs/error-handling.mdx">error handling guide</a>
+        for HTTP-status mapping and rescue patterns.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to read next</h2>
+      <ul>
+        <li><strong>Ruby API reference</strong> — <a href="https://github.com/confium/confium-ruby/tree/main/docs/api-reference.mdx">all 11 subsystems documented</a>.</li>
+        <li><strong>Rust workspace map</strong> — <a href="/software/rust/docs/">43-crate layout</a>.</li>
+        <li><strong>Sinatra verifier quickstart</strong> — the canonical end-to-end Ruby example.</li>
+        <li><strong>Threshold signing example</strong> — the canonical end-to-end Rust example.</li>
+        <li><strong>PQ migration walkthrough</strong> — composite signatures deep dive.</li>
+        <li><strong>Policy / FIPS mode</strong> — jurisdictional algorithm allow-lists.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

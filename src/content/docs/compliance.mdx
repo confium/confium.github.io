@@ -1,0 +1,168 @@
+---
+title: Compliance
+description: FIPS 140 mode, jurisdictional algorithm policies, audit log format, and regulatory mapping to eIDAS, HIPAA, FedRAMP, and Common Criteria.
+audience: evaluator
+order: 12
+---
+
+# Compliance
+
+Confium ships hooks for FIPS 140 mode, jurisdictional algorithm
+allow-lists, and structured audit logging. This page covers what each
+hook does and how it maps to common regulatory frameworks.
+
+For audience-specific guidance, see
+[the compliance officer guide](/audiences/compliance/).
+
+## FIPS 140 mode
+
+FIPS mode routes every cryptographic operation through a FIPS-validated
+plugin (typically Botan built against a FIPS-validated Botan). The
+engine refuses to use non-FIPS-validated primitives even if they are
+installed.
+
+```ruby
+Confium::Policy.fips_mode = true
+```
+
+In FIPS mode:
+
+- SHA-1, RSA-1024, and other legacy algorithms are rejected even if allow-listed.
+- The Botan plugin (when built FIPS-validated) is the preferred backend.
+- Random number generation uses the FIPS-approved DRBG.
+- Self-tests run at startup and periodically per FIPS 140-2 §4.9.
+
+FIPS mode is process-global. Set it once at boot; every subsequent
+Confium call honors it.
+
+## Jurisdictional algorithm policies
+
+Beyond FIPS, individual jurisdictions have specific algorithm
+requirements. Confium expresses these as allow-lists:
+
+### European Union (P-384+)
+
+```ruby
+Confium::Policy.configure do |p|
+  p.allowed_signature_algorithms = %w[ECDSA-P384 ECDSA-P521]
+  p.allowed_hash_algorithms = %w[SHA-384 SHA-512]
+end
+```
+
+### United States (P-256 acceptable)
+
+```ruby
+Confium::Policy.configure do |p|
+  p.allowed_signature_algorithms = %w[ECDSA-P256 ECDSA-P384 Ed25519]
+  p.allowed_hash_algorithms = %w[SHA-256 SHA-384 SHA-512]
+end
+```
+
+### China (SM2 / SM3)
+
+```ruby
+Confium::Policy.configure do |p|
+  p.allowed_signature_algorithms = %w[SM2]
+  p.allowed_hash_algorithms = %w[SM3]
+end
+```
+
+SM2/SM3 support requires the SM plugin bundle; the engine rejects
+these algorithms if the plugin is not loaded.
+
+### Post-quantum-required (forward-looking)
+
+```ruby
+Confium::Policy.configure do |p|
+  p.require_pq_component = true
+  p.allowed_signature_algorithms = %w[ECDSA-P256 Ed25519 ML-DSA-65]
+end
+```
+
+With `require_pq_component = true`, the engine only accepts composite
+signatures that include at least one post-quantum algorithm. Useful
+for long-lived signatures (code signing, archival) where migration
+to PQ is a regulatory or business requirement.
+
+## Deployment manifest as policy artifact
+
+The TOML deployment manifest is the canonical policy artifact. Treat
+it like any other audited configuration:
+
+- Version it in git.
+- Require code review for changes.
+- Sign it (Confium can verify its own manifest signature at boot).
+- Audit changes against the change-management control of your compliance framework.
+
+```toml
+[policy]
+fips_mode = true
+allowed_signature_algorithms = ["ECDSA-P384", "Ed25519"]
+allowed_hash_algorithms = ["SHA-384", "SHA-512"]
+require_pq_component = false
+
+[quorum]
+threshold = 3
+total = 5
+diversity = { regions = 3 }
+```
+
+## Audit log format
+
+Every signing operation produces a structured audit record. The format
+is JSON, suitable for ingestion into SIEM systems (Splunk, Elastic,
+Datadog, etc.).
+
+```json
+{
+  "event_id": "evt_01H8X9...",
+  "timestamp": "2026-07-28T14:23:42.118Z",
+  "session_id": "sess_8a92...",
+  "coordinator": "coord-eu.internal",
+  "operation": "sign",
+  "algorithm": "ECDSA-P256",
+  "message_hash": "sha256:9b1d...",
+  "signature_hash": "sha256:7c3e...",
+  "transparency_sequence": 18437,
+  "quorum": {
+    "required": 3,
+    "participating": 3,
+    "signers": ["director-1", "director-3", "director-5"]
+  },
+  "attributes": {
+    "region": ["na", "eu", "apac"]
+  },
+  "policy_version": "deploy.toml@abc123",
+  "fips_mode": true
+}
+```
+
+The transparency log anchors each audit record's `event_id` as a
+Merkle leaf. The inclusion proof cryptographically binds the audit
+record to a public, verifiable timeline.
+
+## Regulatory framework mapping
+
+| Framework | Relevant Confium features |
+| --- | --- |
+| **eIDAS** (EU, electronic signatures) | Jurisdictional policy enforcing P-384+ for Qualified Electronic Signatures. Audit log with signer identity + attributes. Transparency log for long-term verifiability (eIDAS Article 50). |
+| **HIPAA** (US, healthcare) | Audit trail of every signing operation (§164.312(b)). FIPS 140 mode for cryptographic primitives (§164.312(a)(2)(iv)). Threshold key escrow pattern for break-glass access. |
+| **FedRAMP** (US, federal cloud) | FIPS 140-2 validated cryptography. Structured audit log ingestible into SIEM. Attribute-based access control for signer authorization. |
+| **Common Criteria (EAL4+)** | Open-source codebase for full audit. `#![forbid(unsafe_code)]` for memory safety. Type-safe errors (no string-error attack surface). |
+| **GDPR** (data minimization) | Audit log records hashes, not message contents. No personal data in transparency log entries (only event hashes). |
+| **SOC 2 Type II** | Transparency log provides immutable audit trail. Attribute-based quorum for separation of duties. Structured audit log for monitoring controls. |
+
+This table is informational, not a certification. Each deployment
+must complete its own compliance assessment.
+
+## Disclosure policy
+
+See [/security/](/security/) for the security disclosure policy,
+PGP key, and SLA for vulnerability response.
+
+## See also
+
+- [Security model](./security-model.mdx)
+- [Architecture](./architecture.mdx)
+- [Compliance officer guide](/audiences/compliance/)
+- [Security disclosure](/security/)

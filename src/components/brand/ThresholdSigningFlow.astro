@@ -1,0 +1,96 @@
+---
+/**
+ * Threshold signing flow — shows how T-of-N parties produce a single
+ * signature without any one of them holding the full key.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 480 360"
+  class={className}
+  role="img"
+  aria-labelledby="threshold-flow-title"
+  set:html={`
+    <title id="threshold-flow-title">Threshold signing: T-of-N parties co-sign without reconstructing the secret.</title>
+    <defs>
+      <linearGradient id="ts-msg" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#1a7bec"/>
+        <stop offset="100%" stop-color="#00c2c9"/>
+      </linearGradient>
+      <linearGradient id="ts-sig" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#00dfb7"/>
+        <stop offset="100%" stop-color="#009e80"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Message -->
+    <rect x="160" y="20" width="160" height="42" rx="8" fill="url(#ts-msg)"/>
+    <text x="240" y="46" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" font-weight="700" fill="white" letter-spacing="2">MESSAGE</text>
+
+    <!-- Coordinator in middle -->
+    <rect x="190" y="155" width="100" height="50" rx="10" fill="white" stroke="#1a7bec" stroke-width="2"/>
+    <text x="240" y="175" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="#1a7bec">COORDINATOR</text>
+    <text x="240" y="192" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="#4f5469">aggregates shares</text>
+
+    <!-- N=5 party circles at bottom -->
+    <g font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700">
+      <!-- Party 1 — participating -->
+      <circle cx="80" cy="290" r="26" fill="#1a7bec"/>
+      <text x="80" y="295" text-anchor="middle" fill="white">P1</text>
+      <text x="80" y="330" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#4f5469">share 1</text>
+
+      <!-- Party 2 — NOT participating (gray) -->
+      <circle cx="150" cy="290" r="26" fill="#eef4fa" stroke="#dfe8f2"/>
+      <text x="150" y="295" text-anchor="middle" fill="#5f6680">P2</text>
+      <text x="150" y="330" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#5f6680">offline</text>
+
+      <!-- Party 3 — participating -->
+      <circle cx="220" cy="290" r="26" fill="#1a7bec"/>
+      <text x="220" y="295" text-anchor="middle" fill="white">P3</text>
+      <text x="220" y="330" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#4f5469">share 3</text>
+
+      <!-- Party 4 — NOT participating -->
+      <circle cx="290" cy="290" r="26" fill="#eef4fa" stroke="#dfe8f2"/>
+      <text x="290" y="295" text-anchor="middle" fill="#5f6680">P4</text>
+      <text x="290" y="330" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#5f6680">offline</text>
+
+      <!-- Party 5 — participating -->
+      <circle cx="360" cy="290" r="26" fill="#1a7bec"/>
+      <text x="360" y="295" text-anchor="middle" fill="white">P5</text>
+      <text x="360" y="330" text-anchor="middle" font-family="IBM Plex Sans" font-size="9" fill="#4f5469">share 5</text>
+    </g>
+
+    <!-- Arrows: participating parties up to coordinator -->
+    <line x1="80" y1="264" x2="200" y2="200" stroke="#1a7bec" stroke-width="1.5" marker-end="url(#ts-arrow)"/>
+    <line x1="220" y1="264" x2="240" y2="205" stroke="#1a7bec" stroke-width="1.5"/>
+    <line x1="360" y1="264" x2="280" y2="200" stroke="#1a7bec" stroke-width="1.5"/>
+
+    <!-- Dashed gray arrows from offline parties -->
+    <line x1="150" y1="264" x2="220" y2="200" stroke="#dfe8f2" stroke-width="1" stroke-dasharray="3 3"/>
+    <line x1="290" y1="264" x2="260" y2="200" stroke="#dfe8f2" stroke-width="1" stroke-dasharray="3 3"/>
+
+    <!-- Arrow from message to coordinator -->
+    <line x1="240" y1="62" x2="240" y2="155" stroke="#1a7bec" stroke-width="1.5" stroke-dasharray="3 3"/>
+
+    <!-- Final signature -->
+    <rect x="160" y="95" width="160" height="42" rx="8" fill="url(#ts-sig)" opacity="0.95"/>
+    <text x="240" y="113" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" fill="white" letter-spacing="2">3-OF-5 QUORUM</text>
+    <text x="240" y="128" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="white">signature produced</text>
+
+    <line x1="240" y1="137" x2="240" y2="155" stroke="#009e80" stroke-width="2"/>
+
+    <!-- Side annotations -->
+    <text x="20" y="160" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">N = 5</text>
+    <text x="20" y="174" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">T = 3</text>
+    <text x="20" y="188" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">participating: 3</text>
+
+    <text x="430" y="160" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">secret</text>
+    <text x="430" y="174" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">never</text>
+    <text x="430" y="188" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">rebuilt</text>
+  `}
+/>

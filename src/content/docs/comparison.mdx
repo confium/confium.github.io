@@ -1,0 +1,150 @@
+---
+title: Comparison
+description: Confium vs HSMs, conventional CAs, KMS, Sigstore, and commercial threshold solutions. Where each fits, where each falls short.
+audience: evaluator
+order: 11
+---
+
+# Comparison
+
+Confium occupies a specific niche in the trust-infrastructure
+landscape: open-source, standards-only, threshold-native, with a path
+to post-quantum migration that doesn't require replacing hardware.
+This page maps that niche against the alternatives.
+
+## At a glance
+
+| Property | Confium | HSM (single-key) | Conventional CA | Cloud KMS | Sigstore | Commercial threshold |
+| --- | --- | --- | --- | --- | --- | --- |
+| Open source | ✓ BSD-2-Clause | varies | ✗ | ✗ | ✓ Apache-2.0 | ✗ |
+| No single point of compromise | ✓ structural | ✗ (single HSM) | ✗ (single CA key) | ✗ (KMS holds key) | ✗ (Cosign) | ✓ structural |
+| Standards-only adapters | ✓ PKCS#11 / OpenSSL / JCE / TLS | ✓ PKCS#11 | varies | limited | ✗ own API | usually |
+| Async (offline-tolerant) sessions | ✓ structural | n/a | n/a | ✗ | ✗ | varies |
+| Post-quantum migration path | ✓ composite sigs | ✗ (HSM replacement) | ✗ | varies | ✗ | varies |
+| Transparency log built in | ✓ RFC 6962 | ✗ | varies | ✗ | ✓ Rekor | varies |
+| Attribute-based quorum | ✓ DSL | ✗ | ✗ | limited | ✗ | limited |
+| FIPS 140 mode | ✓ via plugin | ✓ (HSM itself) | varies | ✓ | ✗ | ✓ |
+| Jurisdictional algorithm policies | ✓ per-deployment | limited | varies | limited | ✗ | limited |
+| Long-term archival (ERS, OTS) | ✓ both | ✗ | varies | ✗ | ✗ | varies |
+| Licensing cost | Free | $$ (hardware) | $$ (subscription) | $ (per-call) | Free | $$$ (subscription) |
+
+## Confium vs HSM (single-key)
+
+A Hardware Security Module stores a single private key in tamper-resistant
+hardware. Compromise requires physical access plus PIN compromise — but
+once compromised, the attacker has the full key and can sign anything
+until the HSM is revoked.
+
+**Use HSM when:**
+- You need the highest physical-security assurance (FIPS 140-2 Level 3+).
+- Single-key operation is acceptable.
+- You already have HSMs and want to keep using them.
+
+**Use Confium when:**
+- No single party can be trusted with the key.
+- You need quorum governance (multi-stakeholder signing).
+- You want software-only operation without specialized hardware.
+
+**Best together:** Confium integrates with HSMs via PKCS#11. Each
+signer can store its share in an HSM, combining HSM-grade physical
+security with Confium's threshold governance.
+
+## Confium vs conventional CA
+
+A conventional Certificate Authority (DigiCert, Sectigo, Let's
+Encrypt) holds a single private key that signs certificates. The CA
+operator is trusted not to misuse the key.
+
+**Use conventional CA when:**
+- You're issuing TLS certificates for the public web (use Let's Encrypt).
+- You trust the CA operator.
+- Single-stakeholder model fits your org.
+
+**Use Confium Mode 3 (Sovereign PKI) when:**
+- No single stakeholder can be trusted.
+- You need custom certificate formats or delegation rules.
+- You want a public, auditable record of every certificate ever issued.
+
+## Confium vs cloud KMS
+
+AWS KMS, Google Cloud KMS, and Azure Key Vault offer hosted
+cryptographic key storage. The cloud provider holds (or shards) the
+key; you call an API to sign.
+
+**Use cloud KMS when:**
+- You're already on one cloud and want minimal operational overhead.
+- Single-cloud trust model is acceptable.
+- You want tight IAM integration with cloud-native workloads.
+
+**Use Confium when:**
+- You need cross-cloud or on-prem deployment.
+- You want the key split across organizations, not just shards within one provider.
+- Compliance requires open-source, auditable crypto layer.
+
+**Best together:** Confium has a `confium-store-cloud` backend that
+uses cloud KMS as one share storage option among many.
+
+## Confium vs Sigstore
+
+[Sigstore](https://sigstore.dev/) is an open-source project for
+software supply-chain signing. It uses ephemeral keys, OIDC-based
+identity, and a transparency log (Rekor). It's optimized for code
+signing in CI/CD pipelines.
+
+**Use Sigstore when:**
+- You're signing container images, Python packages, or other build artifacts in CI.
+- You want keyless signing tied to GitHub / GitLab identity.
+- Single-signer-per-build is acceptable.
+
+**Use Confium when:**
+- You need multi-stakeholder quorum (e.g. release requires 2-of-3 maintainers).
+- You need threshold key escrow or recovery.
+- You're signing certificates, documents, or anything that isn't a build artifact.
+
+**Best together:** Confium's `confium-cms` produces standard CMS
+SignedData that Sigstore-style verifiers can consume.
+
+## Confium vs commercial threshold solutions
+
+Companies like Unbound (acquired by Coinbase), Sepior (acquired by
+Coinbase), and others offer commercial threshold cryptography
+products.
+
+**Use commercial threshold when:**
+- You want vendor support and SLA.
+- The vendor's specific protocol (often MPC variants) meets your needs.
+- Proprietary licensing is acceptable.
+
+**Use Confium when:**
+- Open-source is a hard requirement.
+- You need standards-only integration (PKCS#11, OpenSSL, JCE).
+- You want to avoid vendor lock-in.
+- You're deploying in a jurisdiction where the vendor isn't available.
+
+## What Confium is not
+
+- **Not a CA in a box.** Confium is the cryptographic layer; you bring the policy, the certificate formats, and the governance.
+- **Not an HSM.** Confium is software. Use HSMs alongside Confium if you need hardware-grade key protection.
+- **Not a cloud service.** Confium runs wherever you run it. No vendor-hosted version.
+- **Not a Sigstore replacement for code signing.** Different scope, different protocols.
+
+## When to choose Confium
+
+Pick Confium if any of these describe your situation:
+
+1. You're an institution where no single party can be trusted with the signing key.
+2. You need post-quantum migration without re-issuing every certificate.
+3. You want a public, auditable record of every signing operation.
+4. You need cross-jurisdiction deployment with per-jurisdiction algorithm policies.
+5. You're building a distributed system where multiple parties must cooperate to sign.
+6. Open-source + standards-only is a non-negotiable.
+
+If none of these apply, conventional PKI or a cloud KMS may serve you
+just as well — at lower operational complexity.
+
+## See also
+
+- [Architecture](./architecture.mdx)
+- [Security model](./security-model.mdx)
+- [Three deployment modes](./three-modes.mdx)
+- [Audience guides](/audiences/)

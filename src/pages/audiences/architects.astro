@@ -1,0 +1,239 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import DefenseInDepthDiagram from '../../components/brand/DefenseInDepthDiagram.astro';
+import SplitViewAttackDiagram from '../../components/brand/SplitViewAttackDiagram.astro';
+import CoordinatorSessionDiagram from '../../components/brand/CoordinatorSessionDiagram.astro';
+---
+
+<BaseLayout
+  title="For security architects"
+  description="Threat model, integration patterns, defense in depth, failure modes. The architect's guide to designing a Confium deployment."
+>
+  <PageHero
+    eyebrow="For security architects"
+    title="Threat model and integration patterns"
+    description="Confium replaces single-key trust with threshold quorum. This page covers the trust model, the integration patterns for each deployment mode, the defense-in-depth story, and the failure modes for every component."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>Trust model</h2>
+      <p>
+        A Confium deployment with threshold T-of-N tolerates compromise of
+        up to T−1 parties without losing the ability to produce valid
+        signatures. Equally important: compromise of up to T−1 parties
+        <strong>does not</strong> let the attacker produce signatures on their own.
+      </p>
+      <p>
+        The trust assumption: an attacker cannot compromise T or more
+        parties simultaneously within a single signing session. With
+        proactive share refresh (Herzberg refresh via
+        <code>confium-tc-reshare</code>), the window for compromise shrinks
+        to a single refresh period.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Threat table</h2>
+      <table>
+        <thead>
+          <tr><th>Threat</th><th>Defense</th><th>Residual risk</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Single-key compromise</td>
+            <td>No single key exists. Shamir split at generation; never reconstructed.</td>
+            <td>T parties colluding within one refresh window.</td>
+          </tr>
+          <tr>
+            <td>Split-view attack on transparency log</td>
+            <td>Consistency proofs + witness gossip + OTS anchoring.</td>
+            <td>Adversary controlling log + witnesses + ability to rewrite Bitcoin.</td>
+          </tr>
+          <tr>
+            <td>Long-term share aggregation</td>
+            <td>Herzberg refresh re-randomizes shares periodically.</td>
+            <td>T shares compromised within one refresh window.</td>
+          </tr>
+          <tr>
+            <td>Side-channel (timing, memory)</td>
+            <td>Constant-time scalar arithmetic; SecureBytes zeroizes on drop; <code>#![forbid(unsafe_code)]</code>.</td>
+            <td>Kernel-level rootkit on signer host — use hardware enclaves for highest assurance.</td>
+          </tr>
+          <tr>
+            <td>Coordinator compromise</td>
+            <td>Coordinator cannot produce signatures without T party contributions; nonces are unique per session.</td>
+            <td>Coordinator DoS (availability), not forgery (secrecy).</td>
+          </tr>
+          <tr>
+            <td>Policy violation (wrong algorithm used)</td>
+            <td>Confium::Policy is process-global; enforced on every call.</td>
+            <td>Misconfigured policy at deployment time — audit your manifest.</td>
+          </tr>
+          <tr>
+            <td>Replay of old session</td>
+            <td>Per-session nonces; coordinator rejects duplicate session IDs.</td>
+            <td>None — replay produces detectable hash mismatch.</td>
+          </tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Defense in depth for transparency logs</h2>
+      <p>
+        The transparency log is the audit spine of any Confium deployment.
+        Three layers protect against split-view attacks:
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <DefenseInDepthDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <p>
+        Layer 1 (consistency proofs) is necessary but not sufficient —
+        verifiers must communicate to detect divergent heads. Layer 2
+        (witness gossip) makes that communication automatic. Layer 3
+        (OTS anchoring) defeats the adversary who controls both log and
+        witnesses by anchoring state in Bitcoin's proof-of-work chain.
+      </p>
+      <p>
+        See <a href="/docs/transparency-logs/">the transparency logs deep dive</a>
+        for the cryptographic details.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Split-view attack walkthrough</h2>
+      <p>
+        The diagram below shows both the attack and the defense in one
+        frame. On the left, a compromised log operator presents two
+        different tree heads to two different verifiers. On the right,
+        witnesses gossip the heads and detect the divergence.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <SplitViewAttackDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Integration patterns by mode</h2>
+
+      <h3>Mode 1 — Peer-to-peer</h3>
+      <p>
+        Nodes exchange threshold protocol messages directly. No
+        intermediary. The coordinator is a library linked into the
+        application; signers are processes the application can reach
+        over the transport of choice.
+      </p>
+      <ul>
+        <li><strong>Best for</strong>: new distributed systems where you control both ends.</li>
+        <li><strong>Failure mode</strong>: if too few signers are reachable, signing fails. Use async sessions to tolerate latency.</li>
+        <li><strong>Hardening</strong>: use <code>confium-net-quic</code> for transport encryption + auth; pin signer identities.</li>
+      </ul>
+
+      <h3>Mode 2 — PKI drop-in</h3>
+      <p>
+        Existing PKCS#11, OpenSSL, or JCE consumer talks to a Confium
+        adapter process. The adapter translates each call into a
+        threshold session.
+      </p>
+      <ul>
+        <li><strong>Best for</strong>: migrating existing PKI consumers without rewriting them.</li>
+        <li><strong>Failure mode</strong>: adapter is a single point of failure unless you deploy it redundantly.</li>
+        <li><strong>Hardening</strong>: deploy adapter as a sidecar or behind a load balancer; the consumer sees only one logical PKCS#11 socket.</li>
+      </ul>
+
+      <h3>Mode 3 — Sovereign PKI</h3>
+      <p>
+        Custom certificate formats, custom delegation rules, custom
+        archival cadence. Coordinator runs as a long-lived service;
+        signers join and leave over time.
+      </p>
+      <ul>
+        <li><strong>Best for</strong>: institutional PKI where no single stakeholder can be trusted.</li>
+        <li><strong>Failure mode</strong>: institutional signers may go offline for long periods. Async sessions are mandatory.</li>
+        <li><strong>Hardening</strong>: attribute-based quorum (e.g. 5-of-9 directors from 3 distinct regions) for resilience against regional compromise.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Coordinator session lifecycle</h2>
+      <p>
+        The coordinator is an <strong>availability</strong> service, not a
+        <strong>secrecy</strong> service. Compromising it can
+        denial-of-service the deployment but cannot produce unauthorized
+        signatures — the math requires T party contributions.
+      </p>
+      <p>
+        Sessions are async. A director in Tokyo can submit their share
+        during their workday; a director in New York submits theirs hours
+        later; the coordinator combines when quorum is reached. Below is
+        a 9-hour session spanning Tokyo, Frankfurt, and New York.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <CoordinatorSessionDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Failure modes and mitigations</h2>
+
+      <h3>Signer loss</h3>
+      <p>
+        If a signer is lost permanently (hardware failure, departed
+        employee), use <code>confium-tc-reshare</code> to re-share the
+        secret across the remaining parties plus a new replacement signer.
+        The secret itself is never reconstructed. The threshold T may
+        also be adjusted during re-sharing.
+      </p>
+
+      <h3>Coordinator compromise</h3>
+      <p>
+        Replace the coordinator. The signing key is not on the
+        coordinator — it's split across signers. Re-deploy coordinator
+        from a clean image; resume sessions from the transparency log.
+      </p>
+
+      <h3>Transparency log compromise</h3>
+      <p>
+        If the log operator goes rogue, witnesses detect divergence via
+        gossip. Switch to a backup log; replay recent tree heads. The
+        OTS anchors in Bitcoin preserve irrefutable history.
+      </p>
+
+      <h3>Algorithm break</h3>
+      <p>
+        If a classical algorithm (e.g. Ed25519) is broken, deploy a
+        composite-signature update that includes the broken algorithm
+        alongside a post-quantum algorithm. Verifiers that have upgraded
+        accept the composite; verifiers that haven't still accept the
+        classical component (which is what they always accepted).
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/docs/security-model/">Security model deep dive</a></li>
+        <li><a href="/docs/architecture/">Engine architecture</a></li>
+        <li><a href="/docs/three-modes/">Three deployment modes</a></li>
+        <li><a href="/docs/transparency-logs/">Transparency logs</a></li>
+        <li><a href="/docs/pq-migration/">PQ migration with composite signatures</a></li>
+        <li><a href="/audiences/operators/">Operator deployment guide</a></li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>
