@@ -59,15 +59,15 @@ onUnmounted(() => {
   >
     <div class="mx-auto w-full max-w-6xl px-6">
       <div class="flex h-16 items-center justify-between">
-        <a href="/" class="font-sans text-lg font-semibold flex items-center gap-2">
-          <span class="w-7 h-7 inline-block">
-            <svg viewBox="0 0 275 275" class="w-full h-full" aria-hidden="true">
-              <path fill="#1a7bec" d="M137.5 12 L263 70 L137.5 128 L12 70 Z" opacity="0.95" />
-              <path fill="#00dfb7" d="M12 70 L137.5 128 L137.5 263 L12 205 Z" opacity="0.92" />
-              <path fill="#ffdc4a" d="M263 70 L137.5 128 L137.5 263 L263 205 Z" opacity="0.92" />
+        <a href="/" class="font-sans text-lg font-bold tracking-tight lowercase flex items-center gap-2">
+          <span class="w-8 h-5 inline-block">
+            <svg viewBox="0 0 275.37 167.48" class="w-full h-full" aria-hidden="true">
+              <path fill="#1a7bec" d="M95.79,83.73a95.44,95.44,0,0,1,31.82-71.27,83.73,83.73,0,1,0,0,142.54A95.44,95.44,0,0,1,95.79,83.73Z" transform="translate(0.08 0.01)" />
+              <path fill="#00dfb7" d="M179.46,83.73A95.44,95.44,0,0,1,147.6,155a83.73,83.73,0,1,0,0-142.54A95.44,95.44,0,0,1,179.46,83.73Z" transform="translate(0.08 0.01)" />
+              <path fill="#ffdc4a" d="M167.49,83.73a83.57,83.57,0,0,0-29.87-64,83.59,83.59,0,0,0,0,128.09A83.57,83.57,0,0,0,167.49,83.73Z" transform="translate(0.08 0.01)" />
             </svg>
           </span>
-          <span>Confium</span>
+          <span>confium</span>
         </a>
 
         <nav class="hidden md:flex items-center gap-1">

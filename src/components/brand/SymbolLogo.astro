@@ -1,10 +1,15 @@
 ---
 /**
- * Confium symbol mark — three intersecting cube faces in the brand
- * palette (blue, teal, gold). Designed in the same visual language
- * as the sister RNP site's three-circle mark, adapted to Confium's
- * cube geometry. The three faces represent the three deployment
- * modes (Peer-to-Peer TC, PKI Drop-in, Sovereign PKI).
+ * Confium symbol mark — three intersecting circles in the brand
+ * palette (blue, teal, gold), matching RNP's exact visual language.
+ *
+ * The three circles represent the three deployment modes:
+ *   Blue  — Mode 1: Peer-to-Peer TC
+ *   Teal  — Mode 2: PKI Drop-in
+ *   Gold  — Mode 3: Sovereign PKI
+ *
+ * The intersection at the center represents the shared engine —
+ * all three modes draw on the same core.
  */
 interface Props {
   class?: string;
@@ -14,44 +19,27 @@ const { class: className = '' } = Astro.props;
 
 <svg
   xmlns="http://www.w3.org/2000/svg"
-  viewBox="0 0 275 275"
+  viewBox="0 0 275.37 167.48"
   class={className}
   role="img"
   aria-label="Confium symbol"
 >
-  <!-- Top face (blue) — Mode 1: Peer-to-Peer TC -->
+  <!-- Left circle (blue) — Mode 1: Peer-to-Peer TC -->
   <path
     fill="#1a7bec"
-    d="M137.5 12 L263 70 L137.5 128 L12 70 Z"
-    opacity="0.95"
+    d="M95.79,83.73a95.44,95.44,0,0,1,31.82-71.27,83.73,83.73,0,1,0,0,142.54A95.44,95.44,0,0,1,95.79,83.73Z"
+    transform="translate(0.08 0.01)"
   />
-  <!-- Left face (teal) — Mode 2: PKI Drop-in -->
+  <!-- Right circle (teal) — Mode 2: PKI Drop-in -->
   <path
     fill="#00dfb7"
-    d="M12 70 L137.5 128 L137.5 263 L12 205 Z"
-    opacity="0.92"
+    d="M179.46,83.73A95.44,95.44,0,0,1,147.6,155a83.73,83.73,0,1,0,0-142.54A95.44,95.44,0,0,1,179.46,83.73Z"
+    transform="translate(0.08 0.01)"
   />
-  <!-- Right face (gold) — Mode 3: Sovereign PKI -->
+  <!-- Center circle (gold) — Mode 3: Sovereign PKI -->
   <path
     fill="#ffdc4a"
-    d="M263 70 L137.5 128 L137.5 263 L263 205 Z"
-    opacity="0.92"
-  />
-  <!-- Edges for definition -->
-  <path
-    fill="none"
-    stroke="#0f1326"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-    opacity="0.25"
-    d="M137.5 12 L263 70 L263 205 L137.5 263 L12 205 L12 70 Z"
-  />
-  <path
-    fill="none"
-    stroke="#0f1326"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-    opacity="0.25"
-    d="M137.5 128 L137.5 263 M12 70 L137.5 128 L263 70"
+    d="M167.49,83.73a83.57,83.57,0,0,0-29.87-64,83.59,83.59,0,0,0,0,128.09A83.57,83.57,0,0,0,167.49,83.73Z"
+    transform="translate(0.08 0.01)"
   />
 </svg>
