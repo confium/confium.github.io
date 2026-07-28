@@ -1,0 +1,244 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import CoordinatorSessionDiagram from '../../components/brand/CoordinatorSessionDiagram.astro';
+---
+
+<BaseLayout
+  title="For PKI operators"
+  description="Deployment runbook, monitoring hooks, backup and recovery, upgrade paths. The operator's guide to running Confium in production."
+>
+  <PageHero
+    eyebrow="For PKI operators"
+    title="Run Confium in production"
+    description="A Mode 2 or Mode 3 deployment lives or dies on operational discipline. This page covers the deployment runbook, the monitoring hooks, the backup and recovery procedures, and the upgrade path."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>Deployment topology</h2>
+      <p>
+        A production Confium deployment has four moving parts:
+      </p>
+      <ol>
+        <li><strong>Coordinator</strong> — long-lived service that orchestrates signing sessions. Deploy one per region for redundancy; they share session state via the transparency log.</li>
+        <li><strong>Signers</strong> — processes holding individual threshold shares. One per authorized party. Can be online or offline; async sessions tolerate both.</li>
+        <li><strong>Transparency log</strong> — append-only Merkle tree recording every signing event. Run as a separate service with its own persistence layer.</li>
+        <li><strong>Witness(es)</strong> — services that gossip tree heads between coordinators. Required for split-view attack detection.</li>
+      </ol>
+    </Reveal>
+
+    <Reveal>
+      <h2>Deployment runbook</h2>
+
+      <h3>Step 1: Provision the coordinator</h3>
+      <pre><code class="language-sh" set:html={`# Install the Confium CLI and daemon.
+cargo install confium-cli --locked
+
+# Generate the deployment manifest.
+cat > deploy.toml <<EOF
+[coordinator]
+bind = "0.0.0.0:7443"
+transport = "quic"
+transparency_log = "log:tcp://log.internal:7444"
+
+[quorum]
+threshold = 3
+total = 5
+
+[policy]
+fips_mode = false
+allowed_signature_algorithms = ["ECDSA-P256", "Ed25519"]
+allowed_hash_algorithms = ["SHA-256", "SHA-384"]
+
+[[signers]]
+id = "director-1"
+endpoint = "director-1.internal:7500"
+attributes = { region = "na", role = "director" }
+
+# ... (4 more signer entries)
+EOF
+
+# Start the coordinator.
+confium-daemon --config deploy.toml`}></code></pre>
+
+      <h3>Step 2: Provision signers</h3>
+      <pre><code class="language-sh" set:html={`# On each signer host (director-1 through director-5):
+confium signer init --share /etc/confium/share.enc
+# (the share was generated during the initial key ceremony)
+
+confium signer start \\
+  --bind 0.0.0.0:7500 \\
+  --coordinator coord.internal:7443 \\
+  --identity director-1`}></code></pre>
+
+      <h3>Step 3: Provision the transparency log</h3>
+      <pre><code class="language-sh" set:html={`confium-log init --backend lmdb --path /var/lib/confium/log
+confium-log serve --bind 0.0.0.0:7444`}></code></pre>
+
+      <h3>Step 4: Provision a witness</h3>
+      <pre><code class="language-sh" set:html={`confium witness serve \\
+  --bind 0.0.0.0:7445 \\
+  --peers coord-eu.internal:7443,coord-apac.internal:7443 \\
+  --anchor-interval 3600`}></code></pre>
+
+      <h3>Step 5: Smoke test</h3>
+      <pre><code class="language-sh" set:html={`echo "test message" | confium sign \\
+  --coordinator coord.internal:7443 \\
+  --algorithm ECDSA-P256
+
+# Expected: a DER-encoded signature, anchored in the transparency log
+# with an inclusion proof.`}></code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Coordinator session lifecycle in production</h2>
+      <p>
+        Sessions are async. A signer in Tokyo can submit during their
+        workday; a signer in New York submits hours later; the
+        coordinator combines when quorum is reached. Below is a
+        representative 9-hour session.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <CoordinatorSessionDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Monitoring</h2>
+      <p>
+        Export Prometheus metrics from the coordinator, signers, and
+        transparency log. The critical metrics to alert on:
+      </p>
+      <table>
+        <thead>
+          <tr><th>Metric</th><th>Alert threshold</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>confium_signing_sessions_in_flight</code></td><td>Sustained &gt; 100 (load)</td></tr>
+          <tr><td><code>confium_signing_session_age_seconds</code> p99</td><td>&gt; 24h (signers not joining)</td></tr>
+          <tr><td><code>confium_signing_failures_total</code></td><td>Any non-zero (signer errors)</td></tr>
+          <tr><td><code>confium_quorum_reached_total</code></td><td>Drops to zero (no successful signing)</td></tr>
+          <tr><td><code>confium_transparency_log_tree_size</code></td><td>Stops growing (writer broken)</td></tr>
+          <tr><td><code>confium_witness_divergence_detected_total</code></td><td>Any non-zero (SPLIT-VIEW — investigate immediately)</td></tr>
+          <tr><td><code>confium_policy_violations_total</code></td><td>Any non-zero (something tried to use a disallowed algorithm)</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Also alert on standard process health: CPU, memory, disk (the
+        transparency log grows monotonically), and TLS certificate
+        expiry on the coordinator's QUIC listener.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Backup and recovery</h2>
+
+      <h3>Signer shares</h3>
+      <p>
+        Each signer's share is encrypted at rest. Back up the encrypted
+        share file to your standard key-management infrastructure (HSM,
+        KMS, password manager). Never back up an unencrypted share —
+        if you lose it, use <code>confium-tc-reshare</code> to re-share
+        and assign a new share to a replacement signer.
+      </p>
+
+      <h3>Transparency log</h3>
+      <p>
+        The transparency log is append-only. Back it up via standard
+        snapshot tooling (LMDB hot backup, ZFS snapshot, etc.) at
+        hourly cadence. The log's Merkle root is reproducible from
+        the entries, so backups are content-addressable.
+      </p>
+
+      <h3>Coordinator state</h3>
+      <p>
+        The coordinator holds in-flight session state. This state can
+        be reconstructed from the transparency log (which records
+        every session) — the coordinator itself is stateless across
+        reboots.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Upgrading</h2>
+
+      <h3>Coordinator upgrade</h3>
+      <p>
+        Coordinators can be upgraded one at a time if you run multiple.
+        Drain sessions from the old coordinator (let in-flight sessions
+        complete), shut it down, deploy the new version, restart.
+        In-flight session state is recoverable from the transparency
+        log.
+      </p>
+
+      <h3>Signer upgrade</h3>
+      <p>
+        Signers can be upgraded independently as long as the protocol
+        version is compatible. The FROST / CMP20 / GG18 protocols
+        are versioned; the coordinator negotiates the highest
+        mutually-supported version per session.
+      </p>
+
+      <h3>Share re-sharing (proactive refresh)</h3>
+      <p>
+        Run <code>confium-tc-reshare</code> on a fixed cadence
+        (monthly is common; quarterly for lower-assurance deployments).
+        This re-randomizes all shares without changing the underlying
+        secret, defeating any long-running share-aggregation attack.
+      </p>
+      <pre><code class="language-sh" set:html={`# Trigger a re-share. All signers must participate.
+confium reshare \\
+  --coordinator coord.internal:7443 \\
+  --new-threshold 3 \\
+  --new-total 5`}></code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Capacity planning</h2>
+      <p>
+        Per-signer throughput (FROST-P256, single core):
+      </p>
+      <ul>
+        <li><strong>Sign share</strong>: ~5ms</li>
+        <li><strong>Verify share</strong>: ~2ms</li>
+        <li><strong>Aggregate (coordinator)</strong>: ~1ms per share</li>
+      </ul>
+      <p>
+        End-to-end session latency (3-of-5 quorum, same region):
+        ~30ms over QUIC. Cross-region: 100–200ms typical. Async
+        sessions (hours-long): not throughput-bound; bounded by
+        signer availability.
+      </p>
+      <p>
+        For high-throughput Mode 2 deployments (TLS signing for a
+        high-traffic site), batch multiple messages per session to
+        amortize round-trip cost.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Incident response</h2>
+      <ol>
+        <li><strong>Coordinator compromise.</strong> Replace from clean image. Signing key is not on the coordinator — it's split across signers. Resume sessions from transparency log.</li>
+        <li><strong>Signer compromise.</strong> Trigger immediate re-share excluding the compromised signer. Investigate which sessions the compromised signer participated in via the audit log.</li>
+        <li><strong>Transparency log compromise.</strong> Witnesses detect divergence via gossip. Switch to backup log; replay recent tree heads. OTS anchors in Bitcoin preserve irrefutable history.</li>
+        <li><strong>Algorithm break.</strong> Deploy composite-signature update that includes the broken algorithm alongside a post-quantum one. Issue new certificates under the composite profile.</li>
+      </ol>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/docs/architecture/">Architecture overview</a></li>
+        <li><a href="/audiences/architects/">Architect\'s guide</a> — threat model and integration patterns.</li>
+        <li><a href="/docs/transparency-logs/">Transparency logs deep dive</a></li>
+        <li><a href="/software/rust/docs/workspace-map">Workspace map</a> — pick the right crates for your deployment.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

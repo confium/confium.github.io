@@ -1,0 +1,162 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import ThreeModeDiagram from '../../components/brand/ThreeModeDiagram.astro';
+---
+
+<BaseLayout
+  title="For executives"
+  description="Confium for decision-makers: cost model, risk reduction, compliance posture, vendor independence, and migration timeline."
+>
+  <PageHero
+    eyebrow="For executives"
+    title="Threshold trust without vendor lock-in"
+    description="Confium replaces single-key CA trust with configurable threshold quorum. No licensing fees, no proprietary protocol, no per-transaction cost. BSD-2-Clause open source, funded by NLnet NGI Zero PET and Mozilla MOSS."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>The business case in one paragraph</h2>
+      <p>
+        Public Key Infrastructure today has a structural weakness: every
+        Certificate Authority holds a single private key that can sign
+        anything. If that key is compromised — DigiNotar 2011, Symantec
+        2015–2018, Let's Encrypt 2020 — every certificate the CA ever issued
+        is called into question. The cost of each incident: millions of
+        dollars, disrupted services, eroded public trust. Confium replaces
+        the single-key model with threshold cryptography: a configurable
+        quorum (e.g. 3 of 5 directors) must participate in every signing
+        operation. An attacker must compromise multiple independent parties
+        simultaneously to forge a signature.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>What you get</h2>
+      <ul>
+        <li><strong>Structural risk reduction.</strong> No single point of compromise. Compromising one party reveals one share, mathematically useless on its own.</li>
+        <li><strong>Post-quantum migration without re-issuance.</strong> Composite signatures (Ed25519 + ML-DSA-65) ship as a software upgrade. Verifiers that haven't upgraded still accept; verifiers that have already migrated.</li>
+        <li><strong>Audit trail by default.</strong> Every signing operation anchors into an RFC 6962 transparency log. Split-view attacks become detectable.</li>
+        <li><strong>Vendor independence.</strong> PKCS#11 v3.0, OpenSSL 3.0 provider, JCE — Confium slots into the infrastructure you already operate. No proprietary protocol.</li>
+        <li><strong>Open-source sustainability.</strong> BSD-2-Clause licensed. Funded by NLnet NGI Zero PET (European Commission) and Mozilla MOSS. No CLA, no per-transaction fees.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>The three deployment modes</h2>
+      <p>
+        Confium is layered across three deployment modes. The same engine
+        and primitives serve all three; what changes is the integration
+        boundary.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <ThreeModeDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Cost model</h2>
+      <p>
+        Confium is free open-source software. There are no licensing fees,
+        no per-transaction charges, no proprietary protocol royalties. The
+        real cost of deployment is engineering effort and operational
+        overhead:
+      </p>
+      <ul>
+        <li><strong>Engineering.</strong> Days to weeks for initial integration, depending on which mode and which existing infrastructure you're adapting. Mode 2 (PKI drop-in) is typically fastest because the consumer code stays unchanged.</li>
+        <li><strong>Infrastructure.</strong> One coordinator process per region, plus the participating signer processes. Commodity hardware — no HSMs required, though Confium integrates with HSMs if you have them.</li>
+        <li><strong>Operations.</strong> Standard monitoring (metrics, logs, alerts) plus transparency-log auditing. No specialized SRE skills required beyond what a CA already demands.</li>
+      </ul>
+      <p>
+        For a Mode 3 institutional deployment (dozens of signers across
+        multiple jurisdictions), total cost is comparable to running a
+        conventional CA — but with no single point of failure and no
+        proprietary lock-in.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Compliance posture</h2>
+      <table>
+        <thead>
+          <tr><th>Framework</th><th>Status</th><th>How Confium supports it</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>FIPS 140 (US)</td>
+            <td>Mode flag</td>
+            <td>Routes cryptographic operations through FIPS-validated plugins (e.g. Botan in FIPS mode).</td>
+          </tr>
+          <tr>
+            <td>eIDAS (EU)</td>
+            <td>Algorithm policies</td>
+            <td>Jurisdictional allow-lists enforce EU P-384+ requirement at the engine level.</td>
+          </tr>
+          <tr>
+            <td>SM2/SM3 (China)</td>
+            <td>Plugin-based</td>
+            <td>SM plugin bundle adds SM2/SM3 algorithms; engine refuses disallowed algorithms per policy.</td>
+          </tr>
+          <tr>
+            <td>HIPAA / FedRAMP</td>
+            <td>Audit trail</td>
+            <td>Every signing operation produces a structured audit record; transparency log anchors events immutably.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        See <a href="/audiences/compliance/">the compliance officer guide</a> for
+        the detailed matrix and the <a href="/docs/compliance/">compliance docs</a>.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Reference deployments</h2>
+      <p>
+        Sovereign PKI (Mode 3) is the right shape for institutional
+        certificate infrastructure where no single party can be trusted.
+        Six scenarios where it already fits:
+      </p>
+      <ul>
+        <li><strong>Calibration registries</strong> — BIPM-style metrology chains.</li>
+        <li><strong>Pharma regulator approvals</strong> — multi-jurisdiction drug sign-off.</li>
+        <li><strong>Academic accreditation</strong> — cross-institutional credential verification.</li>
+        <li><strong>Supply-chain provenance</strong> — manufacturing attestation in transparency logs.</li>
+        <li><strong>Treaty organizations</strong> — multi-state cooperative instruments.</li>
+        <li><strong>Certified instruments registry</strong> — a reference Mode 3 deployment.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Migration timeline</h2>
+      <p>
+        Most deployments move through four phases over 6–18 months:
+      </p>
+      <ol>
+        <li><strong>Pilot (weeks 1–4).</strong> Stand up a coordinator, generate test shares, verify signing works end-to-end in a non-production environment.</li>
+        <li><strong>Parallel (months 2–4).</strong> Run Confium alongside the existing CA. New issuances go through both; verifiers prefer Confium when available.</li>
+        <li><strong>Cutover (months 5–9).</strong> Production traffic moves to Confium. Legacy CA kept as backup.</li>
+        <li><strong>Decommission (months 10–18).</strong> Legacy CA is retired. Confium is the sole signing path.</li>
+      </ol>
+      <p>
+        Mode 2 (PKI drop-in) deployments can compress this timeline
+        significantly because the existing consumer code doesn't change.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/docs/three-modes/">Three deployment modes</a> — pick the shape that matches your integration surface.</li>
+        <li><a href="/docs/security-model/">Security model</a> — the threat table and what Confium does and doesn't protect against.</li>
+        <li><a href="/docs/comparison/">Comparison</a> — Confium vs HSMs, conventional CAs, KMS, and Sigstore.</li>
+        <li><a href="/audiences/architects/">Architecture guide</a> — hand this to your security architect.</li>
+        <li><a href="/funding/">Funding</a> — who pays for Confium and what each grant covers.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

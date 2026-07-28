@@ -5,6 +5,9 @@ audience: developer
 order: 1
 ---
 
+import ThresholdSigningFlow from '../../components/brand/ThresholdSigningFlow.astro';
+import MerkleTreeDiagram from '../../components/brand/MerkleTreeDiagram.astro';
+
 # Threshold cryptography 101
 
 Threshold cryptography is the math that lets a group of N parties
@@ -94,6 +97,16 @@ For practical signing, the same idea runs in the exponent: each
 party's partial signature is `σᵢ = f(i) · H(m)` and the final
 signature is `σ = Σᵢ ℓᵢ(0) · σᵢ`.
 
+## Visual: how a signing session works
+
+The diagram below shows a 3-of-5 signing session. Three parties
+participate (P1, P3, P5); two are offline (P2, P4). The coordinator
+collects partial signatures from the three participating parties and
+produces the final signature. The secret is never reconstructed on
+any single machine.
+
+<ThresholdSigningFlow class="w-full max-w-2xl mx-auto my-8" />
+
 ## Try it
 
 The Confium homepage has an interactive [quorum playground](/)
@@ -102,6 +115,19 @@ in action.
 
 For a worked code example, see the [threshold signing walkthrough](https://github.com/confium/confium/tree/main/docs/examples/threshold-signing.mdx)
 in the Rust workspace docs.
+
+## What this has to do with transparency logs
+
+Once you have a valid threshold signature, you typically want a
+public, verifiable record that the signing happened. That's where
+the [transparency log](./transparency-logs/) comes in. The signature
+event becomes a leaf in a Merkle tree like the one below:
+
+<MerkleTreeDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The root hash commits to every leaf. Inclusion proofs let any
+verifier independently confirm a specific signature event is in the
+log without revealing anything else about the log's contents.
 
 ## See also
 

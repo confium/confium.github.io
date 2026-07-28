@@ -1,0 +1,89 @@
+---
+/**
+ * Split-view attack + detection — left side shows the attack,
+ * right side shows how consistency proofs catch it.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 480 360"
+  class={className}
+  role="img"
+  aria-labelledby="split-view-title"
+  set:html={`
+    <title id="split-view-title">Split-view attack on a transparency log, and how consistency proofs + witness gossip detect it.</title>
+
+    <!-- Left: the attack -->
+    <text x="120" y="30" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" fill="#a07d0a" letter-spacing="2">THE ATTACK</text>
+
+    <!-- Malicious log operator -->
+    <rect x="60" y="50" width="120" height="40" rx="8" fill="#fff4d6" stroke="#ffdc4a" stroke-width="2"/>
+    <text x="120" y="68" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="#a07d0a">Log operator</text>
+    <text x="120" y="82" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#a07d0a">compromised</text>
+
+    <!-- Two divergent heads -->
+    <rect x="30" y="120" width="90" height="50" rx="6" fill="white" stroke="#ffdc4a"/>
+    <text x="75" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a07d0a">head A</text>
+    <text x="75" y="153" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a07d0a">root=0xab...</text>
+
+    <rect x="120" y="120" width="90" height="50" rx="6" fill="white" stroke="#ffdc4a"/>
+    <text x="165" y="138" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a07d0a">head B</text>
+    <text x="165" y="153" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a07d0a">root=0xcd...</text>
+
+    <!-- Two verifiers being shown different views -->
+    <rect x="30" y="200" width="90" height="36" rx="6" fill="#eef4fa"/>
+    <text x="75" y="222" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="#23273a">Verifier A</text>
+
+    <rect x="120" y="200" width="90" height="36" rx="6" fill="#eef4fa"/>
+    <text x="165" y="222" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="#23273a">Verifier B</text>
+
+    <!-- Arrows -->
+    <line x1="75" y1="100" x2="75" y2="120" stroke="#ffdc4a" stroke-width="1.5"/>
+    <line x1="165" y1="100" x2="165" y2="120" stroke="#ffdc4a" stroke-width="1.5"/>
+    <line x1="75" y1="170" x2="75" y2="200" stroke="#ffdc4a" stroke-width="1.5"/>
+    <line x1="165" y1="170" x2="165" y2="200" stroke="#ffdc4a" stroke-width="1.5"/>
+
+    <text x="120" y="270" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" font-style="italic" fill="#a07d0a">silent insertion / omission</text>
+    <text x="120" y="284" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" font-style="italic" fill="#a07d0a">undetected without defense</text>
+
+    <!-- Divider -->
+    <line x1="240" y1="20" x2="240" y2="340" stroke="#dfe8f2" stroke-width="1" stroke-dasharray="4 4"/>
+
+    <!-- Right: the defense -->
+    <text x="360" y="30" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" fill="#009e80" letter-spacing="2">THE DEFENSE</text>
+
+    <!-- Witness network -->
+    <rect x="280" y="50" width="160" height="40" rx="8" fill="#dcf8f0" stroke="#00c2c9" stroke-width="2"/>
+    <text x="360" y="68" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="#009e80">Witness network</text>
+    <text x="360" y="82" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#009e80">gossips heads hourly</text>
+
+    <!-- Both verifiers send heads to witnesses -->
+    <rect x="270" y="120" width="80" height="36" rx="6" fill="white" stroke="#00c2c9"/>
+    <text x="310" y="142" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#009e80">head A</text>
+
+    <rect x="370" y="120" width="80" height="36" rx="6" fill="white" stroke="#00c2c9"/>
+    <text x="410" y="142" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#009e80">head B</text>
+
+    <line x1="310" y1="90" x2="310" y2="120" stroke="#00c2c9" stroke-width="1.5"/>
+    <line x1="410" y1="90" x2="410" y2="120" stroke="#00c2c9" stroke-width="1.5"/>
+
+    <!-- Detection -->
+    <rect x="280" y="180" width="160" height="50" rx="8" fill="#009e80"/>
+    <text x="360" y="200" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="white">⚠ DIVERGENCE</text>
+    <text x="360" y="216" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="10" fill="white">DETECTED</text>
+
+    <line x1="310" y1="156" x2="340" y2="180" stroke="#009e80" stroke-width="1.5"/>
+    <line x1="410" y1="156" x2="380" y2="180" stroke="#009e80" stroke-width="1.5"/>
+
+    <text x="360" y="252" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#4f5469">+ OTS anchoring in Bitcoin</text>
+    <text x="360" y="266" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#4f5469">for irrefutable time proof</text>
+
+    <text x="360" y="296" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="700" fill="#009e80">DEFENSE IN DEPTH</text>
+    <text x="360" y="310" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="9" fill="#5f6680">3 layers, each adds assurance</text>
+  `}
+/>

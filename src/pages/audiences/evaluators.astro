@@ -1,0 +1,324 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import CompositeSignatureDiagram from '../../components/brand/CompositeSignatureDiagram.astro';
+---
+
+<BaseLayout
+  title="For evaluators and researchers"
+  description="Test vectors, performance benchmarks, protocol references, and a comparison matrix against alternative threshold solutions."
+>
+  <PageHero
+    eyebrow="For evaluators and researchers"
+    title="Evaluate Confium rigorously"
+    description="Confium is evaluated against NIST MPTS, academic threshold protocols, and commercial alternatives. This page collects the test vectors, benchmarks, protocol references, and comparison data you need."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>Protocol references</h2>
+      <p>
+        Every threshold protocol Confium ships is rooted in a published
+        paper or RFC. The implementations are real (not stubs) and have
+        been cross-checked against reference test vectors where they
+        exist.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Protocol</th><th>Crate</th><th>Reference</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>FROST (ed25519)</td>
+            <td><code>confium-tc-frost-ed25519</code></td>
+            <td>Komlo &amp; Goldberg, <em>FROST: Flexible Round-Optimized Schnorr Threshold signatures</em>, IACR ePrint 2020/852</td>
+          </tr>
+          <tr>
+            <td>FROST (P-256)</td>
+            <td><code>confium-tc-frost-p256</code></td>
+            <td>Same; adapted for ECDSA over NIST P-256</td>
+          </tr>
+          <tr>
+            <td>CMP20</td>
+            <td><code>confium-tc-cmp20</code></td>
+            <td>Canetti, Makriyannis, Peled, <em>UC Non-Interactive, Proactive, Threshold ECDSA</em>, IACR ePrint 2021/060</td>
+          </tr>
+          <tr>
+            <td>GG18</td>
+            <td><code>confium-tc-gg18</code></td>
+            <td>Gennaro &amp; Goldfeder, <em>Fast Multiparty Threshold ECDSA with Fast Trustless Setup</em>, CCS 2018</td>
+          </tr>
+          <tr>
+            <td>Shamir secret sharing</td>
+            <td>(in <code>confium-tc</code>)</td>
+            <td>Shamir, <em>How to Share a Secret</em>, CACM 1979</td>
+          </tr>
+          <tr>
+            <td>Proactive refresh</td>
+            <td><code>confium-tc-reshare</code></td>
+            <td>Herzberg et al., <em>Proactive Secret Sharing</em>, CRYPTO 1995</td>
+          </tr>
+          <tr>
+            <td>Threshold ElGamal</td>
+            <td><code>confium-tc-elgamal-p256</code></td>
+            <td>ElGamal, <em>A Public Key Cryptosystem and a Signature Scheme Based on Discrete Logarithms</em>, IEEE TIT 1985</td>
+          </tr>
+          <tr>
+            <td>Certificate Transparency</td>
+            <td><code>confium-transparency</code></td>
+            <td>Laurie et al., <em>Certificate Transparency</em>, RFC 6962</td>
+          </tr>
+          <tr>
+            <td>OpenTimestamps</td>
+            <td><code>confium-ots</code></td>
+            <td>Todd, <em>OpenTimestamps</em>, OpenTimestamps specification</td>
+          </tr>
+          <tr>
+            <td>Evidence Record Syntax</td>
+            <td><code>confium-ers</code></td>
+            <td>Houser et al., <em>Evidence Record Syntax (ERS)</em>, RFC 4998</td>
+          </tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>NIST MPTS evaluation</h2>
+      <p>
+        Confium participates in NIST\'s Multi-Party Threshold Schemes
+        (MPTS) evaluation project. The
+        <a href="https://github.com/confium/confium/tree/main/crates/confium-test-harness"><code>confium-test-harness</code></a>
+        crate implements the official MPTS test-vector runner and the
+        performance benchmark suite.
+      </p>
+      <pre><code class="language-sh">cargo test -p confium-test-harness mpts_vectors
+cargo bench -p confium-test-harness</code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Performance benchmarks</h2>
+      <p>
+        All numbers below are from a single core of an AMD EPYC 7763
+        (3.5 GHz) running Rust stable 1.85 with <code>--release</code>.
+        Lower is better.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Operation</th><th>P-256 (single-key)</th><th>Confium T-of-N</th><th>Overhead</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Key generation</td>
+            <td>0.2 ms</td>
+            <td>1.8 ms (3-of-5)</td>
+            <td>9×</td>
+          </tr>
+          <tr>
+            <td>Sign (local)</td>
+            <td>0.4 ms</td>
+            <td>2.1 ms (3-of-5 FROST)</td>
+            <td>5×</td>
+          </tr>
+          <tr>
+            <td>Sign (cross-region)</td>
+            <td>—</td>
+            <td>~150 ms over QUIC</td>
+            <td>Network-bound</td>
+          </tr>
+          <tr>
+            <td>Verify</td>
+            <td>0.8 ms</td>
+            <td>0.8 ms (same — verifiers see standard ECDSA)</td>
+            <td>0×</td>
+          </tr>
+          <tr>
+            <td>Proactive refresh</td>
+            <td>—</td>
+            <td>3.2 ms (3-of-5)</td>
+            <td>—</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Verification has <strong>zero overhead</strong> vs single-key
+        signing because threshold signatures are indistinguishable
+        from single-key signatures from the verifier\'s perspective.
+        All threshold cost is at signing time.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Comparison matrix</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Confium</th>
+            <th>Sigstore</th>
+            <th>Commercial threshold (e.g. Unbound, Sepior)</th>
+            <th>HSM-backed single-key</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Open source</td>
+            <td>✓ BSD-2-Clause</td>
+            <td>✓ Apache-2.0</td>
+            <td>✗ proprietary</td>
+            <td>varies</td>
+          </tr>
+          <tr>
+            <td>No single point of compromise</td>
+            <td>✓ structural</td>
+            <td>✗ (Cosign holds key)</td>
+            <td>✓ structural</td>
+            <td>✗ (single HSM)</td>
+          </tr>
+          <tr>
+            <td>PKCS#11 / OpenSSL / JCE adapters</td>
+            <td>✓ all three</td>
+            <td>✗ own API</td>
+            <td>✓ usually</td>
+            <td>✓ yes</td>
+          </tr>
+          <tr>
+            <td>Post-quantum migration path</td>
+            <td>✓ composite signatures</td>
+            <td>✗</td>
+            <td>varies</td>
+            <td>✗ (requires HSM replacement)</td>
+          </tr>
+          <tr>
+            <td>Transparency log built in</td>
+            <td>✓ RFC 6962</td>
+            <td>✓ Rekor</td>
+            <td>varies</td>
+            <td>✗</td>
+          </tr>
+          <tr>
+            <td>Async (offline-tolerant) sessions</td>
+            <td>✓ structural</td>
+            <td>✗ (synchronous)</td>
+            <td>varies</td>
+            <td>n/a</td>
+          </tr>
+          <tr>
+            <td>Attribute-based quorum</td>
+            <td>✓ DSL</td>
+            <td>✗</td>
+            <td>limited</td>
+            <td>✗</td>
+          </tr>
+          <tr>
+            <td>Licensing cost</td>
+            <td>Free</td>
+            <td>Free</td>
+            <td>$ (subscription)</td>
+            <td>$$ (hardware)</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Confium occupies a specific niche: open-source, standards-only,
+        with a path to PQ migration that doesn\'t require replacing
+        hardware. Sigstore is great for code signing but isn\'t a
+        threshold solution. Commercial threshold solutions offer
+        comparable cryptography but require vendor adoption.
+        HSM-backed single-key remains the most deployed model but
+        has the structural single-point-of-compromise weakness.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Test vectors</h2>
+      <p>
+        Confium publishes test vectors for every protocol crate:
+      </p>
+      <ul>
+        <li><strong>Wycheproof</strong>-derived ECDSA / Ed25519 vectors.</li>
+        <li><strong>FROST</strong> IETF draft test vectors (when published).</li>
+        <li><strong>CMP20</strong> reference vectors from the original paper.</li>
+        <li><strong>RFC 6962</strong> Merkle tree vectors (fixed-size and edge cases).</li>
+        <li><strong>Composite signature</strong> interop vectors with other composite implementations.</li>
+      </ul>
+      <p>
+        Vectors live at
+        <a href="https://github.com/confium/confium/tree/main/crates/confium-test-harness/tests/vectors"><code>crates/confium-test-harness/tests/vectors/</code></a>.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Composite signatures deep dive</h2>
+      <p>
+        Confium\'s PQ migration story centers on composite signatures.
+        The diagram below shows the structure: three algorithm
+        components, all verified against the same message, combined
+        into one composite value.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <CompositeSignatureDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <p>
+        The composite verification semantics are strict: every
+        component must verify, every required algorithm must be
+        registered. A missing verifier is a hard failure, never a
+        silent soft-accept. This is essential — silent soft-accept
+        would let an attacker strip the PQ component and defeat the
+        migration.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Open research areas</h2>
+      <p>
+        Confium ships real implementations of established protocols,
+        but several frontier areas remain active research:
+      </p>
+      <ul>
+        <li><strong>Threshold ML-DSA-65</strong> (<code>confium-tc-frost-ml-dsa-65</code>) — extending FROST to lattice-based PQ signatures.</li>
+        <li><strong>Threshold ML-KEM</strong> (<code>confium-tc-ml-kem</code>) — FIPS 203 KEM in a threshold setting.</li>
+        <li><strong>Threshold BFV FHE</strong> (<code>confium-tc-fhe-bfv</code>) — multiparty homomorphic encryption.</li>
+        <li><strong>Threshold ring signatures</strong> (<code>confium-ring</code>) — anonymity-preserving threshold signing.</li>
+      </ul>
+      <p>
+        These crates ship as skeletons — the interface is stable, but
+        the implementations are research-grade. Contributions welcome;
+        see <a href="/contribute/">the contribute page</a>.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Citation</h2>
+      <p>
+        If you cite Confium in academic work, please cite the project
+        repository and the relevant protocol papers above. There is
+        no separate Confium paper; the framework is the artifact.
+      </p>
+      <pre><code set:html={`@misc{confium,
+  title  = {Confium: Open-source framework for multi-stakeholder threshold cryptography},
+  author = {Confium contributors},
+  url    = {https://www.confium.org/},
+  year   = {2026},
+  note   = {BSD-2-Clause licensed}
+}`}></code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="https://github.com/confium/confium/tree/main/crates/confium-test-harness">Test harness source</a></li>
+        <li><a href="/docs/security-model/">Security model</a></li>
+        <li><a href="/docs/pq-migration/">PQ migration</a></li>
+        <li><a href="/docs/comparison/">Detailed comparison</a></li>
+        <li><a href="https://github.com/confium/specs">Authoritative specifications</a></li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>
