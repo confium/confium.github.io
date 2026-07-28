@@ -1,0 +1,150 @@
+---
+title: Healthcare records
+description: HIPAA-compliant signing of medical records, prescriptions, and clinical trial data. Threshold signing per record.
+mode: 3
+order: 12
+---
+
+# Healthcare records
+
+Medical records, prescriptions, and clinical trial data have
+strict signing requirements: every entry must be attributable
+to a specific clinician; the record must remain verifiable for
+the patient's lifetime; audit trails must satisfy HIPAA, GCP
+(Good Clinical Practice), and 21 CFR Part 11. Today these
+requirements are met with single-key signing per clinician —
+which means a compromised clinician credential can be used to
+sign fraudulent records until discovered.
+
+Confium adds threshold governance on top:
+
+- Every clinical record requires the treating clinician plus a
+  co-signer (attending, supervisor, pharmacist) per policy.
+- The signing key is never on a single device; lost or stolen
+  devices reveal one share, not the key.
+- Every signing event anchors into a transparency log for
+  immutable audit.
+- Long-term archival via RFC 4998 Evidence Record Syntax.
+
+## When to choose this use case
+
+- You operate an EHR (Electronic Health Record) system where
+  record integrity is a HIPAA / regulatory requirement.
+- Clinical trial data must be signed and verifiable for decades.
+- Prescription signing must be attributable and tamper-evident.
+- A compromised clinician credential should not be enough to
+  inject fraudulent records.
+
+## How Confium solves it
+
+### Medical record signing
+
+Each record signing event requires:
+
+1. Treating clinician's partial signature.
+2. Co-signer (attending, supervisor, or pharmacist) per policy.
+3. Optional: institutional signing key (hospital, clinic).
+
+The coordinator combines the partial signatures into a single
+CMS SignedData on the record. The signature embeds in the EHR's
+standard record format (FHIR, HL7 v2, C-CDA).
+
+### Prescription signing
+
+Electronic prescriptions (e-prescribing) require the prescriber's
+signature plus, for controlled substances, a second signer (DEA
+EPCS requirements in the US). Confium's threshold model implements
+this natively:
+
+```toml
+[quorum]
+threshold = 2
+total = 2
+
+[[signers]]
+id = "prescriber"
+attributes = { role = "physician", dea_number = "...", specialty = "..." }
+
+[[signers]]
+id = "pharmacist-verify"
+attributes = { role = "pharmacist", pharmacy_id = "..." }
+```
+
+### Clinical trial data
+
+Clinical trial data signing has unique requirements:
+
+- **Long-term verifiability**: trial data may be audited 10+ years
+  after collection (FDA submission, post-market surveillance).
+- **Multi-party sign-off**: principal investigator + clinical
+  research associate + sponsor.
+- **Tamper-evidence**: every data point signed and anchored in a
+  transparency log.
+
+```ruby
+trial_data = {
+  subject_id: "SUBJ-001",
+  visit: "V3",
+  measurements: { weight_kg: 78.4, bp_sys: 118, bp_dia: 76 },
+  timestamp: Time.now.utc,
+}
+
+data_hash = Confium::Transparency.compute_artifact_hash(
+  artifact_type: :clinical_trial_data,
+  content: trial_data.to_json,
+)
+
+session = Confium::TC::Session.start(
+  coordinator: "trials.internal:7443",
+  message: data_hash,
+  algorithm: "ECDSA-P256",
+  quorum: {
+    threshold: 3,
+    attributes: {
+      "principal_investigator" => 1,
+      "clinical_associate" => 1,
+      "sponsor" => 1,
+    },
+  },
+)
+
+final_sig = session.wait_for_completion
+
+# Anchor in transparency log with long-term archival (RFC 4998 ERS).
+Confium::ERS.archive(
+  signature: final_sig,
+  data: trial_data.to_json,
+  archival_period: :perpetual,
+)
+```
+
+## HIPAA mapping
+
+| HIPAA requirement | How Confium supports it |
+| --- | --- |
+| §164.312(a)(1) — Access control | Attribute-based threshold; per-record signer identity |
+| §164.312(a)(2)(iv) — Encryption and decryption | FIPS 140 mode; threshold key split |
+| §164.312(b) — Audit controls | Structured audit log per signing event |
+| §164.312(c)(1) — Integrity | Transparency log anchors; consistency proofs |
+| §164.312(c)(2) — Authentication | Signer identity + attributes per session |
+| §164.312(d) — Person or entity authentication | Threshold quorum; no single-party signing |
+| §164.312(e)(1) — Transmission security | Standard TLS; threshold key for TLS termination |
+
+## Long-term archival
+
+Medical records and clinical trial data must remain verifiable
+for decades. RFC 4998 Evidence Record Syntax (ERS) maintains
+long-term evidence by re-timestamping as hash algorithms and
+signature algorithms evolve. Confium's `confium-ers` crate
+implements ERS archival.
+
+Composite signatures add post-quantum readiness: even after
+quantum computers break today's classical algorithms, the
+records still verify.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Compliance officer guide](/audiences/compliance/)
+- [Document signing use case](/use-cases/document-signing/)
+- [Transparency logs concept](/concepts/transparency-logs/)

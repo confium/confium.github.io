@@ -1,0 +1,206 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+---
+
+<BaseLayout
+  title="For product managers"
+  description="PM-focused view: what features Confium unlocks, integration timelines, and how to scope a threshold-trust feature for your roadmap."
+>
+  <PageHero
+    eyebrow="For product managers"
+    title="Scope threshold-trust features"
+    description="Adding threshold governance to a product is a feature decision with technical, compliance, and UX implications. This page helps you scope it, plan the integration, and communicate the value."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>What "Confium" means for a product</h2>
+      <p>
+        For most products, Confium shows up as one of three feature
+        shapes:
+      </p>
+      <ol>
+        <li>
+          <strong>Multi-stakeholder approvals.</strong> Your product
+          already has approval workflows (release approvals, expense
+          approvals, contract sign-off). Today these are recorded in
+          a database. With Confium they become cryptographically
+          attributable — the approval chain is tamper-evident.
+        </li>
+        <li>
+          <strong>Threshold key custody.</strong> Your product
+          manages keys on behalf of users (cryptocurrency wallets,
+          document signing services, identity providers). Today
+          these are single-key in an HSM or KMS. With Confium
+          they're threshold-split across N parties.
+        </li>
+        <li>
+          <strong>Verifiable audit trail.</strong> Your product
+          must prove to customers / regulators that operations
+          happened when claimed. Today this is operational logs.
+          With Confium this is a transparency log with cryptographic
+          inclusion proofs.
+        </li>
+      </ol>
+    </Reveal>
+
+    <Reveal>
+      <h2>Scoping the integration</h2>
+      <p>
+        Three questions to scope a threshold-trust feature:
+      </p>
+
+      <h3>1. What's the trust boundary?</h3>
+      <p>
+        Identify what currently sits behind a single trusted
+        operator. Examples:
+      </p>
+      <ul>
+        <li>"Release signing is done by the release manager's GPG key."</li>
+        <li>"API keys are issued by the API team's signing service."</li>
+        <li>"Certifications are issued by the registrar's office."</li>
+        <li>"Customer funds are held by the company's single custody key."</li>
+      </ul>
+      <p>
+        Each of these is a candidate for threshold governance.
+      </p>
+
+      <h3>2. Who are the stakeholders?</h3>
+      <p>
+        Threshold requires identifying the parties who should
+        participate. Examples:
+      </p>
+      <ul>
+        <li>"Release signing: 2-of-3 release engineers + 1-of-2 security."</li>
+        <li>"API key issuance: 1-of-2 platform + 1-of-2 product."</li>
+        <li>"Certifications: 2-of-3 registrar + 1-of-1 department head."</li>
+        <li>"Custody: 3-of-5 custody operators across regions."</li>
+      </ul>
+      <p>
+        Identifying the stakeholders is the policy work; Confium's
+        predicate DSL implements it.
+      </p>
+
+      <h3>3. What's the failure mode if Confium isn't deployed?</h3>
+      <p>
+        Be honest about what happens today if a single key is
+        compromised:
+      </p>
+      <ul>
+        <li>Customer data exposure?</li>
+        <li>Financial loss?</li>
+        <li>Regulatory consequence?</li>
+        <li>Reputational damage?</li>
+      </ul>
+      <p>
+        The cost of the failure mode should justify the integration
+        cost. If the failure mode is minor, threshold governance
+        may not be worth the complexity.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Integration timeline (typical)</h2>
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Duration</th><th>Engineering cost</th><th>Outcome</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Discovery</td>
+            <td>1–2 weeks</td>
+            <td>0.5 engineers</td>
+            <td>Trust boundary identified; stakeholders mapped.</td>
+          </tr>
+          <tr>
+            <td>Architecture</td>
+            <td>1–2 weeks</td>
+            <td>1 architect + 1 security</td>
+            <td>Deployment topology + threat model.</td>
+          </tr>
+          <tr>
+            <td>Pilot</td>
+            <td>2–4 weeks</td>
+            <td>2 engineers</td>
+            <td>Working in non-prod; verified end-to-end.</td>
+          </tr>
+          <tr>
+            <td>Production cutover</td>
+            <td>2–6 weeks</td>
+            <td>2 engineers + ops</td>
+            <td>Live; monitoring in place; runbooks written.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        Total: 6–14 weeks for a focused team. Mode 2 (PKI drop-in)
+        tends to be faster because the consumer code doesn't change.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Customer-facing value props</h2>
+      <p>
+        How to communicate threshold-trust features to customers:
+      </p>
+      <ul>
+        <li>
+          <strong>"No single point of compromise."</strong> Easy to
+          understand, true, and differentiating.
+        </li>
+        <li>
+          <strong>"Cryptographic audit trail."</strong> Appeals to
+          compliance-minded customers (regulated industries,
+          enterprise, government).
+        </li>
+        <li>
+          <strong>"Post-quantum ready."</strong> Future-proofing
+          angle; especially valuable for long-lived signatures.
+        </li>
+        <li>
+          <strong>"Open standards."</strong> For customers wary of
+          vendor lock-in.
+        </li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Common PM pitfalls</h2>
+      <ul>
+        <li>
+          <strong>Over-engineering the quorum.</strong> 2-of-3 is
+          often enough; 5-of-9 with cross-region constraints is
+          for high-stakes deployments only.
+        </li>
+        <li>
+          <strong>Skipping the UX for signers.</strong> Signers
+          need a way to review what they're signing. Build a signer
+          UI; don't expect people to blindly sign.
+        </li>
+        <li>
+          <strong>Underestimating operations.</strong> Threshold
+          deployments need monitoring, backup, recovery. Plan for
+          SRE involvement from the start.
+        </li>
+        <li>
+          <strong>Ignoring the long-tail UX.</strong> What happens
+          when a signer is on vacation? When a device is lost?
+          When a signer leaves the company? Build break-glass
+          before you need it.
+        </li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/audiences/ctos/">CTO guide</a> — strategic context for the same decision.</li>
+        <li><a href="/audiences/developers/">Developer guide</a> — to hand off to engineering.</li>
+        <li><a href="/use-cases/">Use cases</a> — concrete scenarios to map to your product.</li>
+        <li><a href="/docs/comparison/">Comparison</a> — alternatives if Confium doesn't fit.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

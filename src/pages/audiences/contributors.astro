@@ -1,0 +1,182 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import ArchitectureStackDiagram from '../../components/brand/ArchitectureStackDiagram.astro';
+---
+
+<BaseLayout
+  title="For contributors"
+  description="How to contribute to Confium: code, docs, design, security research. Open-source workflow, coding standards, plugin authoring."
+>
+  <PageHero
+    eyebrow="For contributors"
+    title="Help build Confium"
+    description="Confium is developed in the open. Code, documentation, design feedback, plugin authorship, and security research all welcome. This page covers where to start and what each contribution path looks like."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>Where to start</h2>
+      <p>
+        Pick a path that matches your skills and time:
+      </p>
+      <ul>
+        <li><strong>Code</strong> — Rust workspace, Ruby gem, or WASM package. <a href="https://github.com/confium/confium/labels/good%20first%20issue">good first issue</a> is the entry point.</li>
+        <li><strong>Documentation</strong> — these very pages. Every page has a "Edit this page" link.</li>
+        <li><strong>Design</strong> — SVG diagrams, UX patterns, accessibility review.</li>
+        <li><strong>Plugin authorship</strong> — write a Confium plugin for an algorithm or backend we don't ship.</li>
+        <li><strong>Security research</strong> — review the cryptography, the protocol implementations, the audit trail.</li>
+        <li><strong>Translation / localization</strong> — the site and the docs are English-first today.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Architecture overview</h2>
+      <p>
+        Before contributing code, you'll want a mental model of the
+        layered architecture. The diagram below shows how consumers,
+        adapters, the engine, plugins, and hardware stack.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <ArchitectureStackDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Development workflow</h2>
+      <p>
+        The Rust workspace uses Nix flakes for reproducibility:
+      </p>
+      <pre><code class="language-sh">git clone https://github.com/confium/confium.git
+cd confium
+nix develop              # reproducible dev shell
+cargo build --workspace  # build all 43 crates
+cargo test --workspace   # full test suite
+cargo clippy --workspace --all-targets -- -D warnings</code></pre>
+      <p>
+        Without Nix, install Rust stable 1.85+ via <a href="https://rustup.rs/">rustup</a>
+        and run the cargo commands directly.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Coding standards</h2>
+      <p>
+        Every crate in the workspace follows:
+      </p>
+      <ul>
+        <li><code>#![forbid(unsafe_code)]</code> — no unsafe Rust, period.</li>
+        <li><code>#![warn(missing_docs)]</code> — every public item documented.</li>
+        <li><code>thiserror</code> for typed errors (or <code>snafu</code> 0.8 in legacy crates).</li>
+        <li>Conventional commits (<code>feat:</code>, <code>fix:</code>, <code>docs:</code>, etc.) driving release-plz.</li>
+        <li>Tests use real instances; no <code>double()</code>-style mocks.</li>
+      </ul>
+      <p>
+        See <a href="/docs/architecture/">the architecture page</a> and the per-crate READMEs for the specific trait / error patterns.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Plugin authoring</h2>
+      <p>
+        Writing a Confium plugin lets you expose a new cryptographic
+        algorithm, key format, or backend to every consumer that
+        uses the engine. The plugin contract is a small set of
+        bootstrap symbols (<code>cfmp_interface_version</code>,
+        <code>cfmp_initialize</code>, <code>cfmp_query_interfaces</code>,
+        etc.) plus per-interface implementation functions.
+      </p>
+      <pre><code class="language-sh">cargo new --lib my-plugin
+cd my-plugin
+
+# Cargo.toml: crate-type = ["cdylib"]
+# Add deps: confium-api, confium-macros
+
+# Then implement via #[confium_plugin] and #[confium_interface]</code></pre>
+      <p>
+        The full walkthrough is in the
+        <a href="https://github.com/confium/confium/tree/main/docs/plugin-author-guide.mdx">plugin author guide</a>
+        in the Rust workspace docs.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Documentation contributions</h2>
+      <p>
+        The website source lives at
+        <a href="https://github.com/confium/confium.github.io">confium/confium.github.io</a>.
+        Content is plain Markdown (.md) or Astro (.astro) — MDX was
+        considered but removed due to Astro 7 / rolldown-vite
+        interop issues.
+      </p>
+      <p>
+        Content rules:
+      </p>
+      <ul>
+        <li>No mention of the international metrology organization (CI gate).</li>
+        <li>No "TODO", "coming soon", "planned", "milestone", "roadmap" language (CI gate).</li>
+        <li>CNML is allowed as one example among many; never the sole reference.</li>
+        <li>Every page should explain <em>how things work</em>, not just <em>what they are</em>.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Design contributions</h2>
+      <p>
+        The site uses RNP's design language (sister project at
+        <a href="https://www.rnpgp.org">rnpgp.org</a>): blue/teal/gold
+        palette, IBM Plex typography, dual-token CSS variables for
+        light/dark mode, generous SVG diagrams.
+      </p>
+      <p>
+        SVG diagram components live in
+        <a href="https://github.com/confium/confium.github.io/tree/main/src/components/brand">src/components/brand/</a>.
+        They're Astro components that emit inline SVG with consistent
+        color palette and typography. New diagrams welcome.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Security research</h2>
+      <p>
+        Cryptographic code review is one of the highest-value
+        contributions you can make. We're especially interested in:
+      </p>
+      <ul>
+        <li>Constant-time analysis of the threshold protocols.</li>
+        <li>Side-channel analysis (timing, memory, power).</li>
+        <li>Protocol-level analysis of FROST, CMP20, GG18 implementations.</li>
+        <li>Transparency log analysis (split-view, gossip, OTS).</li>
+        <li>Plugin sandbox analysis (untrusted plugin isolation).</li>
+      </ul>
+      <p>
+        For responsible disclosure of vulnerabilities, see
+        <a href="/security/">the security page</a>. Do not open public
+        issues for security problems.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Code of conduct</h2>
+      <p>
+        The project follows the
+        <a href="https://contributor-covenant.org/version/2/1/code_of_conduct/">Contributor Covenant 2.1</a>.
+        Reports go to <code>conduct@confium.org</code>.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="https://github.com/confium/confium">Rust workspace</a> — start with good-first-issues.</li>
+        <li><a href="https://github.com/confium/confium-ruby">Ruby gem</a> — wrapper contributions.</li>
+        <li><a href="/docs/architecture/">Architecture</a> — understand the engine before contributing code.</li>
+        <li><a href="/audiences/developers/">Developer guide</a> — for using Confium (different from contributing).</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

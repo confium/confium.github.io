@@ -1,0 +1,149 @@
+---
+title: Financial settlement
+description: Multi-party signing for trade settlement, SWIFT messages, and audit trails. No single operator holds the signing key.
+mode: 3
+order: 13
+---
+
+# Financial settlement
+
+Trade settlement, interbank transfers, and SWIFT messaging all
+rely on digital signatures to authorize movements of value. A
+compromised signing key at a bank, clearing house, or custodian
+can authorize fraudulent transfers worth billions. The historical
+defense — operational security around single keys stored in HSMs —
+has held, but each high-profile incident (Bangladesh Bank 2016,
+$81M stolen via SWIFT compromise) shows the model's limits.
+
+Confium adds structural defense: settlement signing requires
+multi-party quorum per transaction, with the threshold scaling
+to transaction value.
+
+## When to choose this use case
+
+- You operate a clearing, settlement, or custodial service where
+  signing authority is too sensitive for any single operator.
+- You need attribute-based quorum: low-value transactions auto-clear;
+  high-value transactions require multiple signers from different
+  departments.
+- You want a tamper-evident audit trail that satisfies regulators
+  (SEC, FINRA, FCA, MAS, BaFin).
+- You're modernizing legacy HSM-based signing and want to keep
+  the HSM but add threshold governance.
+
+## How Confium solves it
+
+### Tiered authorization
+
+Real settlement systems tier authorization by value and risk:
+
+```
+1-of-2 operations staff
+  for routine settlement < $1M
+
+2-of-3 operations + 1-of-2 risk
+  for $1M – $100M
+
+3-of-5 operations + 2-of-3 risk + 1-of-2 compliance
+  for $100M – $1B
+
+Board resolution + 5-of-7 senior officers
+  for > $1B
+```
+
+Confium's attribute DSL expresses these policies; the coordinator
+enforces them per transaction.
+
+### SWIFT message signing
+
+SWIFT messages (MT, MX/ISO 20022) require cryptographic signing
+to authenticate the sender. The signing key today lives in an
+HSM at the sending institution. Confium replaces this with
+threshold signing:
+
+- The signing key is split across operations, risk, and
+  compliance HSMs.
+- Each SWIFT message signing requires T-of-N quorum.
+- The output signature is standard PKCS#1 / PKCS#7, accepted by
+  SWIFT's infrastructure without modification.
+
+### Audit trail
+
+Every settlement event anchors into a transparency log. The log
+is queryable by:
+
+- Internal audit (full record).
+- External auditors (cryptographically verified subset).
+- Regulators (real-time feed via witness gossip).
+- Counterparties (inclusion proof per transaction).
+
+```ruby
+settlement_event = {
+  trade_id: "TRD-2026-001234",
+  counterparty: "CPTY-US-001",
+  amount_usd: 50_000_000,
+  value_date: Date.today + 2,
+  signers: ["ops-1", "ops-2", "risk-1"],
+}
+
+event_hash = Confium::Transparency.compute_artifact_hash(
+  artifact_type: :settlement,
+  content: settlement_event.to_json,
+)
+
+session = Confium::TC::Session.start(
+  coordinator: "settlement.internal:7443",
+  message: event_hash,
+  algorithm: "ECDSA-P384",  # EU-compatible; US also accepts P-256
+  quorum: { threshold: 3, attributes: { "operations" => 2, "risk" => 1 } },
+)
+
+final_sig = session.wait_for_completion
+
+# Anchor in transparency log; emit SIEM event.
+Confium::Audit.emit(
+  event: settlement_event,
+  signature: final_sig,
+  transparency_sequence: Confium::Transparency.append(event_hash),
+)
+```
+
+## Regulatory alignment
+
+| Regulator / framework | Confium support |
+| --- | --- |
+| **SOX** (US, financial reporting) | Audit trail with signer identity + timestamp; immutable transparency log |
+| **Dodd-Frank** (US, derivatives) | Per-trade signing with attribute-based quorum |
+| **MiFID II** (EU, markets) | P-384+ jurisdictional policy; structured audit log |
+| ** Basel III** (banking supervision) | Operational risk reduction via multi-party control |
+| **FINRA** (US, brokers) | Audit trail; signer identity |
+| **MAS** (Singapore, financial) | Threshold signing for custody; structured audit |
+| **FCA** (UK, financial) | Audit trail; transparency log anchors |
+
+## HSM coexistence
+
+Most financial institutions already have HSMs. Confium doesn't
+require ripping them out — it adds threshold governance on top:
+
+- Each HSM stores one share (via `confium-store-pkcs11`).
+- The coordinator orchestrates signing sessions across HSMs.
+- The HSMs retain their physical security guarantees.
+- Confium adds the threshold layer (no single HSM compromise
+  suffices to forge a signature).
+
+## Disaster recovery
+
+Settlement systems require business continuity. Confium supports:
+
+- **Multi-region coordinators** with shared transparency log state.
+- **Async sessions** that survive coordinator failover.
+- **Share backup** encrypted at rest, restorable to replacement HSMs.
+- **Periodic Herzberg refresh** to defeat long-running share
+  aggregation attacks.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Code signing use case](/use-cases/code-signing/) (similar pattern)
+- [Compliance officer guide](/audiences/compliance/)
+- [PKI operators guide](/audiences/operators/)

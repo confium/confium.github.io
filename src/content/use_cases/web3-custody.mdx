@@ -1,0 +1,120 @@
+---
+title: Web3 custody
+description: Multi-party computation wallets and threshold key custody for blockchain applications. No single party holds the wallet key.
+mode: 1
+order: 9
+---
+
+# Web3 custody
+
+Cryptocurrency wallets, DeFi protocol keys, and NFT marketplace
+custody all share a structural problem: whoever holds the private
+key holds the funds. Single-key custody is a known operational risk;
+multi-sig smart contracts help but are chain-specific and add
+on-chain overhead. Threshold cryptography gives you chain-agnostic
+multi-party custody with off-chain coordination.
+
+## When to choose this use case
+
+- You operate a cryptocurrency exchange, custody service, or wallet
+  infrastructure.
+- You need institutional-grade custody with no single point of
+  compromise.
+- You want to enforce multi-stakeholder approval for high-value
+  transactions (withdrawals, treasury moves, governance votes).
+- You need cross-chain custody without deploying separate multi-sig
+  contracts on each chain.
+
+## How Confium solves it
+
+A threshold ECDSA key (P-256 or secp256k1) is split across N
+custody parties. Each party runs a Confium signer process holding
+one share. To authorize a transaction:
+
+1. The wallet front-end submits the transaction hash to the
+   coordinator.
+2. The coordinator collects partial signatures from T-of-N custody
+   parties.
+3. The final signature is broadcast to the chain as a standard
+   transaction.
+
+The chain sees a normal ECDSA signature. No multi-sig contract
+needed; no on-chain overhead; no protocol change.
+
+## Architecture
+
+```
+[ Wallet front-end ]
+       |
+       | submit tx hash + policy
+       v
+[ Coordinator ] ---------------------------+
+   |          |          |                 |
+   v          v          v                 v
+[Custody 1][Custody 2][Custody 3]    [Custody N]
+   |          |          |                 |
+   +----------+---- T-of-N quorum --------+
+                       |
+                       v
+              [ Standard ECDSA signature ]
+                       |
+                       v
+              [ Broadcast to chain ]
+                       |
+                       v
+              [ Transparency log anchors event ]
+```
+
+## Attribute-based policy
+
+Real custody operations have nuanced policies. The Confium predicate
+DSL expresses them:
+
+```
+2-of-3 user devices
+  for transactions under $1,000
+
+3-of-5 security staff
+  for transactions $1,000 – $100,000
+
+5-of-7 board members
+  for transactions over $100,000
+
+7-of-9 (board + custody + auditor)
+  for cold-storage withdrawals
+```
+
+The coordinator evaluates the predicate per transaction.
+
+## Cross-chain
+
+The same threshold key infrastructure works for:
+
+- Bitcoin (ECDSA over secp256k1)
+- Ethereum (ECDSA over secp256k1)
+- Solana (Ed25519)
+- Aptos / Sui (Ed25519 / ECDSA)
+- Cardano (Ed25519)
+
+One custody stack, many chains.
+
+## HSM integration
+
+For the highest-assurance deployments, each custody share can be
+stored in a hardware HSM accessed via PKCS#11. Confium's
+`confium-store-pkcs11` backend wraps the HSM access; the share
+never leaves the HSM in plaintext.
+
+## Audit and compliance
+
+Every transaction is anchored in the transparency log. SIEM
+integration via structured JSON audit records supports
+SOC 2, NYDFS BitLicense (for US crypto businesses), and the EU's
+Markets in Crypto-Assets Regulation (MiCA).
+
+## See also
+
+- [Mode 1 — Peer-to-Peer TC](/docs/mode1-peer-tc/)
+- [Distributed custody use case](/use-cases/distributed-custody/)
+- [Attribute-based threshold concept](/concepts/attribute-based-threshold/)
+- [Compliance officer guide](/audiences/compliance/)

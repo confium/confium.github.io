@@ -1,0 +1,116 @@
+---
+title: Email security (S/MIME)
+description: Multi-stakeholder S/MIME signing for high-value email. Threshold key per mailbox; no single party holds the private key.
+mode: 2
+order: 8
+---
+
+# Email security (S/MIME)
+
+Email signing today means a single private key stored on each
+device. If the device is lost, stolen, or compromised, every email
+signed from it until revocation is suspect. For high-value email
+(executive communications, legal notices, regulator correspondence)
+this single-key model is a structural risk.
+
+Confium replaces it with threshold S/MIME: the signing key is split
+across N parties (the user's devices plus an organizational escrow);
+T-of-N must participate. A lost laptop reveals one share, not the
+key.
+
+## When to choose this use case
+
+- Your organization sends signed email that must remain verifiable
+  for years (legal notices, contract communications, regulator
+  filings).
+- A single compromised device should not invalidate every signature
+  the user ever produced.
+- You need break-glass access: if the user loses all their devices,
+  the organization can recover access via threshold key escrow.
+- You want S/MIME compliance (e.g. FedRAMP, eIDAS QES) without
+  trusting a single party with the private key.
+
+## How Confium solves it
+
+Each mailbox gets a threshold key split across:
+
+- The user's primary device (1 share).
+- The user's secondary device (1 share).
+- An organizational key escrow service running Confium (N−2 shares).
+
+A 2-of-N quorum lets the user sign from any of their devices (their
+device + one escrow share). Break-glass recovery requires the
+escrow to participate with multiple shares plus one user device —
+or, in extremis, the full escrow quorum.
+
+The S/MIME signature produced is a standard CMS SignedData.
+Existing email clients (Apple Mail, Outlook, Thunderbird) verify
+it without modification.
+
+## Architecture
+
+```
+[ Email client (MUA) ]
+       |
+       | compose + sign request
+       v
+[ Local Confium signer ]
+       |
+       v
+[ Coordinator ]
+   |          |
+   v          v
+[User dev] [Org escrow]
+   |          |
+   +---- 2-of-N quorum ----+
+              |
+              v
+   [ CMS SignedData (standard S/MIME) ]
+              |
+              v
+   [ Embedded in MIME message ]
+```
+
+## PKCS#11 integration
+
+The local Confium signer exposes a PKCS#11 v3.0 socket. The email
+client thinks it's talking to a smartcard or HSM; under the hood
+every `C_Sign()` call dispatches to the threshold coordinator.
+
+```ruby
+# Configure the MUA to use Confium as its PKCS#11 module:
+#   Module path: /usr/lib/confium/confium-pkcs11.so
+#   Slot ID: 0
+#   Token label: "alice@example.com"
+
+# The MUA's standard S/MIME signing flow works unchanged:
+#   Message → C_Sign(hash) → Confium threshold session → CMS signature
+```
+
+## Break-glass recovery
+
+If Alice loses all her devices:
+
+1. Alice contacts the organizational escrow (security team).
+2. Escrow initiates a recovery session: T-of-N escrow shares
+   participate to produce a recovery signature.
+3. Alice is issued a new device with a fresh share.
+4. `confium-tc-reshare` redistributes shares across the new device
+   set without changing the underlying key.
+
+The transparency log records every recovery event for audit.
+
+## Post-quantum readiness
+
+Long-lived email signatures are a prime candidate for composite
+signatures. A regulatory filing sent today should still verify in
+2040. By embedding both Ed25519 and ML-DSA-65 components from day
+one, the signature remains valid even after Ed25519 falls to
+quantum attack.
+
+## See also
+
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [Distributed custody use case](/use-cases/distributed-custody/)
+- [PKI operators guide](/audiences/operators/)
+- [Compliance officer guide](/audiences/compliance/)

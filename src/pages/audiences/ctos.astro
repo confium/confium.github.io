@@ -1,0 +1,216 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import ThreeModeDiagram from '../../components/brand/ThreeModeDiagram.astro';
+import PQMigrationTimelineDiagram from '../../components/brand/PQMigrationTimelineDiagram.astro';
+---
+
+<BaseLayout
+  title="For CTOs"
+  description="Strategic and technical overview for CTOs and engineering directors. Vendor independence, PQ readiness, team adoption, and risk posture."
+>
+  <PageHero
+    eyebrow="For CTOs"
+    title="Strategic adoption of threshold trust"
+    description="As a CTO or engineering director, you need to evaluate Confium on three axes: does it solve a real problem for your organization, is it safe to adopt, and what's the team investment. This page covers all three."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-16 md:py-20 prose dark:prose-invert">
+    <Reveal>
+      <h2>The strategic case in two paragraphs</h2>
+      <p>
+        Single-key PKI is the trust infrastructure for most of the
+        internet. It works because we trust the operators. But
+        trust-based systems fail when the operator is compromised,
+        goes rogue, or makes an error. DigiNotar, Symantec, and
+        Let's Encrypt each had incidents that cost millions and
+        eroded public trust. The pattern is structural: as long as
+        one party holds the key, that party is the single point of
+        failure.
+      </p>
+      <p>
+        Confium eliminates the single point of failure structurally.
+        Threshold cryptography means no single party holds the
+        signing key; a configurable quorum must participate. This
+        is the same architectural shift that took us from "the
+        database is the system of record" to "consensus across
+        replicas is the system of record". The math is proven; the
+        protocols are published; the implementations are open
+        source. What was missing was a framework that made this
+        deployable in real PKI settings — Confium is that framework.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Three modes, one engine</h2>
+      <p>
+        Confium is layered across three deployment modes. The same
+        engine and the same primitives serve all three. Your
+        organization might use Mode 2 internally (migrate an
+        existing PKI consumer) and Mode 3 externally (deploy a
+        sovereign institutional PKI).
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <ThreeModeDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Why now</h2>
+      <p>
+        Three forces make this the right time to evaluate threshold
+        trust infrastructure:
+      </p>
+      <ol>
+        <li>
+          <strong>Post-quantum migration.</strong> NIST has
+          standardized ML-DSA (FIPS 204) and ML-KEM (FIPS 203).
+          Migration is no longer theoretical. Composite signatures
+          (classical + PQ) let you migrate without a flag day, but
+          only if your infrastructure can produce and verify them.
+          Confium is built around composite signatures.
+        </li>
+        <li>
+          <strong>Regulatory pressure on auditability.</strong>
+          SOX, eIDAS, FedRAMP, HIPAA, MiCA — every major regulatory
+          framework now demands audit trails that don't rely on
+          the operator's word. Transparency logs (RFC 6962) provide
+          cryptographic auditability. Confium has this built in.
+        </li>
+        <li>
+          <strong>Single-key incidents are accelerating.</strong>
+          DigiNotar (2011), Symantec (2015–2018), Let's Encrypt
+          (2020), and many unreported near-misses. The cost per
+          incident: $10M+ in direct response, plus reputational
+          damage. Threshold governance is the structural fix.
+        </li>
+      </ol>
+    </Reveal>
+
+    <Reveal>
+      <h2>PQ migration timeline</h2>
+      <p>
+        The composite-signature migration path lets you adopt PQ
+        incrementally. Today you can emit signatures that include
+        both classical and PQ components; legacy verifiers still
+        accept via the classical component, upgraded verifiers
+        check both. When classical algorithms break, the PQ
+        component holds. No flag day, no forklift upgrade.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <PQMigrationTimelineDiagram class="w-full max-w-2xl mx-auto" />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Vendor independence</h2>
+      <p>
+        Confium is BSD-2-Clause open source. There is no CLA, no
+        proprietary fork, no "open-core" upsell. The funding model
+        (NLnet NGI Zero PET + Mozilla MOSS) does not direct the
+        technical roadmap. If you deploy Confium today and decide
+        to fork it tomorrow, you have every right and every
+        technical capability to do so.
+      </p>
+      <p>
+        This matters strategically: threshold trust infrastructure
+        is the kind of thing you don't want to outsource. It's the
+        spine of your signing operations for decades. Owning your
+        deployment (or having the option to) is essential.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Team investment</h2>
+      <p>
+        Realistic team investment for a production deployment:
+      </p>
+      <table>
+        <thead>
+          <tr><th>Phase</th><th>Team</th><th>Duration</th><th>Outcome</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Evaluation</td>
+            <td>1 architect + 1 security engineer</td>
+            <td>2–4 weeks</td>
+            <td>Decision document + threat model.</td>
+          </tr>
+          <tr>
+            <td>Pilot</td>
+            <td>2–3 engineers</td>
+            <td>4–8 weeks</td>
+            <td>Working deployment in a non-production environment.</td>
+          </tr>
+          <tr>
+            <td>Production cutover</td>
+            <td>3–5 engineers + ops</td>
+            <td>3–6 months</td>
+            <td>Live traffic, monitoring, runbooks.</td>
+          </tr>
+          <tr>
+            <td>Ongoing operations</td>
+            <td>1–2 SREs part-time</td>
+            <td>continuous</td>
+            <td>Same cost as running a conventional CA.</td>
+          </tr>
+        </tbody>
+      </table>
+      <p>
+        For Mode 2 (PKI drop-in), the cutover is significantly
+        faster because the consumer code stays unchanged. For
+        Mode 3 (Sovereign PKI), expect longer timelines due to
+        certificate profile design and policy work.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Risk posture</h2>
+      <table>
+        <thead>
+          <tr><th>Risk</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Framework abandonment (Confium project ends)</td>
+            <td>BSD-2-Clause license + open source = the code remains usable indefinitely. Funded by NLnet / Mozilla = not dependent on a single commercial entity.</td>
+          </tr>
+          <tr>
+            <td>Protocol-level vulnerability (FROST, CMP20, etc.)</td>
+            <td>Protocols are published and peer-reviewed. Multiple protocols available; switch if one is broken.</td>
+          </tr>
+          <tr>
+            <td>Operational complexity</td>
+            <td>Coordinator is a single service; signers are processes; transparency log is a service. Standard ops.</td>
+          </tr>
+          <tr>
+            <td>Talent availability</td>
+            <td>Threshold cryptography is a niche today; growing. The Confium team and Discord are the support network.</td>
+          </tr>
+          <tr>
+            <td>Performance overhead</td>
+            <td>~5× signing latency vs single-key; zero verification overhead (signatures are standard).</td>
+          </tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/audiences/executives/">Executive guide</a> — for the business-case framing to share with peers.</li>
+        <li><a href="/audiences/architects/">Architect guide</a> — for your security architect's deep dive.</li>
+        <li><a href="/docs/comparison/">Comparison</a> — Confium vs HSM, CA, KMS, Sigstore, commercial threshold.</li>
+        <li><a href="/docs/three-modes/">Three modes</a> — pick the integration shape.</li>
+        <li><a href="/funding/">Funding</a> — who pays for Confium.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

@@ -1,0 +1,125 @@
+---
+title: Government identity
+description: National IDs, passports, eID, and visa stamping with multi-stakeholder signing. No single government agency holds the root key.
+mode: 3
+order: 11
+---
+
+import DefenseInDepthDiagram from '../../components/brand/DefenseInDepthDiagram.astro';
+
+# Government identity
+
+National identity systems — eID cards, passports, driver's licenses,
+visa stamps — are the most consequential PKI deployments in
+existence. A compromised root key lets an attacker forge identity
+for millions of citizens; a sub-CA compromise lets them forge
+specific identity classes. The standard defense is operational
+security around the root key, often with HSMs in physically
+secured facilities.
+
+Confium offers a structural defense: split the root signing
+authority across multiple government agencies, ministries, or
+independent overseers. No single agency can issue identity
+certificates alone; any issuance requires a configured quorum.
+
+## When to choose this use case
+
+- You operate a national identity system and the root signing
+  authority is too sensitive to entrust to any single agency.
+- You need cross-ministry governance (Interior + Foreign Affairs +
+  independent oversight body) for identity issuance.
+- You're deploying a sovereign digital identity framework (eIDAS
+  Qualified Trust Service, national eID, etc.).
+- You want public verifiability of identity issuance decisions.
+
+## How Confium solves it
+
+A Mode 3 (Sovereign PKI) deployment with:
+
+- **Custom certificate profile** matching the national identity
+  schema (X.509 with custom extensions, or a custom ASN.1 / CBOR
+  structure).
+- **Attribute-based quorum** specifying which agencies must
+  participate. Example: "2-of-3 Interior + 1-of-2 Foreign Affairs
+  + 1-of-1 Oversight".
+- **Transparency log** recording every identity certificate ever
+  issued. Citizens, relying parties, and journalists can audit.
+- **OTS anchoring** for irrefutable proof of when certificates
+  existed.
+
+<DefenseInDepthDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+## Sovereignty over formats
+
+National identity cards have unique requirements:
+
+- Custom data fields (national ID number, biometric hash, blood
+  type, organ donor status).
+- Custom encoding (CBOR for compactness on smartcards, or ASN.1
+  for X.509 compatibility).
+- Custom delegation (Ministry X can issue category Y but not
+  category Z).
+- Custom archival cadence (decades-long validity for passports).
+
+Confium's Mode 3 lets the deploying government define all of
+these. The framework provides the engine; the policy and format
+are sovereign.
+
+## Cross-border interop
+
+Many identity systems must interop across borders:
+
+- **eIDAS** (EU): cross-border recognition of national eIDs.
+- **ICAO** (passports): Machine Readable Travel Documents (MRTD).
+- **ISO/IEC 18013** (driver's licenses): mobile driver's license
+  (mDL).
+
+Confium produces standard X.509 / CMS / CBOR structures that
+interop with existing verifiers. The threshold-signing backend
+is invisible to relying parties.
+
+## Example: visa stamping
+
+A visa issuance authority wants 2-of-3 sign-off on every visa:
+
+- Consular officer at the issuing embassy.
+- Home-country foreign ministry.
+- Destination-country immigration authority (for reciprocal
+  agreements).
+
+```toml
+[quorum]
+threshold = 2
+total = 3
+
+[[signers]]
+id = "consular-officer"
+attributes = { role = "consular", embassy = "...", country = "..." }
+
+[[signers]]
+id = "foreign-ministry"
+attributes = { role = "ministry", country = "..." }
+
+[[signers]]
+id = "destination-immigration"
+attributes = { role = "immigration", country = "..." }
+```
+
+Each visa is anchored in the transparency log. Any verifier
+(airline, border control) can independently confirm the visa was
+validly issued.
+
+## Compliance
+
+- **eIDAS** Qualified Trust Service: P-384+ jurisdictional policy;
+  audit trail; long-term verifiability via ERS archival.
+- **ICAO PKI**: X.509 + custom visa extensions; threshold signing
+  at the visa root.
+- **FIPS 140-2/3**: route through FIPS-validated crypto plugin.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Sovereign PKI use case](/use-cases/sovereign-pki/)
+- [Compliance officer guide](/audiences/compliance/)
+- [Architecture](/docs/architecture/)
