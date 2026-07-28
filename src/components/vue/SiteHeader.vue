@@ -60,9 +60,11 @@ onUnmounted(() => {
     <div class="mx-auto w-full max-w-6xl px-6">
       <div class="flex h-16 items-center justify-between">
         <a href="/" class="font-sans text-lg font-semibold flex items-center gap-2">
-          <span class="w-6 h-6 inline-block text-accent">
-            <svg viewBox="0 0 512 512" fill="currentColor" class="w-full h-full" aria-hidden="true">
-              <path d="M239.1 6.3l-208 78c-18.7 7-31.1 25-31.1 45v225.1c0 18.2 10.3 34.8 26.5 42.9l208 104c13.5 6.8 29.4 6.8 42.9 0l208-104c16.3-8.1 26.5-24.8 26.5-42.9V129.3c0-20-12.4-37.9-31.1-44.9l-208-78C262 2.2 250 2.2 239.1 6.3zM256 34.2l224 84v.3l-224 97.1-224-97.1v-.3l224-84zM32 153.4l208 90.1v224.7l-208-104V153.4zm240 314.8V243.5l208-90.1v210.9L272 468.2z" />
+          <span class="w-7 h-7 inline-block">
+            <svg viewBox="0 0 275 275" class="w-full h-full" aria-hidden="true">
+              <path fill="#1a7bec" d="M137.5 12 L263 70 L137.5 128 L12 70 Z" opacity="0.95" />
+              <path fill="#00dfb7" d="M12 70 L137.5 128 L137.5 263 L12 205 Z" opacity="0.92" />
+              <path fill="#ffdc4a" d="M263 70 L137.5 128 L137.5 263 L263 205 Z" opacity="0.92" />
             </svg>
           </span>
           <span>Confium</span>

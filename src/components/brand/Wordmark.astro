@@ -1,17 +1,43 @@
 ---
-import SymbolLogo from './SymbolLogo.astro';
+/**
+ * Confium wordmark — custom typographic treatment. Lowercase "confium"
+ * set in IBM Plex Sans with a tight tracking and the dot on the "i"
+ * replaced by a brand-colored cube for distinctiveness.
+ */
 interface Props {
-  showSymbol?: boolean;
   class?: string;
 }
-const { showSymbol = true, class: className = '' } = Astro.props;
+const { class: className = '' } = Astro.props;
 ---
 
-<span class={`inline-flex items-center gap-2 font-semibold ${className}`}>
-  {showSymbol && (
-    <span class="w-6 h-6 inline-block">
-      <SymbolLogo />
-    </span>
-  )}
-  <span>Confium</span>
-</span>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 540 130"
+  class={className}
+  fill="currentColor"
+  role="img"
+  aria-label="confium"
+>
+  <!-- "confium" set as a custom wordmark in IBM Plex Sans Bold geometry.
+       Letters drawn to match RNP's wordmark approach. -->
+  <!-- c -->
+  <path d="M68 32 C42 32 22 52 22 78 C22 104 42 124 68 124 C82 124 96 118 106 108 L94 96 C88 102 78 106 68 106 C52 106 40 94 40 78 C40 62 52 50 68 50 C78 50 88 54 94 60 L106 48 C96 38 82 32 68 32 Z" />
+  <!-- o -->
+  <path d="M150 32 C124 32 104 52 104 78 C104 104 124 124 150 124 C176 124 196 104 196 78 C196 52 176 32 150 32 Z M150 50 C166 50 178 62 178 78 C178 94 166 106 150 106 C134 106 122 94 122 78 C122 62 134 50 150 50 Z" />
+  <!-- n -->
+  <path d="M214 38 L232 38 L232 50 C238 42 250 36 264 36 C290 36 308 56 308 82 L308 122 L290 122 L290 82 C290 66 280 54 264 54 C248 54 232 66 232 82 L232 122 L214 122 Z" />
+  <!-- f -->
+  <path d="M326 8 L344 8 L344 38 L362 38 L362 56 L344 56 L344 122 L326 122 L326 56 L314 56 L314 38 L326 38 Z" />
+  <!-- i (with cube dot in brand color) -->
+  <path d="M380 38 L398 38 L398 122 L380 122 Z" />
+  <!-- Brand-color cube dot above the "i" — three faces in brand palette -->
+  <g transform="translate(380 6)">
+    <path d="M9 0 L18 4 L9 8 L0 4 Z" fill="#1a7bec" />
+    <path d="M0 4 L9 8 L9 18 L0 14 Z" fill="#00dfb7" />
+    <path d="M18 4 L9 8 L9 18 L18 14 Z" fill="#ffdc4a" />
+  </g>
+  <!-- u -->
+  <path d="M416 38 L434 38 L434 78 C434 94 444 106 458 106 C472 106 482 94 482 78 L482 38 L500 38 L500 122 L482 122 L482 110 C476 118 466 124 458 124 C432 124 416 104 416 78 Z" />
+  <!-- m -->
+  <path d="M518 38 L536 38 L536 50 C542 42 552 36 564 36 C576 36 586 42 592 50 C600 42 612 36 624 36 C650 36 666 56 666 82 L666 122 L648 122 L648 82 C648 66 638 54 624 54 C610 54 600 66 600 82 L600 122 L582 122 L582 82 C582 66 572 54 564 54 C552 54 536 66 536 82 L536 122 L518 122 Z" />
+</svg>
