@@ -1,0 +1,88 @@
+---
+title: Distributed custody
+description: Multi-party computation wallets and threshold key escrow. No single party holds the full key. Thunderbird-style backup generalized.
+mode: 1
+order: 3
+---
+
+# Distributed custody
+
+Single-key custody has a structural problem: whoever holds the key
+holds the funds (or the secrets, or the credentials). Threshold
+custody splits the ability to act across N parties such that any T
+can act jointly.
+
+This is the foundation of MPC wallets, threshold key escrow, and
+multi-device authentication systems.
+
+## What you get
+
+- A single key never exists on any one machine — even at generation
+  time, the secret is split at birth.
+- T-of-N quorum to authorize any transaction.
+- Configurable policies (daily limits, multi-jurisdiction
+  requirements, time-bounded authorizations) via the
+  attribute DSL.
+- Thunderbird-style key escrow: lose your device and T-of-N trusted
+  recoverers can restore access.
+
+## Wallet architecture
+
+A threshold BTC or ETH wallet looks like:
+
+```
+[ User device ]         [ Co-signer 1 ]       [ Co-signer 2 ]
+       |                       |                     |
+       +-----------+-----------+---------+-----------+
+                   |
+                   v
+           [ Coordinator ]
+                   |
+                   v
+           [ Threshold signature ]
+                   |
+                   v
+           [ Blockchain transaction ]
+```
+
+The user authorizes a transaction on their device; co-signers
+approve (or auto-approve under policy); the coordinator combines
+the partial signatures into a valid blockchain signature.
+
+## Threshold key escrow
+
+The same architecture backs Thunderbird-style key escrow. An
+organization can designate N trusted recoverers (e.g. 5 IT staff);
+any 3 of them can restore access to a lost key. Individual
+recoverers cannot act alone; collective action is required.
+
+Confium's `confium-escrow` crate generalizes this pattern. The
+threshold T and pool N are configurable; recovery events are
+anchored in the transparency log for auditability.
+
+## Attribute-based policies
+
+The threshold DSL lets you express:
+
+```
+2-of-3 user devices for transactions under $1000
+3-of-5 security staff for transactions over $1000
+5-of-7 board members for transactions over $100000
+```
+
+The coordinator enforces the policy at signing time.
+
+## When to choose this use case
+
+- You're building a cryptocurrency wallet or institutional custody
+  service.
+- You provide backup / recovery for end-user keys (email, identity,
+  content encryption).
+- You need a multi-party approval mechanism for high-value
+  operations.
+
+## See also
+
+- [Mode 1 — Peer-to-Peer TC](/docs/mode1-peer-tc/)
+- [Attribute-based threshold](/concepts/attribute-based-threshold/)
+- [Threshold crypto 101](/concepts/threshold-crypto-101/)

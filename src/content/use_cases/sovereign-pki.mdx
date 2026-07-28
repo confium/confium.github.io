@@ -1,0 +1,91 @@
+---
+title: Sovereign PKI
+description: Institutional PKI where no single party is trusted. Calibration registries, pharma approvals, accreditation, supply-chain provenance, treaty orgs.
+mode: 3
+order: 4
+---
+
+# Sovereign PKI
+
+Conventional PKI assumes a single trusted Certificate Authority.
+For many institutional settings, that assumption doesn't hold — no
+single stakeholder can be trusted with the signing key alone.
+
+Sovereign PKI replaces the single-CA model with threshold
+governance: T-of-N authorized signers from K distinct groups must
+participate to issue a certificate. Certificate formats, delegation
+rules, archival cadence, and quorum composition are all under the
+institution's control.
+
+## What sovereignty means
+
+| Dimension | Conventional PKI | Sovereign PKI |
+| --- | --- | --- |
+| **Certificate format** | Fixed (X.509) | Custom profiles, custom extensions |
+| **Delegation** | Hierarchy, fixed | Scoped, time-bounded, attribute-based |
+| **Archival cadence** | CA's discretion | Configurable per-deployment |
+| **Quorum** | Single CA key | T-of-N with attribute constraints |
+| **Audit** | CA's internal records | Public transparency log |
+
+## Reference deployments
+
+Sovereign PKI is the right shape for:
+
+- **Calibration registries** — BIPM-style metrology chains where
+  measurements must be traceable to a sovereign reference.
+- **Pharma regulator approvals** — multi-jurisdiction sign-off on
+  clinical trial data and drug approvals.
+- **Academic accreditation** — cross-institutional degree and
+  credential verification without a single trusted authority.
+- **Supply-chain provenance** — manufacturing step attestation
+  anchored in a public transparency log.
+- **Treaty organizations** — multi-state cooperative instruments
+  requiring concurrent sovereign approval.
+- **CNML** — certified measuring instruments list, a reference
+  Mode 3 deployment.
+
+CNML appears here as one of six reference scenarios. It is not the
+sole or defining use case for Sovereign PKI.
+
+## Deployment shape
+
+A Mode 3 deployment typically includes:
+
+- **Custom certificate profile** via `confium-cert`.
+- **Delegation templates** via `confium-cert-delegation`.
+- **Attribute-based threshold predicates** via `confium-attributes`.
+- **Transparency log** via `confium-transparency`.
+- **OTS anchoring** via `confium-ots` (Bitcoin-backed tree head
+  timestamps).
+- **Archival** via `confium-ers` (RFC 4998 Evidence Record Syntax).
+- **Coordinator** orchestrating signing sessions across the
+  institutional signers.
+
+## Defense in depth
+
+Mode 3 deployments should layer three defenses against split-view
+attacks:
+
+1. **Consistency proofs** (RFC 6962 §2.1.2) on every tree head.
+2. **Witness gossip** between coordinators (default: hourly).
+3. **OTS anchoring** of tree heads in Bitcoin (default: daily).
+
+See [transparency logs](/concepts/transparency-logs/) for details.
+
+## When to choose this use case
+
+- You operate an institutional CA where no single stakeholder can
+  be trusted.
+- You need custom certificate formats, delegation rules, or
+  archival policies.
+- You're deploying across multiple jurisdictions with different
+  algorithm requirements.
+- You need a public, auditable record of every certificate ever
+  issued.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Transparency logs](/concepts/transparency-logs/)
+- [Attribute-based threshold](/concepts/attribute-based-threshold/)
+- [Security model](/docs/security-model/)
