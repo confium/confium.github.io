@@ -1,0 +1,154 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+---
+
+<BaseLayout
+  title="For students and educators"
+  description="Teaching materials, lab exercises, syllabus templates, and reading lists for threshold cryptography courses using Confium as the reference implementation."
+>
+  <PageHero
+    eyebrow="For students and educators"
+    title="Teach threshold cryptography with Confium"
+    description="Confium is the reference implementation for multi-stakeholder threshold cryptography. Use it in your course to give students hands-on experience with the protocols, the math, and the deployment patterns."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-12 md:py-16 prose dark:prose-invert">
+    <Reveal>
+      <h2>Why teach with Confium?</h2>
+      <p>
+        Threshold cryptography is increasingly taught in
+        cryptography, distributed systems, and cybersecurity
+        courses. But most courses stop at the theory — students
+        learn Shamir secret sharing and Lagrange interpolation
+        without ever touching a real implementation. Confium
+        bridges that gap: it's a production-grade framework
+        with real protocol implementations (FROST, CMP20, GG18),
+        real transparency logs, and real adapters for PKCS#11 /
+        OpenSSL / JCE.
+      </p>
+      <p>
+        Students who learn with Confium leave the course
+        understanding not just the math but the engineering:
+        how threshold protocols are deployed in production, how
+        async sessions work across continents, how transparency
+        logs detect split-view attacks.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Course syllabus template (10 weeks)</h2>
+      <table>
+        <thead><tr><th>Week</th><th>Topic</th><th>Lab</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td>PKI fundamentals: certificates, CAs, trust chains</td><td>Parse an X.509 cert with <code>confium</code></td></tr>
+          <tr><td>2</td><td>Secret sharing: Shamir's scheme, Lagrange interpolation</td><td>Split and recover a secret in 20 lines of Ruby</td></tr>
+          <tr><td>3</td><td>Threshold signatures: FROST protocol</td><td>3-of-5 FROST-P256 signing session</td></tr>
+          <tr><td>4</td><td>Threshold ECDSA: CMP20, GG18</td><td>Compare FROST vs CMP20 vs GG18</td></tr>
+          <tr><td>5</td><td>Coordinator architecture: async sessions</td><td>Run a cross-region signing session</td></tr>
+          <tr><td>6</td><td>Transparency logs: RFC 6962 Merkle trees</td><td>Build a transparency log, verify inclusion proofs</td></tr>
+          <tr><td>7</td><td>Split-view attacks and defense in depth</td><td>Simulate an attack, detect via consistency proofs</td></tr>
+          <tr><td>8</td><td>Post-quantum migration: composite signatures</td><td>Add ML-DSA-65 alongside Ed25519</td></tr>
+          <tr><td>9</td><td>Mode 2: PKI drop-in adapters</td><td>Wire Confium to nginx via PKCS#11</td></tr>
+          <tr><td>10</td><td>Mode 3: Sovereign PKI</td><td>Design a custom certificate profile</td></tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Lab exercises</h2>
+      <p>
+        Each lab is designed for a 2-3 hour session. They progress
+        from theory to deployment, building on each other.
+      </p>
+
+      <h3>Lab 1: Shamir secret sharing (week 2)</h3>
+      <p>
+        Students split a secret into 5 shares with threshold 3,
+        recover from any 3, and verify that 2 shares produce the
+        wrong answer. Demonstrates the threshold property.
+      </p>
+      <pre><code class="language-ruby" set:html={`require "confium"
+
+kp = Confium::TC::FrostP256.generate_keypair
+shares = Confium::TC::FrostP256.split_secret(kp["private_key"], 3, 5)
+
+# Recover from any 3
+recovered = Confium::TC::FrostP256.recover_secret(
+  [shares[0], shares[2], shares[4]].map { |s| { "x" => s.x, "y" => s.y_bytes } }
+)
+puts recovered == kp["private_key"] ? "MATCH" : "MISMATCH"
+
+# Try with only 2 — wrong answer, no error
+wrong = Confium::TC::FrostP256.recover_secret(
+  [shares[0], shares[1]].map { |s| { "x" => s.x, "y" => s.y_bytes } }
+)
+puts wrong == kp["private_key"] ? "unexpected match" : "WRONG (expected)"`}></code></pre>
+
+      <h3>Lab 2: FROST threshold signing (week 3)</h3>
+      <p>
+        Students run a 3-of-5 FROST-P256 signing session using the
+        coordinator, verify the signature with standard OpenSSL,
+        and observe that the output is indistinguishable from a
+        single-key signature.
+      </p>
+
+      <h3>Lab 3: Transparency log (week 6)</h3>
+      <p>
+        Students build a Merkle tree, compute inclusion proofs,
+        and verify them. Then they simulate a split-view attack
+        and detect it via consistency proofs.
+      </p>
+
+      <h3>Lab 4: Composite signatures (week 8)</h3>
+      <p>
+        Students create a composite signature containing Ed25519
+        + ECDSA-P256 + ML-DSA-65, verify it, and observe that
+        removing any one component fails verification.
+      </p>
+
+      <h3>Lab 5: Sovereign PKI profile (week 10)</h3>
+      <p>
+        Students design a custom certificate profile for a
+        hypothetical institution (university degree issuance,
+        supply-chain provenance, treaty organization) and
+        implement it using Confium's certificate and CMS crates.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Reading list</h2>
+      <ul>
+        <li>Shamir, <em>How to Share a Secret</em>, CACM 1979 — the foundational paper.</li>
+        <li>Komlo &amp; Goldberg, <em>FROST: Flexible Round-Optimized Schnorr Threshold signatures</em>, IACR ePrint 2020/852.</li>
+        <li>Canetti, Makriyannis, Peled, <em>UC Non-Interactive, Proactive, Threshold ECDSA</em>, IACR ePrint 2021/060.</li>
+        <li>Gennaro &amp; Goldfeder, <em>Fast Multiparty Threshold ECDSA with Fast Trustless Setup</em>, CCS 2018.</li>
+        <li>Laurie et al., <em>Certificate Transparency</em>, RFC 6962.</li>
+        <li>Herzberg et al., <em>Proactive Secret Sharing</em>, CRYPTO 1995.</li>
+        <li>NIST FIPS 204, <em>Module-Lattice-Based Digital Signature Algorithm (ML-DSA)</em>.</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Getting started for educators</h2>
+      <ol>
+        <li>Install Confium: <code>gem install confium</code> (Ruby is the easiest for students).</li>
+        <li>Clone the examples: <code>git clone https://github.com/confium/confium-ruby</code>.</li>
+        <li>Run the threshold signing example: <code>ruby examples/threshold_signing.rb</code>.</li>
+        <li>Adapt the labs above for your course's language (Python examples coming).</li>
+        <li>Reach out on GitHub Discussions for educator support.</li>
+      </ol>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/concepts/threshold-crypto-101/">Threshold crypto 101</a> — the primer students should read first.</li>
+        <li><a href="/docs/getting-started/">Getting started</a> — install and first signing session.</li>
+        <li><a href="/audiences/developers/">Developer guide</a> — for students who want to build on Confium.</li>
+        <li><a href="https://github.com/confium/confium-ruby/tree/main/examples">Example code</a> — runnable demos.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>

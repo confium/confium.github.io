@@ -1,0 +1,161 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+import QuorumPlayground from '../../components/vue/QuorumPlayground.vue';
+---
+
+<BaseLayout
+  title="For Web3 and blockchain developers"
+  description="Threshold key custody, MPC wallets, cross-chain signing, and DeFi protocol key management using Confium."
+>
+  <PageHero
+    eyebrow="For Web3 and blockchain"
+    title="Threshold custody for on-chain assets"
+    description="Single-key custody is the #1 operational risk in Web3. Confium replaces it with threshold key management — T-of-N quorum for every transaction, chain-agnostic, off-chain coordination."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-12 md:py-16 prose dark:prose-invert">
+    <Reveal>
+      <h2>The Web3 custody problem</h2>
+      <p>
+        Every blockchain wallet, DeFi protocol, and NFT marketplace
+        has the same structural problem: whoever holds the private
+        key holds the funds. Single-key custody means one
+        compromise drains the treasury. Multi-sig smart contracts
+        help but are chain-specific, add on-chain overhead, and
+        expose signer identities on-chain.
+      </p>
+      <p>
+        Threshold cryptography gives you off-chain, chain-agnostic
+        custody. The signing key is split across N custody parties;
+        any T of them produce a valid signature. The chain sees a
+        normal ECDSA or Ed25519 signature — no multi-sig contract,
+        no on-chain overhead, no protocol change.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>What Confium gives Web3</h2>
+      <ul>
+        <li><strong>Chain-agnostic.</strong> Same threshold key infrastructure works for Bitcoin, Ethereum, Solana, Cardano, Aptos, Sui — any chain using ECDSA (secp256k1/P-256) or Ed25519.</li>
+        <li><strong>Off-chain coordination.</strong> The coordinator runs off-chain; only the final signature touches the chain.</li>
+        <li><strong>Attribute-based policy.</strong> "2-of-3 user devices for transactions under $1K; 5-of-7 board members for transactions over $100K".</li>
+        <li><strong>HSM coexistence.</strong> Each custody share can be stored in a hardware HSM via PKCS#11. The share never leaves the HSM in plaintext.</li>
+        <li><strong>Proactive refresh.</strong> Shares re-randomize periodically; a compromised share from last quarter is useless today.</li>
+        <li><strong>Transparency log.</strong> Every transaction anchored for regulatory audit (SOC 2, NYDFS BitLicense, EU MiCA).</li>
+      </ul>
+    </Reveal>
+
+    <Reveal>
+      <h2>Architecture for a custody service</h2>
+      <pre><code>[ Wallet front-end (API / SDK) ]
+           |
+           | submit tx hash + policy
+           v
+[ Coordinator ] --------------------+
+   |          |          |          |
+   v          v          v          v
+[Custody 1][Custody 2][Custody 3][Custody N]
+   |          |          |          |
+   +----------+---- T-of-N quorum --+
+                      |
+                      v
+           [ Standard ECDSA signature ]
+                      |
+                      v
+           [ Broadcast to chain ]
+                      |
+                      v
+           [ Transparency log anchors event ]</code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Tiered authorization</h2>
+      <p>
+        Real custody operations have value-tiered policies. Confium's
+        attribute DSL expresses them:
+      </p>
+      <table>
+        <thead><tr><th>Tier</th><th>Policy</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr><td>Micro</td><td>1-of-2 user devices</td><td>Under $1K — instant withdrawal</td></tr>
+          <tr><td>Standard</td><td>2-of-3 operations + 1-of-2 risk</td><td>$1K–$100K — multi-stakeholder</td></tr>
+          <tr><td>Large</td><td>3-of-5 ops + 2-of-3 risk + 1-of-1 compliance</td><td>$100K–$1M — full governance</td></tr>
+          <tr><td>Whale</td><td>Board resolution + 5-of-7 senior officers</td><td>Over $1M — executive sign-off</td></tr>
+          <tr><td>Cold storage</td><td>7-of-9 (board + custody + auditor)</td><td>Reserve withdrawal — maximum quorum</td></tr>
+        </tbody>
+      </table>
+      <p>
+        The coordinator evaluates the policy per transaction and
+        only advances when the quorum is satisfied.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Cross-chain examples</h2>
+
+      <h3>Ethereum (ECDSA secp256k1)</h3>
+      <pre><code class="language-ruby" set:html={`# Sign an Ethereum transaction hash
+session = Confium::TC::FrostP256.start_session(
+  coordinator: "custody.internal:7443",
+  message: eth_tx_hash,
+  algorithm: "ECDSA-secp256k1",
+  quorum: { threshold: 3, total: 5 },
+)
+
+sig = session.wait_for_completion
+# sig is a standard ECDSA signature — broadcast to Ethereum`}></code></pre>
+
+      <h3>Solana (Ed25519)</h3>
+      <pre><code class="language-ruby" set:html={`# Sign a Solana transaction
+session = Confium::TC::FrostEd25519.start_session(
+  coordinator: "custody.internal:7443",
+  message: sol_tx_hash,
+  algorithm: "Ed25519",
+  quorum: { threshold: 3, total: 5 },
+)
+
+sig = session.wait_for_completion
+# sig is a 64-byte Ed25519 signature — broadcast to Solana`}></code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Try the quorum playground</h2>
+      <p>
+        Drag the sliders to model any custody policy. The
+        playground shows what happens when the threshold isn't met.
+      </p>
+    </Reveal>
+
+    <Reveal delayMs={80}>
+      <div class="not-prose my-8">
+        <QuorumPlayground client:visible />
+      </div>
+    </Reveal>
+
+    <Reveal>
+      <h2>Regulatory alignment</h2>
+      <table>
+        <thead><tr><th>Regulation</th><th>How Confium helps</th></tr></thead>
+        <tbody>
+          <tr><td>NYDFS BitLicense (US)</td><td>Multi-party control over custody keys; structured audit trail.</td></tr>
+          <tr><td>MiCA (EU)</td><td>Custody requirements for Crypto-Asset Service Providers; transparency log for accountability.</td></tr>
+          <tr><td>SOC 2 Type II</td><td>Immutable audit trail; attribute-based quorum; structured log for monitoring.</td></tr>
+          <tr><td>FinCEN Travel Rule</td><td>Transaction-level signing records with signer identity + attributes.</td></tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/use-cases/web3-custody/">Web3 custody use case</a> — detailed architecture.</li>
+        <li><a href="/use-cases/distributed-custody/">Distributed custody</a> — MPC wallet pattern.</li>
+        <li><a href="/concepts/attribute-based-threshold/">Attribute-based threshold</a> — policy DSL.</li>
+        <li><a href="/audiences/developers/">Developer guide</a> — Ruby / Rust / WASM quickstarts.</li>
+        <li><a href="/audiences/compliance/">Compliance guide</a> — regulatory mapping.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>
