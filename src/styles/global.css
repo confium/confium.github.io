@@ -2,119 +2,292 @@
 @plugin "@tailwindcss/typography";
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Confium brand palette — warm amber/bronze, modernized from the
- * original Jekyll theme. Surfaces are warm off-white / warm
- * near-black (not zinc) for cross-mode consistency. */
+/* ===========================================================================
+ * Confium design system — matches the sister RNP site (rnpgp.org) exactly.
+ * Brand tokens are static; semantic tokens flip on .dark. The @theme inline
+ * block bridges semantic vars into Tailwind's token system so classes like
+ * bg-surface, text-foreground, border-line work natively in light + dark.
+ * =========================================================================== */
 
 @theme {
-  --color-brand: #d97706;
-  --color-brand-50: #fffbeb;
-  --color-brand-100: #fef3c7;
-  --color-brand-200: #fde68a;
-  --color-brand-300: #fcd34d;
-  --color-brand-400: #fbbf24;
-  --color-brand-500: #f59e0b;
-  --color-brand-600: #d97706;
-  --color-brand-700: #b45309;
-  --color-brand-800: #92400e;
-  --color-brand-900: #78350f;
-
-  --color-accent: #92400e;
-  --color-accent-light: #b45309;
-  --color-accent-dark: #632807;
-
-  --color-surface-light: #fafaf7;
-  --color-surface-dark: #0f0e0c;
-  --color-ink: #1a1714;
-  --color-ink-muted: #5c5249;
-  --color-line-light: #e7e2d8;
-  --color-line-dark: #2a2520;
+  --color-brand: #1a7bec;
+  --color-teal: #00dfb7;
+  --color-gold: #ffdc4a;
+  --color-navy: #14172b;
 
   --font-sans: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", Roboto, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Monaco, Consolas,
-    "Liberation Mono", monospace;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Monaco,
+    Consolas, "Liberation Mono", monospace;
 
-  --shadow-card: 0 1px 3px 0 rgba(15, 14, 12, 0.05),
-    0 1px 2px 0 rgba(15, 14, 12, 0.03);
-  --shadow-lift: 0 4px 6px -1px rgba(15, 14, 12, 0.08),
-    0 2px 4px -2px rgba(15, 14, 12, 0.04);
+  --shadow-card: 0 1px 2px rgb(26 60 120 / 0.05),
+    0 8px 28px -10px rgb(26 60 120 / 0.1);
+  --shadow-lift: 0 4px 6px -1px rgb(26 60 120 / 0.08),
+    0 12px 32px -8px rgb(26 60 120 / 0.12);
 }
 
 :root {
-  --bg: var(--color-surface-light);
-  --fg: var(--color-ink);
-  --fg-muted: var(--color-ink-muted);
-  --accent: var(--color-brand-700);
-  --line: var(--color-line-light);
-  --card-bg: #ffffff;
+  --bg: #f8fbfe;
+  --surface: #ffffff;
+  --surface-dim: #eef4fa;
+  --fg: #23273a;
+  --fg-soft: #4f5469;
+  --fg-faint: #5f6680;
+  --line: #dfe8f2;
+  --accent: #1a7bec;
+  --accent-deep: #0f5fc4;
+  --accent2: #009e80;
+  --gold-ink: #a07d0a;
+  --code-bg: #14172b;
+  --code-fg: #e8eaf2;
+  --tint-blue: #e6f0fe;
+  --tint-teal: #dcf8f0;
+  --tint-gold: #fff4d6;
+  --brand-grad: linear-gradient(135deg, #1a7bec 0%, #00c2c9 45%, #00dfb7 100%);
 }
 
 .dark {
-  --bg: var(--color-surface-dark);
-  --fg: #f5f0e6;
-  --fg-muted: #a89e91;
-  --accent: var(--color-brand-500);
-  --line: var(--color-line-dark);
-  --card-bg: #1a1714;
+  --bg: #0b0e1a;
+  --surface: #12162c;
+  --surface-dim: #0f1326;
+  --fg: #e8eaf2;
+  --fg-soft: #a2a8c2;
+  --fg-faint: #60678a;
+  --line: #232a4a;
+  --accent: #5ea2f5;
+  --accent-deep: #8fbcf8;
+  --accent2: #2be8c8;
+  --gold-ink: #ffdc4a;
+  --code-bg: #070a14;
+  --tint-blue: color-mix(in oklab, #1a7bec 13%, #0b0e1a);
+  --tint-teal: color-mix(in oklab, #00dfb7 10%, #0b0e1a);
+  --tint-gold: color-mix(in oklab, #ffdc4a 13%, #0b0e1a);
 }
 
 @theme inline {
   --color-background: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
   --color-foreground: var(--fg);
-  --color-muted-foreground: var(--fg-muted);
-  --color-accent: var(--accent);
+  --color-muted: var(--fg-soft);
+  --color-faint: var(--fg-faint);
   --color-line: var(--line);
-  --color-card: var(--card-bg);
+  --color-accent: var(--accent);
+  --color-accent-deep: var(--accent-deep);
+  --color-accent2: var(--accent2);
+  --color-gold-ink: var(--gold-ink);
+  --color-tint-blue: var(--tint-blue);
+  --color-tint-teal: var(--tint-teal);
+  --color-tint-gold: var(--tint-gold);
+  --color-code-bg: var(--code-bg);
+  --color-code-fg: var(--code-fg);
 }
+
+/* ----------------------------------------------------------- base elements */
 
 html {
   background: var(--bg);
   color: var(--fg);
   font-family: var(--font-sans);
-  font-feature-settings: "ss01", "cv01";
   scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
+  font-size: 1.03rem;
+  text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: var(--color-brand-200);
-  color: var(--color-ink);
+  background: var(--tint-blue);
+  color: var(--fg);
 }
 
-.dark ::selection {
-  background: var(--color-brand-800);
-  color: #f5f0e6;
+/* Mono-label eyebrow pattern, used by PageHero and section headers. */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-faint);
 }
 
-/* Prose tweaks for adoc/markdown content rendered through @tailwindcss/typography */
+.gradient-rule {
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-teal));
+}
+
+/* Page hero background: pastel tint wash over a 30px graph paper grid,
+   masked to fade toward the bottom. Matches RNP's page-hero-bg exactly. */
+.page-hero-bg {
+  background-color: var(--tint-blue);
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-brand) 7%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-brand) 7%, transparent) 1px, transparent 1px);
+  background-size: 30px 30px;
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+          mask-image: linear-gradient(to bottom, black 0%, black 60%, transparent 100%);
+}
+
+.dark .page-hero-bg {
+  background-color: var(--tint-blue);
+}
+
+/* Section bands (homepage alternating sections). */
+.band-blue { background-color: var(--tint-blue); }
+.band-teal { background-color: var(--tint-teal); }
+.band-gold { background-color: var(--tint-gold); }
+
+/* Hero gradient for the homepage hero (full color brand gradient). */
+.hero-gradient {
+  background: var(--brand-grad);
+}
+
+.hero-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.09) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.09) 1px, transparent 1px);
+  background-size: 30px 30px;
+  -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+          mask-image: radial-gradient(ellipse at center, black 0%, transparent 75%);
+}
+
+/* ----------------------------------------------------------- buttons */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.125rem;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.2s ease,
+              background-color 0.2s ease,
+              border-color 0.2s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+
+.btn-primary {
+  background: var(--color-brand);
+  color: white;
+  box-shadow: 0 6px 20px -8px color-mix(in oklab, var(--color-brand) 80%, transparent);
+}
+.btn-primary:hover {
+  background: var(--accent-deep);
+  box-shadow: 0 10px 28px -10px color-mix(in oklab, var(--color-brand) 90%, transparent);
+}
+
+.btn-white {
+  background: white;
+  color: var(--color-navy);
+  box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.2);
+}
+.btn-white:hover { box-shadow: 0 10px 28px -10px rgb(0 0 0 / 0.3); }
+
+.btn-outline {
+  border: 1px solid var(--line);
+  color: var(--fg);
+  background: transparent;
+}
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-outline-white {
+  border: 1px solid rgb(255 255 255 / 0.4);
+  color: white;
+  background: transparent;
+}
+.btn-outline-white:hover {
+  border-color: white;
+  background: rgb(255 255 255 / 0.08);
+}
+
+/* ----------------------------------------------------------- cards */
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  box-shadow: var(--shadow-card);
+}
+.card-hover {
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.25s;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--line));
+}
+
+/* ----------------------------------------------------------- prose tweaks */
+
+.prose {
+  --tw-prose-body: var(--fg-soft);
+  --tw-prose-headings: var(--fg);
+  --tw-prose-lead: var(--fg-soft);
+  --tw-prose-links: var(--accent);
+  --tw-prose-bold: var(--fg);
+  --tw-prose-counters: var(--fg-faint);
+  --tw-prose-bullets: var(--accent);
+  --tw-prose-hr: var(--line);
+  --tw-prose-quotes: var(--fg);
+  --tw-prose-quote-borders: var(--accent);
+  --tw-prose-captions: var(--fg-faint);
+  --tw-prose-code: var(--fg);
+  --tw-prose-pre-code: var(--code-fg);
+  --tw-prose-pre-bg: var(--code-bg);
+  --tw-prose-th-borders: var(--line);
+  --tw-prose-td-borders: var(--line);
+  line-height: 1.8;
+}
+
+.prose :where(a):not(:where(.not-prose *)) {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: color-mix(in oklab, var(--accent) 40%, transparent);
+}
+.prose :where(a:hover):not(:where(.not-prose *)) {
+  text-decoration-color: var(--accent);
+}
+
 .prose :where(h2, h3, h4):not(:where(.not-prose *)) {
   scroll-margin-top: 5rem;
 }
 
 .prose :where(code):not(:where(.not-prose *)) {
-  font-weight: 500;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--surface-dim);
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  padding: 0.1em 0.35em;
+}
+.prose :where(code)::before,
+.prose :where(code)::after { content: none; }
+
+.prose :where(pre):not(:where(.not-prose *)) {
+  border-radius: 0.6rem;
+  border: 1px solid color-mix(in oklab, var(--code-fg) 12%, transparent);
 }
 
-.prose :where(a):not(:where(.not-prose *)) {
-  color: var(--accent);
-  text-decoration-color: color-mix(in srgb, var(--accent) 30%, transparent);
-  text-underline-offset: 2px;
+.prose :where(blockquote):not(:where(.not-prose *)) {
+  font-style: italic;
 }
 
-.prose :where(a:hover):not(:where(.not-prose *)) {
-  text-decoration-color: var(--accent);
+.prose :where(img):not(:where(.not-prose *)) {
+  border-radius: 0.5rem;
 }
 
-/* Shiki dual-theme */
+/* Shiki dual-theme support. */
 :root {
   --shiki-light: inherit;
   --shiki-dark: inherit;
 }
-
 .dark .astro-code,
 .dark .astro-code span {
   color: var(--shiki-dark) !important;
