@@ -1,0 +1,70 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+
+const posts = (await getCollection('blog')).sort((a, b) => {
+  const aDate = a.data.date?.getTime() ?? 0;
+  const bDate = b.data.date?.getTime() ?? 0;
+  return bDate - aDate;
+});
+
+const byYear = posts.reduce((acc, post) => {
+  const year = post.data.date ? post.data.date.getFullYear() : 0;
+  if (!acc[year]) acc[year] = [];
+  acc[year].push(post);
+  return acc;
+}, {} as Record<number, typeof posts>);
+
+const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+---
+
+<BaseLayout title="Blog" description="Confium project blog — launch posts, deep dives, and engineering updates.">
+  <PageHero
+    eyebrow="Blog"
+    title="Project writing"
+    description="Launch announcements, deep dives on individual modes, and engineering walkthroughs."
+  />
+
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+    {years.map((year, yi) => (
+      <section>
+        <Reveal delayMs={yi * 60}>
+          <h2 class="text-2xl font-bold mb-6 text-brand-700 dark:text-brand-300">{year}</h2>
+        </Reveal>
+        <ul class="space-y-8">
+          {byYear[year].map((post, pi) => {
+            const dateStr = post.data.date
+              ? post.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              : '';
+            return (
+              <Reveal delayMs={yi * 60 + pi * 40}>
+                <li>
+                  <a href={`/blog/${post.id}/`} class="group block">
+                    <div class="flex items-baseline gap-3 mb-1">
+                      <span class="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                        {dateStr}
+                      </span>
+                      {post.data.category && (
+                        <span class="text-xs font-mono text-brand-600 dark:text-brand-400 uppercase tracking-wider">
+                          {post.data.category}
+                        </span>
+                      )}
+                    </div>
+                    <h3 class="text-xl font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
+                      {post.data.title}
+                    </h3>
+                    {post.data.description && (
+                      <p class="mt-2 text-muted-foreground">{post.data.description}</p>
+                    )}
+                  </a>
+                </li>
+              </Reveal>
+            );
+          })}
+        </ul>
+      </section>
+    ))}
+  </div>
+</BaseLayout>
