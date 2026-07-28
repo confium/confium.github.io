@@ -2,45 +2,35 @@ name: links
 
 on:
   push:
-    branches:
-    - main
-    - staging
+    branches: [main]
   pull_request:
 
 jobs:
   link_checker:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '3.1'
-        bundler-cache: true
-        cache-version: 0 # Increment this number if you need to re-download cached gems
-    - name: Setup Pages
-      id: pages
-      uses: actions/configure-pages@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
 
-    - name: Build with Jekyll
-      # Outputs to the './_site' directory by default
-      run: bundle exec jekyll build --baseurl "${{ steps.pages.outputs.base_path }}"
-      env:
-        JEKYLL_ENV: production
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Link Checker
-      uses: lycheeverse/lychee-action@v2.9.0
-      with:
-        args: --verbose --no-progress --exclude-file .lycheeignore -- _site/**/*.html
-        fail: true
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Fetch vendor sources
+        run: npm run fetch-sources
 
-      # - name: Create Issue From File
-      #   uses: peter-evans/create-issue-from-file@v2
-      #   with:
-      #     title: Link Checker Report
-      #     content-filepath: ./lychee/out.md
-      #     labels: report, automated issue
+      - name: Build site
+        run: npm run build
+
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2.9.0
+        with:
+          args: --verbose --no-progress --exclude-file .lycheeignore -- 'dist/**/*.html'
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

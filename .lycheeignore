@@ -1,6 +1,12 @@
+# Exclude internal asset paths.
 assets
+
+# Skip JavaScript pseudo-URLs.
 javascript:.*
-https://twitter.com/RiboseUS
+
+# Skip example email addresses and domains.
 .*@.*example.com
 (ht|f)tps?://.*\.?example\.(com|org).*
-https://.*\.?confium\.(com|org).*
+
+# Allow www.confium.org self-references (the site links to itself).
+# Add other exclusions here as needed, each with a comment explaining why.
