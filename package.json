@@ -1,38 +1,36 @@
 {
   "name": "confium.github.io",
-  "type": "module",
   "version": "0.1.0",
   "private": true,
-  "description": "Public website for Confium — open-source threshold-native trust infrastructure.",
+  "type": "module",
+  "description": "Confium — open-source threshold-native trust infrastructure. Source of https://www.confium.org (Astro 7 + Vite 8 + Tailwind 4 + Vue).",
   "scripts": {
     "dev": "astro dev",
-    "predev": "node scripts/prepare-dev-search.mjs",
     "build": "astro build",
+    "preview": "astro preview",
+    "predev": "node scripts/fetch-sources.mjs && node scripts/prepare-dev-search.mjs",
     "prebuild": "node scripts/fetch-sources.mjs",
     "postbuild": "pagefind --site dist",
-    "preview": "astro preview",
     "fetch-sources": "node scripts/fetch-sources.mjs",
-    "check:links": "lychee --base dist --no-progress './dist/**/*.html'",
-    "check:links:external": "lychee --base dist --no-progress './dist/**/*.html'",
-    "astro": "astro"
+    "check:links": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'",
+    "check:links:external": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'"
   },
   "dependencies": {
-    "astro": "^7.1.1",
-    "@astrojs/vue": "^7.0.1",
-    "@astrojs/sitemap": "^3.7.3",
-    "@astrojs/rss": "^4.0.19",
-    "@astrojs/mdx": "^4.0.0",
-    "vue": "^3.5.40",
-    "tailwindcss": "^4.3.3",
-    "@tailwindcss/vite": "^4.3.3",
-    "@tailwindcss/typography": "^0.5.20",
-    "pagefind": "^1.5.2",
-    "@fontsource/ibm-plex-sans": "^5.0.0",
-    "@fontsource/ibm-plex-mono": "^5.0.0"
+    "@astrojs/mdx": "4.0.0",
+    "@astrojs/rss": "4.0.19",
+    "@astrojs/sitemap": "3.7.3",
+    "@astrojs/vue": "7.0.1",
+    "@tailwindcss/typography": "0.5.20",
+    "@tailwindcss/vite": "4.3.3",
+    "astro": "7.1.1",
+    "tailwindcss": "4.3.3",
+    "vue": "3.5.40",
+    "yaml": "2.9.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
-    "lychee": "^0.20.0"
+    "@fontsource/ibm-plex-mono": "5.2.7",
+    "@fontsource/ibm-plex-sans": "5.2.8",
+    "pagefind": "1.5.2"
   },
   "engines": {
     "node": ">=22"

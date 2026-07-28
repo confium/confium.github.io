@@ -1,45 +1,56 @@
-name: Build and deploy site
+name: build_deploy
 
 on:
   push:
-    branches: [main]
+    branches:
+    - main
   pull_request:
+  repository_dispatch:
   workflow_dispatch:
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow one concurrent deployment, skip queued builds on new pushes.
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Configure GitHub Pages
-        if: github.event_name == 'push'
-        id: pages
-        uses: actions/configure-pages@v5
-
-      - name: Fetch vendor sources
+      - name: Fetch software documentation sources
         run: npm run fetch-sources
 
-      - name: Build site
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Build with Astro
+        # prebuild clones the software docs sources into vendor/;
+        # postbuild runs Pagefind indexing. Output: './dist'.
         run: npm run build
+        env:
+          CI: true
 
       - name: Quality gate — no OIML references
         run: |
@@ -58,18 +69,18 @@ jobs:
           fi
 
       - name: Upload artifact
-        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: ./dist
 
+  # Deployment job
   deploy:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    needs: build
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
