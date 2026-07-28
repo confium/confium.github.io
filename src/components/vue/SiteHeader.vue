@@ -9,6 +9,7 @@ const nav = [
   { label: 'Docs', href: '/docs/' },
   { label: 'Concepts', href: '/concepts/' },
   { label: 'Use Cases', href: '/use-cases/' },
+  { label: 'Plugins', href: '/plugins/' },
   { label: 'Specs', href: '/specs/' },
   { label: 'Software', href: '/software/' },
   { label: 'Blog', href: '/blog/' },
