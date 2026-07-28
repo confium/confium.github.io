@@ -1,0 +1,306 @@
+---
+title: FAQ
+description: Common questions about Confium — what it is, how it works, when to use it, and the limits of threshold-native trust infrastructure.
+audience: developer
+order: 13
+---
+
+import MerkleTreeDiagram from '../../components/brand/MerkleTreeDiagram.astro';
+import CompositeSignatureDiagram from '../../components/brand/CompositeSignatureDiagram.astro';
+
+# FAQ
+
+Frequently-asked questions about Confium. If your question isn't
+here, ask on [GitHub Discussions](https://github.com/confium/confium/discussions).
+
+## What Confium is
+
+### What is Confium, in one sentence?
+
+Confium is an open-source framework for multi-stakeholder threshold
+cryptography — the same relationship a TLS library has to transport
+security, applied to threshold signing.
+
+### Is Confium a CA?
+
+No. Conventional CAs issue certificates; Confium is the
+cryptographic framework that organizations use to build *their
+own* CA-like infrastructure with custom certificate formats,
+custom delegation rules, and multi-stakeholder governance. See
+[Sovereign PKI](./mode3-sovereign-pki.mdx).
+
+### Is Confium an HSM?
+
+No. HSMs store keys in tamper-resistant hardware. Confium
+integrates with HSMs via PKCS#11 — each signer can store its
+share in an HSM, combining HSM-grade physical security with
+Confium's threshold governance. See [comparison](./comparison.mdx).
+
+### Is Confium a crypto library like OpenSSL?
+
+No. Crypto libraries provide primitives (hash, sign, encrypt).
+Confium loads those primitives via plugins and orchestrates them
+across multiple parties for threshold operations. See [the TLS
+analogy](/concepts/tls-analogy/).
+
+### Is Confium a blockchain?
+
+No. Confium is cryptographic infrastructure that *can* be used in
+blockchain settings (custody, multi-sig replacement), but the
+framework itself is not a blockchain and does not have a native
+token.
+
+## How it works
+
+### How is the signing key split?
+
+Using Shamir secret sharing (or the equivalent in the chosen
+threshold protocol — FROST, CMP20, GG18). The secret exists at
+key generation time as a polynomial of degree T−1 over the
+scalar field; each party gets a share that's a point on the
+polynomial. Any T shares uniquely determine the polynomial (and
+thus the secret); fewer than T shares reveal nothing. See
+[threshold crypto 101](/concepts/threshold-crypto-101/).
+
+### How do parties sign without reconstructing the secret?
+
+The threshold protocols (FROST, CMP20, GG18) operate "in the
+exponent". Each party computes a partial signature using their
+share; the partial signatures combine into the final signature
+without ever reconstructing the secret. See [threshold crypto
+101](/concepts/threshold-crypto-101/) for the math.
+
+### What does a transparency log entry look like?
+
+An entry is a leaf in a Merkle tree. The leaf hash is
+`SHA-256(0x01 || entry_hash)`; internal nodes are
+`SHA-256(0x02 || left_child || right_child)`. The root commits
+to the entire set of entries.
+
+<MerkleTreeDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+### How do composite signatures work?
+
+A composite signature bundles the artifacts of multiple algorithms
+(Ed25519, ECDSA-P256, ML-DSA-65) into one value. Verification
+succeeds only when every component verifies against the same
+message.
+
+<CompositeSignatureDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+See [composite signatures concept](/concepts/composite-signatures/)
+and [PQ migration docs](./pq-migration.mdx).
+
+## Performance
+
+### How fast is threshold signing?
+
+Per-signer signing latency on a single core (FROST-P256):
+
+- Sign share: ~5ms
+- Verify share: ~2ms
+- Aggregate (coordinator): ~1ms per share
+
+End-to-end session latency (3-of-5 quorum):
+
+- Same region: ~30ms over QUIC
+- Cross-region: ~150ms typical
+- Async (offline-tolerant): bounded by signer availability, not throughput
+
+Verification: zero overhead vs single-key signing because the
+output is a standard signature.
+
+### What's the throughput?
+
+A single coordinator handles ~1000 signing sessions per second on
+commodity hardware. Higher throughput: deploy multiple coordinators
+behind a load balancer.
+
+### How much bandwidth does signing use?
+
+Per signing session, ~10KB over the wire (protocol messages
+included). At 1000 sessions/sec, that's ~10 MB/s — well within
+standard network capacity.
+
+## Security
+
+### What happens if a signer is compromised?
+
+The compromised signer's share is exposed, but the share alone is
+useless. An attacker still needs T−1 more shares to forge a
+signature. Trigger an immediate re-share via `confium-tc-reshare`
+to invalidate the compromised share.
+
+### What if the coordinator is compromised?
+
+The coordinator is an *availability* service, not a *secrecy*
+service. Compromising it can denial-of-service the deployment
+but cannot produce unauthorized signatures — the math requires
+T party contributions. Replace the coordinator from a clean
+image; resume sessions from the transparency log.
+
+### What if a transparency log operator goes rogue?
+
+Witness gossip detects divergence via consistency proofs. Switch
+to a backup log; replay recent tree heads. OTS anchors in Bitcoin
+preserve irrefutable history. See
+[transparency logs concept](/concepts/transparency-logs/).
+
+### What about side-channel attacks?
+
+Constant-time scalar arithmetic via the `p256` crate's `CtOption`
+API. `SecureBytes` zeroizes on drop. Every crate carries
+`#![forbid(unsafe_code)]`. For highest assurance, store shares
+in hardware enclaves (HSM, TPM, OpenPGP card).
+
+### What happens if FROST is broken?
+
+Switch to CMP20 or GG18 (or vice versa). The protocol layer is
+pluggable; the rest of the system (coordinator, transparency
+log, audit) is unaffected.
+
+## Deployment
+
+### What's the minimum viable deployment?
+
+For development / testing:
+
+- 1 coordinator process
+- 3 signer processes (for 2-of-3 threshold)
+- 1 transparency log process
+- 1 witness (optional in dev)
+
+For production, multiply by redundancy requirements per region.
+
+### Can I run Confium on Kubernetes?
+
+Yes. The coordinator, signers, and transparency log are stateless
+or stateful services that run as standard K8s deployments. Helm
+charts are community-contributed.
+
+### What hardware do I need?
+
+Commodity hardware. No HSMs required (though supported via
+PKCS#11). For a 1000-session/sec deployment:
+
+- Coordinator: 4 vCPU, 8GB RAM
+- Each signer: 1 vCPU, 1GB RAM
+- Transparency log: 4 vCPU, 32GB RAM (depends on log size and
+  backend — LMDB vs RocksDB)
+
+### How do I back up threshold shares?
+
+Each share is encrypted at rest. Back up the encrypted share file
+via your standard key-management infrastructure (HSM, KMS,
+password manager). Never back up unencrypted shares. If you lose
+a share, use `confium-tc-reshare` to re-share.
+
+## Standards
+
+### Which RFCs does Confium implement?
+
+- **RFC 3161**: Time-Stamp Protocol
+- **RFC 4998**: Evidence Record Syntax (long-term archival)
+- **RFC 5652**: Cryptographic Message Syntax (CMS)
+- **RFC 6962**: Certificate Transparency (Merkle transparency log)
+- **RFC 8017**: PKCS#1 (RSA)
+- **FIPS 204**: ML-DSA (Module-Lattice-Based Digital Signature
+  Algorithm)
+
+### Which standards does Confium integrate with?
+
+- **PKCS#11 v3.0**: HSM / token interface
+- **OpenSSL 3.0 provider**: provider API for OpenSSL consumers
+- **JCE (Java Cryptography Extension)**: Java provider
+- **TLS 1.3**: signature callback for TLS libraries
+- **X.509**: certificate and CSR types
+- **XMLDSig**: XML signature + Exclusive C14N
+
+### What post-quantum algorithms does Confium support?
+
+- **ML-DSA-65** (FIPS 204): via composite signatures + caller-
+  supplied verifier callback today; native support when a
+  suitable pure-Rust verifier crate is published.
+- **ML-KEM** (FIPS 203, formerly Kyber): threshold KEM research
+  in `confium-tc-ml-kem`.
+- **SLH-DSA** (FIPS 205, formerly SPHINCS+): planned.
+
+## Comparison
+
+### How does Confium compare to Sigstore?
+
+Different scope. Sigstore is great for code signing in CI/CD
+pipelines (keyless, OIDC-identity-based, with a Rekor
+transparency log). Confium is a general threshold cryptography
+framework. Use Sigstore for container / package signing in CI;
+use Confium for multi-stakeholder quorum, threshold key escrow,
+or institutional PKI. See [comparison](./comparison.mdx).
+
+### How does Confium compare to a cloud KMS?
+
+Cloud KMS (AWS, GCP, Azure) holds your keys for you. Single-cloud,
+single-provider trust model. Confium runs wherever you run it —
+no vendor lock-in. See [comparison](./comparison.mdx).
+
+### How does Confium compare to commercial threshold solutions
+(Unbound, Sepior, etc.)?
+
+Same core cryptography (threshold protocols), different
+deployment model. Confium is open-source BSD-2-Clause; commercial
+solutions are proprietary with subscription pricing. Confium
+supports standards-only adapters; commercial solutions have their
+own APIs. See [comparison](./comparison.mdx).
+
+## Limits
+
+### What can't Confium do?
+
+- **Cannot replace all single-key PKI.** Some use cases (Let's
+  Encrypt TLS certs) don't need threshold governance.
+- **Cannot verify signatures faster than the underlying primitive.**
+  Verification is the same as single-key; signing has ~5× overhead.
+- **Cannot operate without the coordinator.** The coordinator is
+  required for orchestrating sessions. Make it redundant for HA.
+- **Cannot retroactively threshold existing keys.** You need a
+  key ceremony to split a new key; existing keys must be re-issued.
+
+### When shouldn't I use Confium?
+
+- **Public web TLS.** Let's Encrypt is fine.
+- **Single-stakeholder, low-stakes signing.** If one party owns
+  the key and the cost of compromise is low, threshold adds
+  complexity without value.
+- **Highest-assurance physical security.** HSMs at FIPS 140-2
+  Level 3+ have physical tamper-evidence that software-only
+  Confium doesn't replace. Use HSMs alongside Confium if you need
+  this.
+
+## Project
+
+### Who develops Confium?
+
+The Confium project collective. Funded by NLnet NGI Zero PET
+(European Commission) and Mozilla MOSS. Developed in the open at
+[github.com/confium](https://github.com/confium).
+
+### Is there a CLA?
+
+No. BSD-2-Clause contributions are accepted on the standard
+license terms; contributors retain copyright.
+
+### What's the release cadence?
+
+Patch releases as needed. Minor releases monthly. Major releases
+as the architecture evolves. Releases are automated via
+release-plz from conventional commits.
+
+### How do I cite Confium in academic work?
+
+See [the evaluators guide](/audiences/evaluators/) for BibTeX.
+
+## See also
+
+- [Architecture](./architecture.mdx)
+- [Security model](./security-model.mdx)
+- [Comparison](./comparison.mdx)
+- [Troubleshooting](./troubleshooting.mdx)

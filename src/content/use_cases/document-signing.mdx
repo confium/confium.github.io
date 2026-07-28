@@ -1,0 +1,114 @@
+---
+title: Document signing
+description: Multi-stakeholder signing of contracts, PDFs, Office documents, and legal records. No single party holds the signing key.
+mode: 3
+order: 7
+---
+
+import CompositeSignatureDiagram from '../../components/brand/CompositeSignatureDiagram.astro';
+
+# Document signing
+
+A signed document — a contract, a regulatory filing, a clinical trial
+report — typically requires multiple stakeholders to approve. Today
+this is done by having one party collect signatures serially, or by
+trusting a single signing service. Confium replaces both with
+threshold signing: T-of-N authorized signers must co-sign; the
+output is a single standard signature any verifier accepts.
+
+## When to choose this use case
+
+- You sign contracts that require sign-off from multiple parties
+  (legal, finance, operations).
+- You sign regulated documents where the signing authority itself
+  should be multi-stakeholder (e.g. FDA drug approvals, SEC filings).
+- You want a single verifiable signature on the final document
+  rather than N separate signature blocks.
+- You need long-term verifiability (decades) and want post-quantum
+  readiness from day one.
+
+## How Confium solves it
+
+Each signing party runs a Confium signer process. The document
+hash is submitted to the coordinator; the coordinator collects
+partial signatures from the participating parties; the final
+signature is published alongside the document. The signing key
+never exists on any single machine.
+
+The output signature is a standard CMS / PAdES / XAdES signature.
+Existing PDF readers, Office applications, and signature verifiers
+accept it without modification.
+
+<CompositeSignatureDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+For long-lived documents (regulatory filings, contracts in force for
+decades), the composite signature includes both classical (Ed25519,
+ECDSA-P256) and post-quantum (ML-DSA-65) components. Today both
+verify; tomorrow, when classical algorithms fall to quantum attack,
+the PQ component still holds.
+
+## Architecture
+
+```
+[ Document authoring tool ]
+            |
+            | submit document hash
+            v
+[ Confium coordinator ] --------------------+
+   |             |             |             |
+   v             v             v             v
+[Legal]      [Finance]     [Operations]   [Compliance]
+   |             |             |             |
+   +------ T-of-N signers -------------------+
+            |
+            v
+   [ Composite signature + inclusion proof ]
+            |
+            v
+   [ Transparency log anchors the event ]
+```
+
+## Code sketch
+
+Submit a document for threshold signing:
+
+```ruby
+doc_hash = Confium::Transparency.compute_artifact_hash(
+  artifact_type: :document,
+  content: File.read("contract.pdf"),
+)
+
+session = Confium::TC::Session.start(
+  coordinator: "docs.internal:7443",
+  message: doc_hash,
+  algorithm: "ECDSA-P256",
+  quorum: { t: 3, n: 5 },
+)
+
+# Authorized signers join asynchronously and submit partial sigs.
+# Coordinator combines when quorum reached.
+
+final_sig = session.wait_for_completion
+puts "signature: #{final_sig[:der].size} bytes (DER)"
+```
+
+The resulting signature embeds into the PDF via standard PAdES,
+into Office docs via XAdES, or attaches as a detached CMS
+SignedData.
+
+## Compliance hooks
+
+- **eIDAS** (EU): Qualified Electronic Signatures require P-384+;
+  Confium's jurisdictional policy enforces this at the engine level.
+- **21 CFR Part 11** (FDA, pharma): Audit trail with signer identity
+  + attributes; transparency log anchors each signing event.
+- **HIPAA**: Audit trail of every signing operation (§164.312(b)).
+- **ESIGN Act** (US): Electronic signature validity; Confium's
+  signatures meet the technical requirements.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Composite signatures concept](/concepts/composite-signatures/)
+- [PQ migration use case](/use-cases/pq-migration/)
+- [Compliance officer guide](/audiences/compliance/)
