@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/astro/PageHero.astro';
+
+const scope = [
+  { in: 'yes', label: 'Confium engine source (confium/confium)' },
+  { in: 'yes', label: 'Ruby bindings (confium/confium-ruby)' },
+  { in: 'yes', label: 'WASM verifier (confium/confium/crates/confium-wasm)' },
+  { in: 'yes', label: 'Public website (confium/confium.github.io)' },
+  { in: 'yes', label: 'Published packages on crates.io, RubyGems, npm' },
+  { in: 'no', label: 'Third-party plugins (report to the plugin author)' },
+  { in: 'no', label: 'Issues in your application code that consumes Confium' },
+  { in: 'no', label: 'Vulnerabilities in dependencies (report upstream)' },
+];
+---
+
+<BaseLayout title="Security" description="Confium security disclosure policy. How to report vulnerabilities, what's in scope, expected response times.">
+  <PageHero
+    eyebrow="Security"
+    title="Responsible disclosure"
+    description="Confium takes security reports seriously. This page describes what's in scope, how to report, and the response you can expect."
+  />
+
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 prose prose-lg dark:prose-invert">
+    <h2>How to report</h2>
+    <p>
+      Email <a href="mailto:security@confium.org">security@confium.org</a>
+      with:
+    </p>
+    <ol>
+      <li>A description of the issue and its impact.</li>
+      <li>Steps to reproduce (code, commands, or test case).</li>
+      <li>Affected versions, if known.</li>
+      <li>Any suggested mitigations.</li>
+    </ol>
+    <p>
+      For sensitive material, encrypt to the project PGP key
+      (<a href="https://keys.openpgp.org/search/security@confium.org">keys.openpgp.org</a>).
+    </p>
+
+    <h2>In scope</h2>
+    <table>
+      <thead>
+        <tr><th>Target</th><th>In scope?</th></tr>
+      </thead>
+      <tbody>
+        {scope.map((row) => (
+          <tr>
+            <td>{row.label}</td>
+            <td>
+              <span class={row.in === 'yes' ? 'text-brand-700 dark:text-brand-300 font-medium' : 'text-muted-foreground'}>
+                {row.in === 'yes' ? 'Yes' : 'No'}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+
+    <h2>Response timeline</h2>
+    <ul>
+      <li><strong>Within 48 hours</strong>: acknowledge receipt of the report.</li>
+      <li><strong>Within 7 days</strong>: initial assessment and severity rating.</li>
+      <li><strong>Within 90 days</strong>: coordinated disclosure timeline agreed with the reporter.</li>
+      <li><strong>At disclosure</strong>: publish a security advisory on GitHub Security Advisories and on this page; publish patched releases.</li>
+    </ul>
+
+    <h2>What we ask of reporters</h2>
+    <ul>
+      <li>Give us reasonable time to fix before public disclosure.</li>
+      <li>Do not access or modify data that isn't yours.</li>
+      <li>Do not perform DoS, mass scanning, or social engineering against the project or its maintainers.</li>
+    </ul>
+
+    <h2>Bounty</h2>
+    <p>
+      Confium does not run a paid bounty program at this time.
+      Significant contributions to security will be acknowledged
+      publicly (with the reporter's consent) in the release notes.
+    </p>
+
+    <h2>Past advisories</h2>
+    <p>
+      Published advisories appear on
+      <a href="https://github.com/confium/confium/security/advisories">GitHub Security Advisories</a>.
+    </p>
+  </div>
+</BaseLayout>

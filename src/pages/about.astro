@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/astro/PageHero.astro';
+import Reveal from '../components/vue/Reveal.vue';
+
+const funding = [
+  { name: 'NLnet NGI Zero PET', role: 'Core framework engineering', href: 'https://nlnet.nl/project/Confium/' },
+  { name: 'Mozilla MOSS', role: 'Open-source sustainability', href: 'https://www.mozilla.org/moss/' },
+];
+---
+
+<BaseLayout title="About" description="Confium is an open-source framework for multi-stakeholder threshold cryptography. BSD-2-Clause licensed, funded by NLnet NGI Zero PET and Mozilla MOSS.">
+  <PageHero
+    eyebrow="About"
+    title="Multi-stakeholder trust, by design"
+    description="Confium is an open-source framework for threshold-native cryptography. No single party holds the signing key; a configurable quorum must participate."
+  />
+
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 prose prose-lg dark:prose-invert">
+    <Reveal>
+      <h2>What Confium is</h2>
+      <p>
+        Confium is a configurable engine for threshold cryptography.
+        Organizations deploy it with their own parameters — their
+        own algorithms, their own quorum policy, their own
+        certificate formats. The same relationship a TLS library has
+        to transport security.
+      </p>
+      <p>
+        Three deployment modes ship today: peer-to-peer threshold
+        crypto, PKI drop-in (PKCS#11 / OpenSSL / JCE adapters), and
+        Sovereign PKI for institutional certificate infrastructure.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Governance</h2>
+      <p>
+        Confium is developed in the open at
+        <a href="https://github.com/confium">github.com/confium</a>.
+        All changes land via pull request on <code>main</code>;
+        releases are automated via release-plz and published to
+        crates.io, RubyGems, and npm.
+      </p>
+      <p>
+        The project operates under the BSD-2-Clause license. There
+        is no contributor license agreement (CLA); contributors
+        retain their copyright while granting the standard
+        distribution rights under the BSD-2-Clause terms.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Contributor ladder</h2>
+      <ul>
+        <li><strong>Contributor</strong> — anyone who opens a PR.</li>
+        <li><strong>Maintainer</strong> — review rights on one or more crates. Earned by sustained review and design contributions.</li>
+        <li><strong>Release manager</strong> — runs the release workflow, cuts release tags. Two-factor required.</li>
+      </ul>
+      <p>
+        See <a href="/contribute/">Contribute</a> for how to get
+        started.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Funding</h2>
+      <p>
+        Confium is funded by:
+      </p>
+      <ul>
+        {funding.map((f) => (
+          <li>
+            <a href={f.href}>{f.name}</a> — {f.role}
+          </li>
+        ))}
+      </ul>
+      <p>
+        Funders do not direct the technical roadmap. Their support
+        underwrites the engineering effort; project decisions remain
+        with the maintainer collective.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Code of conduct</h2>
+      <p>
+        The project follows the
+        <a href="https://contributor-covenant.org/version/2/1/code_of_conduct/">Contributor Covenant 2.1</a>.
+        Reports go to <code>conduct@confium.org</code>.
+      </p>
+    </Reveal>
+
+    <Reveal>
+      <h2>Reference deployments</h2>
+      <p>
+        Confium's Mode 3 (Sovereign PKI) is the right shape for
+        institutional certificate infrastructure: calibration
+        registries, pharma regulator approvals, academic
+        accreditation, supply-chain provenance, treaty organizations,
+        and the CNML (certified measuring instruments list).
+      </p>
+      <p>
+        CNML is one reference deployment among many — it appears
+        here as an example, not as the project's defining use case.
+      </p>
+    </Reveal>
+  </div>
+</BaseLayout>

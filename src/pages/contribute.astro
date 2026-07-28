@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PageHero from '../components/astro/PageHero.astro';
+---
+
+<BaseLayout title="Contribute" description="Confium is developed in the open. Pull requests, issues, design feedback, and security reports all welcome.">
+  <PageHero
+    eyebrow="Contribute"
+    title="Get involved"
+    description="Confium is developed in the open. Pull requests, issues, design feedback, and security reports all welcome."
+  />
+
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 prose prose-lg dark:prose-invert">
+    <h2>Ways to contribute</h2>
+
+    <h3>Code</h3>
+    <p>
+      Pick an issue labeled
+      <a href="https://github.com/confium/confium/labels/good%20first%20issue"><code>good first issue</code></a>
+      from the Rust workspace, or browse the Ruby gem's
+      <a href="https://github.com/confium/confium-ruby/issues">open issues</a>.
+    </p>
+    <p>
+      All code changes go through pull request. Use
+      <a href="https://www.conventionalcommits.org/">conventional commits</a>
+      — they drive automated version bumps via release-plz.
+    </p>
+
+    <h3>Docs</h3>
+    <p>
+      Documentation lives in three places:
+    </p>
+    <ul>
+      <li><strong>Rust workspace</strong> — <code>confium/docs/</code> (MDX).</li>
+      <li><strong>Ruby gem</strong> — <code>confium-ruby/docs/</code> (MDX).</li>
+      <li><strong>This website</strong> — <code>confium.github.io/src/content/</code> (MDX).</li>
+    </ul>
+    <p>
+      Docs use MDX with YAML frontmatter. Cross-link liberally.
+    </p>
+
+    <h3>Design feedback</h3>
+    <p>
+      Substantive design discussions belong in
+      <a href="https://github.com/confium/specs">the specs repository</a>
+      as a proposal AsciiDoc file. Smaller conversations can start as
+      GitHub Discussions or issues.
+    </p>
+
+    <h3>Security reports</h3>
+    <p>
+      See <a href="/security/">Security</a> for the disclosure policy.
+      Do not open public issues for security problems.
+    </p>
+
+    <h2>Development workflow</h2>
+    <p>
+      The Rust workspace uses Nix flakes for reproducibility:
+    </p>
+    <pre><code>nix develop
+cargo test --workspace</code></pre>
+    <p>
+      Without Nix, install Rust stable 1.85+ via
+      <a href="https://rustup.rs/">rustup</a> and run
+      <code>cargo test --workspace</code> directly.
+    </p>
+
+    <h2>Pre-commit hooks</h2>
+    <p>
+      Two options, both mirror CI:
+    </p>
+    <pre><code># Framework version
+pre-commit install
+
+# Shell version (no dependencies)
+cp .githooks/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit</code></pre>
+
+    <h2>Code of conduct</h2>
+    <p>
+      The project follows the
+      <a href="https://contributor-covenant.org/version/2/1/code_of_conduct/">Contributor Covenant 2.1</a>.
+      Reports go to <code>conduct@confium.org</code>.
+    </p>
+  </div>
+</BaseLayout>
