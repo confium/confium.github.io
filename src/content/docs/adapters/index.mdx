@@ -1,0 +1,43 @@
+---
+title: Adapters
+description: "Deep dives into the Mode 2 adapters — PKCS#11, OpenSSL 3.0, JCE, TLS 1.3. How they wire existing consumers into Confium."
+audience: developer
+order: 31
+---
+
+# Adapters
+
+Confium's Mode 2 (PKI Drop-in) works through adapter libraries.
+Each adapter speaks a standard API (PKCS#11, OpenSSL provider,
+JCE, TLS callback) and routes operations into Confium threshold
+sessions. This section documents each adapter in depth.
+
+## Choose your adapter
+
+| Existing consumer | Use this adapter |
+| --- | --- |
+| OpenSSL 1.x with `ENGINE_pkcs11` | [PKCS#11](./pkcs11/) |
+| OpenSSL 3.0 native (modern nginx, curl) | [OpenSSL provider](./openssl/) |
+| Java application via JCA | [JCE provider](./jce/) |
+| TLS library with signature callback | [TLS signer](./tls/) |
+| Anything else speaking PKCS#11 | [PKCS#11](./pkcs11/) |
+
+## The adapter pattern
+
+Every adapter follows the same shape:
+
+1. The existing consumer makes a standard API call (e.g. `C_Sign()`,
+   `EVP_PKEY_sign()`, `Signature.sign()`).
+2. The adapter translates the call into a Confium operation
+   (sign, verify, key derivation, etc.).
+3. The adapter dispatches to a coordinator.
+4. The coordinator runs a threshold session.
+5. The result returns through the standard API — the consumer
+   never knows it went through Confium.
+
+## See also
+
+- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
+- [Tooling overview](../tooling/)
+- [Web TLS use case](/use-cases/web-tls/)
+- [Architecture](../architecture/)

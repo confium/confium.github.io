@@ -1,0 +1,178 @@
+---
+title: PKCS#11 adapter
+description: "PKCS#11 v3.0 adapter — expose Confium as a virtual HSM to OpenSSL, Java, nginx, and custom consumers."
+audience: developer
+order: 32
+---
+
+import AdapterPatternDiagram from '../../../components/brand/AdapterPatternDiagram.astro';
+
+# PKCS#11 adapter
+
+PKCS#11 (also called Cryptoki) is the standard API for HSMs and
+smartcards. RSA Labs defined it in the 1990s; OASIS standardized
+v3.0 in 2015. Almost every enterprise PKI consumer speaks it:
+OpenSSL's `ENGINE_pkcs11`, Java's `SunPKCS11` provider, nginx's
+`ssl_engine pkcs11`, plus countless bespoke enterprise applications.
+
+Confium's PKCS#11 adapter exposes the engine as a virtual HSM.
+Consumers connect to a local socket and see what looks like a
+normal PKCS#11 token; every operation dispatches into a Confium
+threshold session.
+
+## When to choose PKCS#11
+
+- Your consumer already speaks PKCS#11.
+- You're migrating off a physical HSM and want to preserve the
+  consumer-side configuration.
+- You need to support multiple consumers (nginx, Java, OpenSSL)
+  with a single signing backend.
+
+<AdapterPatternDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+## Architecture
+
+The adapter is a process (`confium-pkcs11-server`) that exposes
+a local socket. Consumers load the `confium-pkcs11.so` shared
+library, which proxies calls to the server process. The server
+process talks to the coordinator.
+
+This indirection lets you:
+
+- Run the server as a separate user from the consumer.
+- Run multiple consumers off one server instance.
+- Replace the server without restarting the consumer.
+
+## Slot and token model
+
+PKCS#11 models a hardware device with slots, and each slot holds a
+token. A token has objects (certificates, public keys, private keys).
+
+Confium maps this as:
+
+| PKCS#11 concept | Confium equivalent |
+| --- | --- |
+| Slot | One threshold signing identity |
+| Token | The set of objects associated with that identity |
+| Token label | The signer's human-readable ID |
+| Object: certificate | The signing cert (issued by Confium Mode 3) |
+| Object: public key | The threshold key's public part |
+| Object: private key | A reference that triggers a threshold session |
+
+Multiple slots let one PKCS#11 server expose multiple signing
+identities (e.g. one for code signing, one for TLS, one for
+document signing).
+
+## PIN model
+
+PKCS#11 traditionally protects private keys with a PIN. Confium's
+adapter accepts a PIN per slot but does not use it to decrypt the
+key — the key doesn't exist on the local machine. The PIN is
+forwarded to the coordinator as an additional authentication
+factor (the coordinator validates it against the configured signer
+PIN).
+
+This means losing the local PIN file does not compromise the
+threshold key. The PIN is an *operational* secret, not a
+cryptographic one.
+
+## Configuration
+
+`/etc/confium/pkcs11.toml`:
+
+```toml
+[server]
+socket_path = "/var/run/confium/pkcs11.sock"
+coordinator = "tcp://coordinator.internal:7443"
+
+[slot.0]
+token_label = "tls-signing"
+signer_id = "tls-1"
+pin_env = "CONFium_TLS_PIN"
+
+[slot.1]
+token_label = "code-signing"
+signer_id = "code-1"
+pin_env = "CONFium_CODE_PIN"
+
+[slot.2]
+token_label = "doc-signing"
+signer_id = "docs-1"
+pin_env = "CONFium_DOCS_PIN"
+```
+
+## Consumer-side setup
+
+### OpenSSL ENGINE_pkcs11 (legacy OpenSSL 1.x)
+
+```
+# openssl.cnf
+openssl_conf = openssl_init
+
+[openssl_init]
+engines = engine_section
+
+[engine_section]
+pkcs11 = pkcs11_section
+
+[pkcs11_section]
+engine_id = pkcs11
+dynamic_path = /usr/lib/engines-1.1/pkcs11.so
+MODULE_PATH = /usr/local/lib/confium-pkcs11.so
+init = 0
+```
+
+### Java SunPKCS11
+
+```java
+import java.security.*;
+
+Provider p = Security.getProvider("SunPKCS11");
+p = p.configure("""
+name = Confium
+library = /usr/local/lib/libconfium-pkcs11.so
+slotListIndex = 0
+""");
+Security.addProvider(p);
+
+// Now standard java.security APIs work
+Signature sig = Signature.getInstance("Ed25519");
+sig.initSign(privateKeyFromKeystore);
+```
+
+### nginx
+
+```nginx
+ssl_engine pkcs11;
+
+ssl_certificate "pkcs11:token=tls-signing;object=server-cert";
+ssl_certificate_key "pkcs11:token=tls-signing;object=server-key";
+
+# PIN from environment variable (must match pin_env in confium.toml)
+env CONFium_TLS_PIN;
+```
+
+## Performance
+
+| Operation | Latency |
+| --- | --- |
+| Local co-located coordinator | +5ms vs OpenSSL native |
+| In-region threshold session | ~30ms |
+| Cross-region async session | bounded by signer availability |
+
+## Limitations
+
+- The adapter does not expose key generation. Threshold keys are
+  generated via a Confium key ceremony, not via `C_GenerateKeyPair`.
+- The adapter does not expose symmetric operations. PKCS#11 has
+  cipher operations, but Confium is threshold-focused — those
+  operations use your OS's native crypto.
+- Some legacy PKCS#11 attributes (e.g. `CKA_ALWAYS_AUTHENTICATE`)
+  are accepted but no-ops.
+
+## See also
+
+- [Adapters overview](./)
+- [OpenSSL provider](./openssl/) — alternative for OpenSSL 3.0 native.
+- [confium-pkcs11-server binary](../tooling/pkcs11-server/)
+- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
