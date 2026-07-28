@@ -1,0 +1,163 @@
+---
+title: "confiumd"
+description: "The confiumd daemon — long-running JSON-RPC service for signing sessions, transparency log interaction, and PKI operations."
+audience: developer
+order: 23
+---
+
+import DaemonArchitectureDiagram from '../../../components/brand/DaemonArchitectureDiagram.astro';
+
+# `confiumd`
+
+`confiumd` is the long-running service binary. It exposes a JSON-RPC
+API over Unix socket or TCP for signing sessions, transparency log
+interaction, PKI operations, and threshold session orchestration.
+
+## Install
+
+```sh
+cargo install confium-daemon --locked
+```
+
+Or from the workspace:
+
+```sh
+cargo install --path crates/confium-daemon --locked
+```
+
+Verify:
+
+```sh
+$ confiumd --version
+confiumd 0.3.0
+```
+
+## Architecture
+
+<DaemonArchitectureDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The daemon binds to a Unix socket or TCP port and serves JSON-RPC
+requests. Each request is dispatched to the appropriate subsystem
+(coordinator, transparency log, PKI validator, etc.).
+
+## Synopsis
+
+```sh
+confiumd --listen <scheme>://<addr> [--config <path>] [--log-level <level>]
+```
+
+## Examples
+
+```sh
+# Bind to a Unix socket
+confiumd --listen unix:///var/run/confium.sock
+
+# Bind to a TCP port
+confiumd --listen tcp://127.0.0.1:7878
+
+# Bind to all interfaces (use behind a reverse proxy)
+confiumd --listen tcp://0.0.0.0:7878
+
+# Custom config + debug logging
+confiumd --listen unix:///var/run/confium.sock --config /etc/confium/daemon.toml --log-level debug
+```
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--listen <scheme>://<addr>` | Listen address. `unix://` or `tcp://`. |
+| `--config <path>` | Configuration file path. Default: `/etc/confium/daemon.toml`. |
+| `--log-level <level>` | Log level. Default: `info`. |
+| `--plugins-dir <path>` | Override the plugin directory. |
+| `--version` | Print version and exit. |
+
+## Configuration file
+
+`/etc/confium/daemon.toml`:
+
+```toml
+[server]
+listen = "unix:///var/run/confium.sock"
+log_level = "info"
+
+[plugins]
+dir = "/var/lib/confium/plugins"
+
+[coordinator]
+transparency_log = "log:tcp://log.internal:7444"
+default_quorum = { threshold = 3, total = 5 }
+
+[policy]
+fips_mode = false
+allowed_signature_algorithms = ["ECDSA-P256", "Ed25519"]
+```
+
+## JSON-RPC API
+
+The daemon speaks standard JSON-RPC 2.0. Example session:
+
+```sh
+$ echo '{"jsonrpc":"2.0","method":"version","id":1}' | nc -U /var/run/confium.sock
+{"jsonrpc":"2.0","result":{"engine":"0.3.0","daemon":"0.3.0"},"id":1}
+```
+
+Common methods:
+
+| Method | Description |
+| --- | --- |
+| `version` | Engine + daemon versions. |
+| `list_plugins` | Installed plugins (same as `confium list`). |
+| `load_plugin` | Load a plugin by name. |
+| `sign` | Start a signing session. |
+| `verify` | Verify a signature. |
+| `transparency_append` | Append an entry to the log. |
+| `transparency_inclusion_proof` | Get an inclusion proof. |
+
+The full API is documented in the
+[Rust workspace](https://github.com/confium/confium/tree/main/crates/confium-daemon).
+
+## Running as a service
+
+### systemd
+
+`/etc/systemd/system/confiumd.service`:
+
+```ini
+[Unit]
+Description=Confium daemon
+After=network.target
+
+[Service]
+Type=simple
+User=confium
+Group=confium
+ExecStart=/usr/local/bin/confiumd --listen unix:///var/run/confium.sock
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+```sh
+sudo systemctl enable --now confiumd
+```
+
+### Docker
+
+```dockerfile
+FROM debian:stable-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY confiumd /usr/local/bin/
+RUN useradd -m confium
+USER confium
+EXPOSE 7878
+ENTRYPOINT ["confiumd", "--listen", "tcp://0.0.0.0:7878"]
+```
+
+## See also
+
+- [CLI overview](./)
+- [`confium-publish`](./publish/)
+- [Operator guide](/audiences/operators/) — production deployment.
+- [Architecture](/docs/architecture/)

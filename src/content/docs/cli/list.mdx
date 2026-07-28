@@ -1,0 +1,64 @@
+---
+title: "confium list"
+description: "List installed Confium plugins, optionally filtered by interface or algorithm."
+audience: developer
+order: 18
+---
+
+# `confium list`
+
+## Synopsis
+
+```sh
+confium list [--interface <name>] [--algorithm <name>] [--json]
+```
+
+## Description
+
+Lists all installed plugins in the local store. Output includes
+the plugin name, version, publisher, and the interfaces it
+implements.
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--interface <name>` | Filter by interface (e.g. `hash`, `signature`, `kem`). |
+| `--algorithm <name>` | Filter by algorithm (e.g. `Ed25519`, `ML-DSA-65`). |
+| `--json` | Emit machine-readable JSON. |
+
+## Examples
+
+```sh
+# List everything
+confium list
+
+# Filter by interface
+confium list --interface signature
+
+# JSON output for scripting
+confium list --json | jq '.[] | .name'
+```
+
+## Sample output
+
+```
+NAME        VERSION  PUBLISHER        INTERFACES
+botan       3.0.0    Ribose Open      hash cipher aead signature kem
+openssl     3.0.8    OpenSSL Project  hash cipher aead signature
+ring        0.17.8   BoringSSL        hash aead signature
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Plugin store unreadable. |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium info`](./info/)
+- [`confium install`](./install/)
+- [CLI overview](./)

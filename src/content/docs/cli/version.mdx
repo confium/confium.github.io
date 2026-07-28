@@ -1,0 +1,46 @@
+---
+title: "confium version"
+description: "Print the version of the confium CLI and the underlying engine."
+audience: developer
+order: 14
+---
+
+# `confium version`
+
+## Synopsis
+
+```sh
+confium version
+```
+
+## Description
+
+Prints the version of the `confium` CLI binary. The version is
+sourced from `CARGO_PKG_VERSION` at compile time, so it matches the
+crate version on crates.io.
+
+A future release will also report the version of the underlying
+`confium-core` engine when the engine exposes a public version
+accessor.
+
+## Options
+
+`confium version` takes no options.
+
+## Examples
+
+```sh
+$ confium version
+confium 0.3.0
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+
+## See also
+
+- [CLI overview](./)
+- [`confium config`](./config/)

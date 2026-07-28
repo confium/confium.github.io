@@ -1,0 +1,93 @@
+---
+title: "confium config"
+description: "Read and write local Confium configuration."
+audience: developer
+order: 22
+---
+
+# `confium config`
+
+## Synopsis
+
+```sh
+confium config get <key>
+confium config set <key> <value>
+confium config unset <key>
+confium config list [--json]
+```
+
+## Description
+
+Reads and writes the local configuration file
+(`~/.confium/config.toml`). The configuration controls registry
+URL, plugin directory, log level, and other CLI defaults.
+
+## Subcommands
+
+### `config get`
+
+Reads a single configuration value.
+
+```sh
+$ confium config get registry.url
+https://registry.confium.org
+```
+
+### `config set`
+
+Writes a configuration value.
+
+```sh
+confium config set log.level debug
+```
+
+### `config unset`
+
+Removes a configuration key.
+
+```sh
+confium config unset plugins.dir
+```
+
+### `config list`
+
+Prints the entire configuration as TOML (or JSON with `--json`).
+
+## Configuration keys
+
+| Key | Default | Description |
+| --- | --- | --- |
+| `registry.url` | `https://registry.confium.org` | Plugin registry URL. |
+| `registry.cache_dir` | `~/.confium/cache` | Local cache for downloaded artifacts. |
+| `plugins.dir` | `~/.confium/plugins` | Installed plugin directory. |
+| `log.level` | `info` | Log level: `trace`, `debug`, `info`, `warn`, `error`. |
+| `log.file` | `~/.confium/confium.log` | Log file path. |
+
+## Examples
+
+```sh
+# Use a custom registry
+confium config set registry.url https://registry.internal
+
+# Increase verbosity
+confium config set log.level debug
+
+# Move plugin directory
+confium config set plugins.dir /opt/confium/plugins
+
+# Dump configuration as JSON
+confium config list --json
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Key not found (for `get` / `unset`). |
+| 2 | Usage error. |
+
+## See also
+
+- [CLI overview](./)
+- [`confium trust`](./trust/)
