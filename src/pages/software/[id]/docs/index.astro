@@ -1,15 +1,14 @@
 ---
 import { getCollection } from 'astro:content';
-import DocsLayout from '../../../layouts/DocsLayout.astro';
-import PageHero from '../../../components/astro/PageHero.astro';
+import DocsLayout from '@layouts/DocsLayout.astro';
+import PageHero from '@components/astro/PageHero.astro';
 
 export async function getStaticPaths() {
   const software = await getCollection('software');
   const paths = [];
   for (const sw of software) {
     if (!sw.data.docs_repo) continue;
-    // Look up vendor docs for this software id.
-    const vendorId = sw.id; // 'rust', 'ruby'
+    const vendorId = sw.id;
     const docs = (await getCollection('softwareDocs')).filter((d) => {
       return d.id.includes(`/${vendorId}/docs/`);
     });
@@ -26,7 +25,7 @@ const { sw, docs } = Astro.props;
 const sidebar = docs
   .sort((a, b) => a.id.localeCompare(b.id))
   .map((d) => {
-    const slug = d.id.split(`/${sw.id}/docs/`)[1]?.replace(/\.mdx?$/, '') || '';
+    const slug = d.id.split(`/${sw.id}/docs/`)[1]?.replace(/\.(md|mdx)$/, '') || '';
     return {
       label: d.data.title ?? slug,
       href: `/software/${sw.id}/docs/${slug}/`,

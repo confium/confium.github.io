@@ -5,7 +5,6 @@ mode: 2
 order: 1
 ---
 
-import Prose from '../../components/astro/Prose.astro';
 
 # Web TLS signing
 
