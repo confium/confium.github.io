@@ -1,0 +1,104 @@
+---
+title: Composite signatures
+description: Hybrid PQ/classical signatures for post-quantum migration. Ed25519 + ECDSA-P256 + ML-DSA-65 verified as one.
+audience: developer
+order: 3
+---
+
+# Composite signatures
+
+A composite signature is a single signature value that contains
+the artifacts of multiple algorithms. Verification succeeds only
+when every component verifies. The point: defense-in-depth and
+post-quantum migration without a flag day.
+
+## The shape of a composite
+
+A composite signature is a list of `(algorithm_oid, signature_bytes)`
+pairs, optionally with public key references and metadata:
+
+```
+CompositeSignature {
+  components: [
+    { algorithm: "1.3.101.112", signature: <64 bytes Ed25519> },
+    { algorithm: "1.2.840.10045.4.3.2", signature: <DER ECDSA-P256> },
+    { algorithm: "2.16.840.1.101.3.4.3.18", signature: <ML-DSA-65> },
+  ],
+}
+```
+
+## Why this exists
+
+Two real-world pressures:
+
+### 1. Post-quantum migration
+
+Every signature algorithm in production today (RSA, ECDSA, Ed25519)
+is breakable by a sufficiently large quantum computer running
+Shor's algorithm. The new post-quantum signatures (ML-DSA, SLH-DSA)
+replace them — but they're new, less analyzed, and not yet trusted
+to stand alone.
+
+A composite of (classical + PQ) lets you migrate without choosing:
+
+- **Legacy verifiers** that don't understand composites verify the
+  classical component and accept.
+- **Upgraded verifiers** check both components. If the classical
+  algorithm is later broken, the PQ component still holds. If the
+  PQ algorithm has a flaw, the classical component still holds.
+
+### 2. Defense in depth
+
+Even setting PQ aside, multiple algorithms mean no single algorithm
+break compromises your signatures. An attacker would need to break
+both Ed25519 *and* ECDSA-P256 *and* ML-DSA-65 in the same window.
+
+## Verification semantics
+
+A composite is **valid** if and only if:
+
+1. Every component signature verifies against the message.
+2. Every required component algorithm is registered with the
+   verifier.
+3. The component set matches the deployment's policy (e.g. the
+   jurisdictional policy may require ≥1 classical + ≥1 PQ algorithm).
+
+A missing verifier for any component is a hard failure, not a
+soft-accept. The composite layer never silently accepts on the
+subset of components it can verify.
+
+## Caller-supplied PQ verifiers
+
+For PQ algorithms without a bundled pure-Rust verifier, Confium
+accepts a caller-supplied verifier callback:
+
+```ruby
+sig = Confium::Composite::Signature.new(components)
+result = sig.verify(message, {
+  "ML-DSA-65" => ->(pk, msg, sig) { my_ml_dsa_verifier.verify(pk, msg, sig) },
+})
+```
+
+The deployment wires its preferred ML-DSA implementation (Botan
+plugin, in-process Rust crate, FFI to a C library, or a remote
+verification service) into the composite verifier.
+
+## Migration timeline
+
+1. **Phase 1**: Sign with classical only. Verifiers accept.
+2. **Phase 2**: Sign with composite (classical + PQ). Legacy
+   verifiers still accept via the classical component. Upgraded
+   verifiers check both.
+3. **Phase 3**: Tighten policy — require PQ component. Stop
+   emitting classical-only signatures.
+4. **Phase 4**: Classical component can be removed for new
+   signatures.
+
+The whole migration is a software upgrade. No new HSM. No
+re-issuance of every certificate.
+
+## See also
+
+- [PQ migration docs](/docs/pq-migration/)
+- [Use case: PQ migration](/use-cases/pq-migration/)
+- [Glossary: Composite signature](/glossary/#composite-signature)

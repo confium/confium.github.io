@@ -1,0 +1,110 @@
+---
+title: Threshold cryptography 101
+description: T-of-N intuition, Shamir secret sharing explained from first principles, why threshold beats single-key. No prior knowledge required.
+audience: developer
+order: 1
+---
+
+# Threshold cryptography 101
+
+Threshold cryptography is the math that lets a group of N parties
+share the ability to sign or decrypt, such that any subset of T
+parties can act jointly but no smaller subset can. The two
+non-negotiable properties:
+
+- **T parties** can produce a valid signature.
+- **Any T−1 parties** learn *nothing* useful about the secret.
+
+This is the foundation of every Confium deployment.
+
+## Why threshold?
+
+Consider a conventional CA: a single private key signs certificates.
+If that key is compromised, every certificate it ever issued is
+called into question. DigiNotar, Symantec, and Let's Encrypt each
+had incidents where exactly this happened.
+
+Now consider T-of-N = 3-of-5. The signing key is split into 5
+shares; any 3 of them can produce a signature indistinguishable
+from one signed by a single key. To forge a signature, an attacker
+must compromise 3 of the 5 parties *simultaneously* — far harder
+than compromising one.
+
+## Shamir secret sharing
+
+The simplest threshold scheme is Shamir's, from 1979. The secret
+lives at the constant term of a polynomial of degree T−1 over a
+finite field. To split the secret:
+
+1. Pick a polynomial `f(x) = a₀ + a₁x + a₂x² + ... + aₜ₋₁xᵗ⁻¹`
+   where `a₀` is the secret and `a₁, ..., aₜ₋₁` are random.
+2. Each party gets a share `(i, f(i))` for `i = 1, 2, ..., N`.
+3. To recover: any T shares uniquely determine the polynomial
+   (Lagrange interpolation), so you can compute `f(0) = a₀`.
+
+Fewer than T shares reveal **nothing** — any value of `a₀` is
+consistent with T−1 points.
+
+## Why this is the right primitive
+
+- **No key ceremony for the joint secret**: the secret exists only
+  at the moment of generation, then it's gone. The shares are
+  distributed; the secret never appears in any single machine's
+  memory again.
+- **Tunable security threshold**: 2-of-3 for moderate assurance,
+  3-of-5 for high assurance, 5-of-9 for the most paranoid
+  deployments.
+- **Composable with attribute policies**: not just "any T of N
+  parties" but "T of N parties from K distinct groups" — see
+  [attribute-based threshold](./attribute-based-threshold/).
+
+## Protocols above Shamir
+
+Shamir gets you **key generation** and **secret recovery**. But
+you rarely want to actually recover the secret — every recovery
+puts it in one machine's memory, defeating the purpose.
+
+Real threshold signing protocols (FROST, CMP20, GG18) let T parties
+**co-sign a message** without ever reconstructing the secret. Each
+party contributes a partial signature; the partial signatures
+combine into the final signature. The secret stays split.
+
+- **FROST** (FROST-ed25519, FROST-P256) — two-round signing,
+  efficient, well-studied.
+- **CMP20** — three-round ECDSA threshold, stronger security
+  model against malicious coordinators.
+- **GG18** — older but widely deployed, multiplicative sharing.
+
+Confium ships real implementations of all three.
+
+## Lagrange interpolation
+
+The math that combines T shares. Given T points `(x₁, y₁), ...,
+(x_T, y_T)`, the unique polynomial of degree T−1 passing through
+them is:
+
+```
+f(x) = Σᵢ yᵢ · ℓᵢ(x)
+```
+
+where `ℓᵢ(x) = Πⱼ≠ᵢ (x − xⱼ) / (xᵢ − xⱼ)` is the Lagrange basis
+polynomial. Setting `x = 0` recovers the secret.
+
+For practical signing, the same idea runs in the exponent: each
+party's partial signature is `σᵢ = f(i) · H(m)` and the final
+signature is `σ = Σᵢ ℓᵢ(0) · σᵢ`.
+
+## Try it
+
+The Confium homepage has an interactive [quorum playground](/)
+where you can drag T and N sliders and watch the threshold property
+in action.
+
+For a worked code example, see the [threshold signing walkthrough](https://github.com/confium/confium/tree/main/docs/examples/threshold-signing.mdx)
+in the Rust workspace docs.
+
+## See also
+
+- [TLS analogy](./tls-analogy/)
+- [Attribute-based threshold](./attribute-based-threshold/)
+- [Architecture](/docs/architecture/)
