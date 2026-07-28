@@ -1,0 +1,109 @@
+---
+title: "Introducing Confium"
+description: "Confium is an open-source framework for multi-stakeholder threshold cryptography. Three deployment modes, post-quantum-ready, transparent by design."
+date: 2026-07-28
+author: Confium Project
+tags: [announcement, framework]
+category: announcement
+order: 1
+---
+
+# Introducing Confium
+
+Public Key Infrastructure has a structural weakness: every
+Certificate Authority holds a single private key that can sign
+anything. If that key is compromised, every certificate the CA
+ever issued is called into question.
+
+We've watched this happen repeatedly. DigiNotar in 2011.
+Symantec from 2015 to 2018. Let's Encrypt revocation events in
+2020. Each incident cost millions of dollars, disrupted services,
+and eroded public trust.
+
+**Confium is our answer.** An open-source framework for
+multi-stakeholder threshold cryptography. No single party holds
+the signing key; a configurable quorum must participate. The same
+relationship a TLS library has to transport security — a
+configurable framework organizations deploy with their own
+parameters.
+
+## What ships today
+
+The Confium Rust workspace contains 43 crates organized into
+three deployment modes:
+
+- **Mode 1 — Peer-to-Peer TC**. Nodes do threshold cryptography
+  directly. Hours to value. For MPC, distributed custody, BFT
+  consensus.
+- **Mode 2 — PKI Drop-in**. Drop-in adapters for PKCS#11 v3.0,
+  OpenSSL 3.0, JCE, and TLS 1.3. Existing PKI consumers keep
+  working — every signature now requires a threshold quorum.
+- **Mode 3 — Sovereign PKI**. Custom certificate formats for
+  institutions where no single party can be trusted. Sovereign
+  over formats, delegation rules, archival cadence, quorum
+  composition.
+
+All three modes share the same engine, the same threshold
+protocols (FROST, CMP20, GG18, threshold ElGamal), the same
+transparency log, the same coordinator. What differs is the
+integration surface.
+
+## Real cryptography
+
+Every threshold protocol crate ships real cryptography, not
+stubs:
+
+- `confium-tc-frost-ed25519` — real FROST-ed25519 with the full
+  three-round signing protocol.
+- `confium-tc-frost-p256` — real P-256 Shamir secret sharing and
+  ECDSA threshold signing.
+- `confium-tc-cmp20` — real CMP20 threshold ECDSA.
+- `confium-tc-gg18` — real GG18 threshold ECDSA.
+- `confium-tc-elgamal-p256` — real threshold ElGamal-P256.
+
+The composite signature crate (`confium-composite`) supports
+hybrid classical + PQ signatures — Ed25519 + ECDSA-P256 +
+ML-DSA-65 verified as one. Post-quantum migration as a software
+upgrade, not an HSM replacement.
+
+## Three bindings
+
+- **Ruby gem** (`gem install confium`) — native extension built
+  via magnus + rb-sys at install time. Full Confium API surface.
+- **Rust workspace** (`cargo add confium-core`) — the source of
+  truth.
+- **WASM verifier** (`npm install @confium/confium-wasm`) —
+  browser / Node.js verifier for composite signatures,
+  transparency proofs, X.509 / CMS parsing.
+
+## Transparency by design
+
+Every signing operation can anchor into an append-only Merkle
+transparency log implementing RFC 6962 semantics. Inclusion
+proofs let any verifier independently confirm a certificate is
+in the log. Consistency proofs make split-view attacks
+detectable. OpenTimestamps anchoring in Bitcoin provides an
+irrefutable "what head existed at time T" record.
+
+Three defenses against split-view attacks, layered:
+
+1. Consistency proofs on every new tree head.
+2. Witness gossip between coordinators (default: hourly).
+3. OTS anchoring of tree heads in Bitcoin (default: daily).
+
+## Open source, sustainably funded
+
+BSD-2-Clause licensed. Funded by [NLnet NGI Zero PET](https://nlnet.nl/project/Confium/)
+and [Mozilla MOSS](https://www.mozilla.org/moss/). Funders do
+not direct the technical roadmap.
+
+## What to read next
+
+- [Architecture](/docs/architecture/) — understand the engine.
+- [Three modes](/docs/three-modes/) — pick a deployment shape.
+- [Threshold crypto 101](/concepts/threshold-crypto-101/) — if
+  you're new to threshold cryptography.
+- [Sovereign PKI launch post](/blog/sovereign-pki-launch/) — the
+  Mode 3 deep dive.
+
+Welcome to Confium.
