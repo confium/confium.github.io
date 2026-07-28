@@ -172,7 +172,7 @@ const deployments = [
 
   <!-- ===================== Three modes ===================== -->
   <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">Three deployment modes</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
@@ -220,7 +220,7 @@ const deployments = [
 
   <!-- ===================== Find your path ===================== -->
   <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">For you</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
@@ -266,9 +266,53 @@ const deployments = [
     </div>
   </section>
 
+  <!-- ===================== How it works ===================== -->
+  <section class="border-b border-line">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
+      <Reveal>
+        <p class="mono-label">How it works</p>
+        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
+          From key generation to audited signature
+        </h2>
+        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
+          A signing operation passes through five stages. The secret
+          is created once, split into N shares, and never reconstructed.
+          Every signing event anchors into a transparency log for
+          audit.
+        </p>
+      </Reveal>
+
+      <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+        {[
+          { step: '1', title: 'Generate', body: 'Distributed key generation ceremony. Secret exists once, then is split.', color: 'accent' },
+          { step: '2', title: 'Distribute', body: 'Shares go to N parties. No single party holds the full key.', color: 'accent2' },
+          { step: '3', title: 'Sign', body: 'T-of-N quorum co-signs without reconstructing the secret.', color: 'accent' },
+          { step: '4', title: 'Refresh', body: 'Shares re-randomize periodically. Compromise windows shrink.', color: 'gold-ink' },
+          { step: '5', title: 'Anchor', body: 'Event lands in transparency log. Public, auditable, immutable.', color: 'accent2' },
+        ].map((s, i) => (
+          <Reveal delayMs={i * 60}>
+            <div class="card card-hover h-full p-5 relative">
+              <span class={`absolute -top-3 left-5 w-7 h-7 rounded-full bg-${s.color} text-white font-mono text-xs font-bold flex items-center justify-center shadow-card`}>
+                {s.step}
+              </span>
+              <h3 class="mt-3 font-sans text-base font-bold">{s.title}</h3>
+              <p class="mt-1.5 text-xs leading-relaxed text-muted">{s.body}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      <p class="mt-6 text-sm">
+        <a href="/concepts/threshold-crypto-101/" class="font-semibold text-accent hover:text-accent-deep">
+          Read the threshold crypto primer →
+        </a>
+      </p>
+    </div>
+  </section>
+
   <!-- ===================== What makes Confium different ===================== -->
   <section class="band-blue border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">What makes Confium different</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
@@ -295,7 +339,7 @@ const deployments = [
 
   <!-- ===================== What Confium is NOT ===================== -->
   <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">What Confium is not</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
@@ -342,7 +386,7 @@ const deployments = [
 
   <!-- ===================== Quorum playground ===================== -->
   <section class="band-teal border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <div class="grid lg:grid-cols-[1fr_1.1fr] gap-12 items-start">
         <Reveal>
           <p class="mono-label">Interactive</p>
@@ -392,7 +436,7 @@ const deployments = [
 
   <!-- ===================== Install ===================== -->
   <section id="install" class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">Get started</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
@@ -446,7 +490,7 @@ const deployments = [
 
   <!-- ===================== Reference deployments ===================== -->
   <section class="band-gold border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">Reference deployments</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
@@ -478,7 +522,7 @@ const deployments = [
 
   <!-- ===================== Latest from the blog ===================== -->
   <section class="border-b border-line bg-surface-dim">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <div class="flex items-baseline justify-between flex-wrap gap-3">
           <div>
@@ -513,9 +557,44 @@ const deployments = [
     </div>
   </section>
 
+  <!-- ===================== Final CTA ===================== -->
+  <section class="border-b border-line hero-gradient relative overflow-hidden text-white">
+    <div class="hero-grid absolute inset-0 opacity-50" aria-hidden="true"></div>
+    <div class="relative mx-auto w-full max-w-4xl px-6 py-16 md:py-24 text-center">
+      <Reveal>
+        <h2 class="font-sans text-3xl md:text-5xl font-bold tracking-tight text-balance">
+          Start building with Confium today
+        </h2>
+        <p class="mt-5 max-w-2xl mx-auto text-lg leading-relaxed text-white/85">
+          Install in your language of choice, verify your first
+          signature in five minutes, and join the open-source
+          threshold-trust collective.
+        </p>
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <a href="/docs/getting-started/" class="btn btn-white">
+            Get started
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="#install" class="btn btn-outline-white">
+            Install
+          </a>
+          <a href="https://github.com/confium" class="btn btn-outline-white" aria-label="GitHub">
+            <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15.08-.1.36-.45.08-1.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.28.67-.1 1.02-.08 1.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0016 8c0-4.42-3.58-8-8-8z" />
+            </svg>
+            GitHub
+          </a>
+        </div>
+        <p class="mt-6 text-xs font-mono text-white/60 tracking-wider">
+          BSD-2-Clause · No licensing fees · Sponsored by NLnet + Mozilla MOSS
+        </p>
+      </Reveal>
+    </div>
+  </section>
+
   <!-- ===================== Sponsorship ===================== -->
   <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-16 md:py-20">
+    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
       <Reveal>
         <p class="mono-label">Sponsored by</p>
         <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
