@@ -1,0 +1,40 @@
+{
+  "name": "confium.github.io",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public website for Confium — open-source threshold-native trust infrastructure.",
+  "scripts": {
+    "dev": "astro dev",
+    "predev": "node scripts/prepare-dev-search.mjs",
+    "build": "astro build",
+    "prebuild": "node scripts/fetch-sources.mjs",
+    "postbuild": "pagefind --site dist",
+    "preview": "astro preview",
+    "fetch-sources": "node scripts/fetch-sources.mjs",
+    "check:links": "lychee --base dist --no-progress './dist/**/*.html'",
+    "check:links:external": "lychee --base dist --no-progress './dist/**/*.html'",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "astro": "^7.1.1",
+    "@astrojs/vue": "^7.0.1",
+    "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/rss": "^4.0.19",
+    "@astrojs/mdx": "^4.0.0",
+    "vue": "^3.5.40",
+    "tailwindcss": "^4.3.3",
+    "@tailwindcss/vite": "^4.3.3",
+    "@tailwindcss/typography": "^0.5.20",
+    "pagefind": "^1.5.2",
+    "@fontsource/ibm-plex-sans": "^5.0.0",
+    "@fontsource/ibm-plex-mono": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "lychee": "^0.20.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

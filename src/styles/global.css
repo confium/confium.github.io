@@ -1,0 +1,122 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Confium brand palette — warm amber/bronze, modernized from the
+ * original Jekyll theme. Surfaces are warm off-white / warm
+ * near-black (not zinc) for cross-mode consistency. */
+
+@theme {
+  --color-brand: #d97706;
+  --color-brand-50: #fffbeb;
+  --color-brand-100: #fef3c7;
+  --color-brand-200: #fde68a;
+  --color-brand-300: #fcd34d;
+  --color-brand-400: #fbbf24;
+  --color-brand-500: #f59e0b;
+  --color-brand-600: #d97706;
+  --color-brand-700: #b45309;
+  --color-brand-800: #92400e;
+  --color-brand-900: #78350f;
+
+  --color-accent: #92400e;
+  --color-accent-light: #b45309;
+  --color-accent-dark: #632807;
+
+  --color-surface-light: #fafaf7;
+  --color-surface-dark: #0f0e0c;
+  --color-ink: #1a1714;
+  --color-ink-muted: #5c5249;
+  --color-line-light: #e7e2d8;
+  --color-line-dark: #2a2520;
+
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Monaco, Consolas,
+    "Liberation Mono", monospace;
+
+  --shadow-card: 0 1px 3px 0 rgba(15, 14, 12, 0.05),
+    0 1px 2px 0 rgba(15, 14, 12, 0.03);
+  --shadow-lift: 0 4px 6px -1px rgba(15, 14, 12, 0.08),
+    0 2px 4px -2px rgba(15, 14, 12, 0.04);
+}
+
+:root {
+  --bg: var(--color-surface-light);
+  --fg: var(--color-ink);
+  --fg-muted: var(--color-ink-muted);
+  --accent: var(--color-brand-700);
+  --line: var(--color-line-light);
+  --card-bg: #ffffff;
+}
+
+.dark {
+  --bg: var(--color-surface-dark);
+  --fg: #f5f0e6;
+  --fg-muted: #a89e91;
+  --accent: var(--color-brand-500);
+  --line: var(--color-line-dark);
+  --card-bg: #1a1714;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-muted-foreground: var(--fg-muted);
+  --color-accent: var(--accent);
+  --color-line: var(--line);
+  --color-card: var(--card-bg);
+}
+
+html {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-ink);
+}
+
+.dark ::selection {
+  background: var(--color-brand-800);
+  color: #f5f0e6;
+}
+
+/* Prose tweaks for adoc/markdown content rendered through @tailwindcss/typography */
+.prose :where(h2, h3, h4):not(:where(.not-prose *)) {
+  scroll-margin-top: 5rem;
+}
+
+.prose :where(code):not(:where(.not-prose *)) {
+  font-weight: 500;
+}
+
+.prose :where(a):not(:where(.not-prose *)) {
+  color: var(--accent);
+  text-decoration-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  text-underline-offset: 2px;
+}
+
+.prose :where(a:hover):not(:where(.not-prose *)) {
+  text-decoration-color: var(--accent);
+}
+
+/* Shiki dual-theme */
+:root {
+  --shiki-light: inherit;
+  --shiki-dark: inherit;
+}
+
+.dark .astro-code,
+.dark .astro-code span {
+  color: var(--shiki-dark) !important;
+  background-color: var(--shiki-dark-bg) !important;
+}
