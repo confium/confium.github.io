@@ -1,0 +1,31 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="404" description="Page not found.">
+  <section class="pt-32 pb-16">
+    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
+      <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-4">
+        Threshold not reached
+      </p>
+      <h1 class="text-7xl font-bold tracking-tight">404</h1>
+      <p class="mt-4 text-lg text-muted-foreground">
+        Three of five parties could not find this page.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-3 justify-center">
+        <a
+          href="/"
+          class="inline-flex items-center px-5 py-2.5 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium"
+        >
+          Back home
+        </a>
+        <a
+          href="/docs/"
+          class="inline-flex items-center px-5 py-2.5 rounded-md border border-line font-medium"
+        >
+          Browse docs
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
