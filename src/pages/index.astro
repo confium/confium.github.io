@@ -25,7 +25,7 @@ const differences = [
   },
   {
     title: 'Open-source, BSD-2-Clause',
-    body: 'No per-transaction fees, no proprietary protocol. Funded by NLnet NGI Zero PET and Mozilla MOSS.',
+    body: 'No per-transaction fees, no proprietary protocol. Sponsored by NLnet NGI Zero PET and Mozilla MOSS.',
   },
 ];
 
@@ -255,23 +255,91 @@ const deployments = [
     </div>
   </section>
 
-  <!-- Funding band -->
-  <section class="py-12 border-t border-line">
+  <!-- Sponsorship -->
+  <section class="py-20 border-t border-line bg-gradient-to-b from-brand-50/40 to-transparent dark:from-brand-900/10">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-6 text-center">
-        Funded by
-      </p>
-      <div class="flex flex-wrap justify-center items-center gap-8">
-        <a href="https://nlnet.nl/project/Confium/" class="opacity-70 hover:opacity-100 transition-opacity">
-          <img src="/assets/nlnet-banner.svg" alt="NLnet" class="h-10" />
-        </a>
-        <a href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/" class="opacity-70 hover:opacity-100 transition-opacity">
-          <img src="/assets/ngi-zeropet-banner.svg" alt="NGI Zero PET" class="h-10" />
-        </a>
-        <a href="https://www.mozilla.org/moss/" class="opacity-70 hover:opacity-100 transition-opacity">
-          <span class="font-mono text-sm">Mozilla MOSS</span>
-        </a>
-      </div>
+      <Reveal>
+        <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-3 text-center">
+          Sponsored by
+        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight text-center mb-4">
+          Sponsored by the European Commission<br class="hidden sm:inline" /> through NGI Zero PET
+        </h2>
+        <p class="mt-4 text-lg text-muted-foreground max-w-3xl mx-auto text-center">
+          Confium is developed in the open with the support of the
+          <a href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/" class="text-brand-700 dark:text-brand-300 hover:underline font-medium">NGI Zero PET</a>
+          program — a European Commission initiative administered by
+          <a href="https://nlnet.nl/" class="text-brand-700 dark:text-brand-300 hover:underline font-medium">NLnet</a>
+          that funds open-source work strengthening the privacy and trust
+          properties of the internet. Additional support from
+          <a href="https://www.mozilla.org/moss/" class="text-brand-700 dark:text-brand-300 hover:underline font-medium">Mozilla MOSS</a>.
+        </p>
+      </Reveal>
+
+      <Reveal delayMs={100}>
+        <div class="mt-12 grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+          <a
+            href="https://nlnet.nl/project/Confium/"
+            class="group rounded-lg border border-line bg-card p-6 flex flex-col items-center text-center hover:border-brand-400 hover:shadow-card transition-all"
+          >
+            <div class="h-20 flex items-center justify-center mb-4">
+              <img
+                src="/assets/nlnet-banner.svg"
+                alt="NLnet"
+                class="max-h-20 w-auto"
+                loading="lazy"
+              />
+            </div>
+            <p class="text-sm font-semibold">NLnet</p>
+            <p class="mt-1 text-xs text-muted-foreground">Project sponsor</p>
+            <p class="mt-3 text-xs text-brand-700 dark:text-brand-300 group-hover:underline">
+              nlnet.nl/project/Confium →
+            </p>
+          </a>
+
+          <a
+            href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/"
+            class="group rounded-lg border border-line bg-card p-6 flex flex-col items-center text-center hover:border-brand-400 hover:shadow-card transition-all"
+          >
+            <div class="h-20 flex items-center justify-center mb-4">
+              <img
+                src="/assets/ngi-zeropet-banner.svg"
+                alt="NGI Zero PET"
+                class="max-h-20 w-auto"
+                loading="lazy"
+              />
+            </div>
+            <p class="text-sm font-semibold">NGI Zero PET</p>
+            <p class="mt-1 text-xs text-muted-foreground">European Commission · Next Generation Internet</p>
+            <p class="mt-3 text-xs text-brand-700 dark:text-brand-300 group-hover:underline">
+              ngi.eu/ngi-zero-pet →
+            </p>
+          </a>
+
+          <a
+            href="https://www.mozilla.org/moss/"
+            class="group rounded-lg border border-line bg-card p-6 flex flex-col items-center text-center hover:border-brand-400 hover:shadow-card transition-all"
+          >
+            <div class="h-20 flex items-center justify-center mb-4 px-4">
+              <span class="font-bold text-2xl tracking-tight">mozilla</span>
+            </div>
+            <p class="text-sm font-semibold">Mozilla MOSS</p>
+            <p class="mt-1 text-xs text-muted-foreground">Open Source Support</p>
+            <p class="mt-3 text-xs text-brand-700 dark:text-brand-300 group-hover:underline">
+              mozilla.org/moss →
+            </p>
+          </a>
+        </div>
+      </Reveal>
+
+      <Reveal delayMs={200}>
+        <p class="mt-12 text-center text-xs text-muted-foreground max-w-2xl mx-auto">
+          Sponsors do not direct the technical direction. Their sponsorship
+          supports the engineering effort; project decisions remain
+          with the maintainer collective.
+          <a href="/funding/" class="text-brand-700 dark:text-brand-300 hover:underline">More about funding →</a>
+        </p>
+      </Reveal>
     </div>
   </section>
 </BaseLayout>
