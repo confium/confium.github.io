@@ -1,20 +1,68 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import HeroDecrypt from '../components/vue/HeroDecrypt.vue';
+import ModeSelector from '../components/vue/ModeSelector.vue';
+import QuorumPlayground from '../components/vue/QuorumPlayground.vue';
+import InstallTabs from '../components/vue/InstallTabs.vue';
+import Reveal from '../components/vue/Reveal.vue';
+
+const differences = [
+  {
+    title: 'Software upgrade, not HSM replacement',
+    body: 'Add ML-DSA-65 alongside Ed25519 via composite signatures. Verifiers that haven\'t upgraded still accept the classical component; verifiers that have have already migrated.',
+  },
+  {
+    title: 'Catches silent certificate fraud',
+    body: 'Every signing operation anchors into an append-only Merkle transparency log (RFC 6962). Split-view attacks are detectable via consistency proofs and witness gossip.',
+  },
+  {
+    title: 'Standards-only — no vendor lock-in',
+    body: 'PKCS#11 v3.0, OpenSSL 3.0 provider, JCE provider, CMS (RFC 5652), X.509. Integrations slot into existing infrastructure.',
+  },
+  {
+    title: 'Globally distributed signers',
+    body: 'The async coordinator handles round-trip latency. Parties don\'t need to be online simultaneously — sessions complete across hours or days.',
+  },
+  {
+    title: 'Open-source, BSD-2-Clause',
+    body: 'No per-transaction fees, no proprietary protocol. Funded by NLnet NGI Zero PET and Mozilla MOSS.',
+  },
+];
+
+const notConfium = [
+  { title: 'Not a crypto library', body: 'Plugins provide algorithms. Confium is the engine that loads, dispatches, and coordinates them.' },
+  { title: 'Not an HSM', body: 'Confium integrates with HSMs via PKCS#11 / TPM. The threshold protocol is software; the secrets stay where you put them.' },
+  { title: 'Not just OpenPGP', body: 'RNP is one consumer. The framework is general — any consumer that speaks PKCS#11, OpenSSL, or JCE works.' },
+];
+
+const deployments = [
+  { name: 'Calibration registries', body: 'BIPM-style metrology chains where measurements must be traceable to a sovereign reference.' },
+  { name: 'Pharma regulator approvals', body: 'Multi-jurisdiction regulatory sign-off on clinical trial data and drug approvals.' },
+  { name: 'Academic accreditation', body: 'Cross-institutional degree and credential verification without a single trusted authority.' },
+  { name: 'Supply-chain provenance', body: 'Manufacturing step attestation anchored in a public transparency log.' },
+  { name: 'Treaty organizations', body: 'Multi-state cooperative instruments requiring concurrent sovereign approval.' },
+  { name: 'CNML', body: 'Certified measuring instruments list — one reference Mode 3 deployment.' },
+];
 ---
 
 <BaseLayout
   title="Confium"
-  description="Threshold-native trust infrastructure for a post-quantum world."
+  description="Threshold-native trust infrastructure for a post-quantum world. A configurable framework organizations deploy with their own parameters."
 >
-  <section class="pt-32 pb-16">
+  <!-- 1. Hero -->
+  <section class="pt-32 pb-20 relative overflow-hidden">
+    <div class="absolute inset-0 -z-10 opacity-30">
+      <div class="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-brand-500/20 blur-3xl"></div>
+      <div class="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-brand-700/20 blur-3xl"></div>
+    </div>
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-4">
-        Under construction
-      </p>
-      <h1 class="text-5xl sm:text-6xl font-bold tracking-tight">
         Threshold-native trust infrastructure
+      </p>
+      <h1 class="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05]">
+        <HeroDecrypt text="Threshold-native trust" client:load />
         <span class="block text-brand-600 dark:text-brand-400 mt-2">
-          for a post-quantum world.
+          <HeroDecrypt text="for a post-quantum world." :interval-ms="45" client:load />
         </span>
       </h1>
       <p class="mt-6 text-xl text-muted-foreground max-w-3xl">
@@ -22,16 +70,16 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         transport security — a configurable framework organizations
         deploy with their own parameters.
       </p>
-
       <div class="mt-8 flex flex-wrap gap-3">
         <a
           href="/docs/architecture/"
           class="inline-flex items-center px-5 py-2.5 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors shadow-card"
         >
           Read the architecture
+          <span class="ml-2" aria-hidden="true">→</span>
         </a>
         <a
-          href="/software/"
+          href="#install"
           class="inline-flex items-center px-5 py-2.5 rounded-md border border-line hover:bg-brand-50/50 dark:hover:bg-brand-900/10 font-medium transition-colors"
         >
           Install
@@ -40,30 +88,189 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </section>
 
+  <!-- 2. Three modes -->
   <section class="py-16 border-t border-line">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-      <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-4">
-        Three deployment modes
+      <Reveal>
+        <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+          Three deployment modes
+        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-2">
+          One engine, three ways to deploy
+        </h2>
+        <p class="text-muted-foreground max-w-3xl">
+          The same primitives serve all three modes. Pick the deployment
+          shape that matches your integration surface.
+        </p>
+      </Reveal>
+      <div class="mt-10">
+        <ModeSelector client:visible />
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. What makes Confium different -->
+  <section class="py-16 border-t border-line bg-card/30">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <Reveal>
+        <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+          What makes Confium different
+        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+          Five properties no single-key PKI gives you
+        </h2>
+      </Reveal>
+      <div class="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {differences.map((d, i) => (
+          <Reveal delayMs={i * 60}>
+            <div class="rounded-lg border border-line bg-card p-6 h-full shadow-card">
+              <h3 class="font-semibold text-lg">{d.title}</h3>
+              <p class="mt-2 text-sm text-muted-foreground">{d.body}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. What Confium is NOT -->
+  <section class="py-16 border-t border-line">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <Reveal>
+        <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+          What Confium is not
+        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+          Avoid these common misclassifications
+        </h2>
+      </Reveal>
+      <div class="mt-10 grid md:grid-cols-3 gap-6">
+        {notConfium.map((n) => (
+          <div class="rounded-lg border border-line bg-card p-6 shadow-card">
+            <div class="flex items-start gap-3">
+              <span class="text-brand-600 dark:text-brand-400 text-xl font-mono">×</span>
+              <div>
+                <h3 class="font-semibold">{n.title}</h3>
+                <p class="mt-1 text-sm text-muted-foreground">{n.body}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Get started -->
+  <section id="install" class="py-16 border-t border-line bg-card/30">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <Reveal>
+        <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+          Get started
+        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+          Install in your language of choice
+        </h2>
+        <p class="mt-2 text-muted-foreground max-w-3xl">
+          Three bindings shipped today. The Rust workspace is the source
+          of truth; Ruby and WASM wrap the same engine.
+        </p>
+      </Reveal>
+      <div class="mt-8 max-w-2xl">
+        <InstallTabs client:visible />
+      </div>
+    </div>
+  </section>
+
+  <!-- 6. Reference deployments -->
+  <section class="py-16 border-t border-line">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <Reveal>
+        <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+          Reference deployments
+        </p>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+          Where Sovereign PKI is already the right shape
+        </h2>
+        <p class="mt-2 text-muted-foreground max-w-3xl">
+          Institutional certificate infrastructure where no single
+          party can be trusted. CNML is one example among many.
+        </p>
+      </Reveal>
+      <div class="mt-10 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {deployments.map((d, i) => (
+          <Reveal delayMs={i * 50}>
+            <div class="rounded-lg border border-line bg-card p-6 h-full">
+              <h3 class="font-semibold text-lg">{d.name}</h3>
+              <p class="mt-2 text-sm text-muted-foreground">{d.body}</p>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. Quorum playground -->
+  <section class="py-16 border-t border-line bg-card/30">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+        <Reveal>
+          <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">
+            Interactive
+          </p>
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight">
+            No single party can sign alone
+          </h2>
+          <p class="mt-4 text-lg text-muted-foreground">
+            Threshold cryptography means a T-of-N quorum must
+            participate before any signature is valid. Try it: drag
+            the sliders and watch what happens when the threshold
+            isn't met.
+          </p>
+          <ul class="mt-6 space-y-2 text-sm text-muted-foreground">
+            <li class="flex gap-2">
+              <span class="text-brand-600 dark:text-brand-400">→</span>
+              <span>The full secret is never reconstructed on any single machine.</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="text-brand-600 dark:text-brand-400">→</span>
+              <span>Compromising any T−1 parties reveals nothing useful.</span>
+            </li>
+            <li class="flex gap-2">
+              <span class="text-brand-600 dark:text-brand-400">→</span>
+              <span>Policies compose: 5-of-9 directors from 3 distinct regions.</span>
+            </li>
+          </ul>
+          <a
+            href="/concepts/threshold-crypto-101/"
+            class="mt-6 inline-flex items-center gap-1 text-brand-700 dark:text-brand-300 font-medium hover:underline"
+          >
+            Read the threshold crypto primer
+            <span aria-hidden="true">→</span>
+          </a>
+        </Reveal>
+        <Reveal delayMs={120}>
+          <QuorumPlayground client:visible />
+        </Reveal>
+      </div>
+    </div>
+  </section>
+
+  <!-- Funding band -->
+  <section class="py-12 border-t border-line">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-6 text-center">
+        Funded by
       </p>
-      <div class="grid md:grid-cols-3 gap-6">
-        <div class="rounded-lg border border-line bg-card p-6 shadow-card">
-          <h3 class="font-semibold text-lg">Peer-to-Peer TC</h3>
-          <p class="mt-2 text-sm text-muted-foreground">
-            Nodes do threshold cryptography directly. Hours to value.
-          </p>
-        </div>
-        <div class="rounded-lg border border-line bg-card p-6 shadow-card">
-          <h3 class="font-semibold text-lg">PKI Drop-in</h3>
-          <p class="mt-2 text-sm text-muted-foreground">
-            Replace single-party keys with threshold keys. No ecosystem changes.
-          </p>
-        </div>
-        <div class="rounded-lg border border-line bg-card p-6 shadow-card">
-          <h3 class="font-semibold text-lg">Sovereign PKI</h3>
-          <p class="mt-2 text-sm text-muted-foreground">
-            Custom certificate formats for institutions. No single trusted party.
-          </p>
-        </div>
+      <div class="flex flex-wrap justify-center items-center gap-8">
+        <a href="https://nlnet.nl/project/Confium/" class="opacity-70 hover:opacity-100 transition-opacity">
+          <img src="/assets/nlnet-banner.svg" alt="NLnet" class="h-10" />
+        </a>
+        <a href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/" class="opacity-70 hover:opacity-100 transition-opacity">
+          <img src="/assets/ngi-zeropet-banner.svg" alt="NGI Zero PET" class="h-10" />
+        </a>
+        <a href="https://www.mozilla.org/moss/" class="opacity-70 hover:opacity-100 transition-opacity">
+          <span class="font-mono text-sm">Mozilla MOSS</span>
+        </a>
       </div>
     </div>
   </section>
