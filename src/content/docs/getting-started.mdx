@@ -1,0 +1,81 @@
+---
+title: Getting started
+description: Quickstart hub for Confium — Ruby, Rust, and WASM install commands and pointers into per-binding docs.
+audience: developer
+order: 10
+---
+
+# Getting started
+
+Three bindings shipped today. Pick your language.
+
+## Ruby
+
+```sh
+gem install confium
+```
+
+The native extension is built at install time via rake-compiler. You
+need Ruby ≥ 3.1 and Rust stable. See the
+[Ruby installation guide](https://github.com/confium/confium-ruby/tree/main/docs/installation.mdx).
+
+Quickstart: build a Sinatra verifier app in ~60 lines →
+[Sinatra verifier quickstart](https://github.com/confium/confium-ruby/tree/main/docs/quickstarts/sinatra-verifier.mdx).
+
+## Rust
+
+```sh
+cargo add confium-core
+```
+
+The cdylib is built as
+`target/{debug,release}/libconfium.{so,dylib,dll}`. See the
+[Rust installation guide](https://github.com/confium/confium/tree/main/docs/installation.mdx).
+
+Quickstart: walk through threshold signing with FROST-P256 →
+[threshold-signing.mdx](https://github.com/confium/confium/tree/main/docs/examples/threshold-signing.mdx).
+
+## WASM
+
+```sh
+npm install @confium/confium-wasm
+```
+
+Browser / Node.js verifier for composite signatures, transparency
+logs, attribute predicates, and X.509 / CMS structures. The WASM
+package is **verifier-only** — it cannot sign.
+
+Quickstart: load a composite signature and verify it in the browser:
+
+```javascript
+import init, { CompositeSignature } from "@confium/confium-wasm";
+await init();
+const sig = CompositeSignature.from_json(jsonString);
+const result = sig.verify(messageBytes, {
+  "Ed25519": "builtin",
+  "ECDSA-P256": "builtin",
+  "ML-DSA-65": (pk, msg, sig) => myExternalVerifier(pk, msg, sig),
+});
+console.log(result.all_verified);
+```
+
+## What to read next
+
+- [Architecture](./architecture.mdx) — understand the engine.
+- [Three modes](./three-modes.mdx) — pick a deployment shape.
+- [Security model](./security-model.mdx) — threat model and defenses.
+- [PQ migration](./pq-migration.mdx) — composite signatures.
+
+## Concepts
+
+If you're new to threshold cryptography:
+
+- [Threshold crypto 101](/concepts/threshold-crypto-101/)
+- [TLS analogy](/concepts/tls-analogy/)
+- [Composite signatures](/concepts/composite-signatures/)
+- [Transparency logs](/concepts/transparency-logs/)
+- [Attribute-based threshold](/concepts/attribute-based-threshold/)
+
+## Specs
+
+For normative specifications, see the [specs repository](https://github.com/confium/specs).
