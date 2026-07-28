@@ -2,11 +2,6 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PageHero from '../components/astro/PageHero.astro';
 import Reveal from '../components/vue/Reveal.vue';
-
-const funding = [
-  { name: 'NLnet NGI Zero PET', role: 'Core framework engineering', href: 'https://nlnet.nl/project/Confium/' },
-  { name: 'Mozilla MOSS', role: 'Open-source sustainability', href: 'https://www.mozilla.org/moss/' },
-];
 ---
 
 <BaseLayout title="About" description="Confium is an open-source framework for multi-stakeholder threshold cryptography. BSD-2-Clause licensed, funded by NLnet NGI Zero PET and Mozilla MOSS.">
@@ -15,6 +10,48 @@ const funding = [
     title="Multi-stakeholder trust, by design"
     description="Confium is an open-source framework for threshold-native cryptography. No single party holds the signing key; a configurable quorum must participate."
   />
+
+  <!-- Sponsorship highlight -->
+  <section class="border-b border-line bg-gradient-to-b from-brand-50/40 to-transparent dark:from-brand-900/10">
+    <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-10">
+      <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-4 text-center">
+        Sponsored by
+      </p>
+      <div class="grid sm:grid-cols-3 gap-4 items-center">
+        <a
+          href="https://nlnet.nl/project/Confium/"
+          class="group rounded-lg border border-line bg-card p-4 flex flex-col items-center text-center hover:border-brand-400 transition-colors"
+        >
+          <div class="h-12 flex items-center justify-center mb-2">
+            <img src="/assets/nlnet-banner.svg" alt="NLnet" class="max-h-12 w-auto" loading="lazy" />
+          </div>
+          <p class="text-xs text-muted-foreground">NLnet · project sponsor</p>
+        </a>
+        <a
+          href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/"
+          class="group rounded-lg border border-line bg-card p-4 flex flex-col items-center text-center hover:border-brand-400 transition-colors"
+        >
+          <div class="h-12 flex items-center justify-center mb-2">
+            <img src="/assets/ngi-zeropet-banner.svg" alt="NGI Zero PET" class="max-h-12 w-auto" loading="lazy" />
+          </div>
+          <p class="text-xs text-muted-foreground">European Commission · NGI</p>
+        </a>
+        <a
+          href="https://www.mozilla.org/moss/"
+          class="group rounded-lg border border-line bg-card p-4 flex flex-col items-center text-center hover:border-brand-400 transition-colors"
+        >
+          <div class="h-12 flex items-center justify-center mb-2">
+            <span class="font-bold text-xl">mozilla</span>
+          </div>
+          <p class="text-xs text-muted-foreground">MOSS · open source support</p>
+        </a>
+      </div>
+      <p class="mt-6 text-center text-xs text-muted-foreground">
+        Funded by the European Commission through NGI Zero PET, administered by NLnet.
+        <a href="/funding/" class="text-brand-700 dark:text-brand-300 hover:underline">More about funding →</a>
+      </p>
+    </div>
+  </section>
 
   <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 py-12 prose prose-lg dark:prose-invert">
     <Reveal>
@@ -64,25 +101,6 @@ const funding = [
     </Reveal>
 
     <Reveal>
-      <h2>Funding</h2>
-      <p>
-        Confium is funded by:
-      </p>
-      <ul>
-        {funding.map((f) => (
-          <li>
-            <a href={f.href}>{f.name}</a> — {f.role}
-          </li>
-        ))}
-      </ul>
-      <p>
-        Funders do not direct the technical direction. Their support
-        underwrites the engineering effort; project decisions remain
-        with the maintainer collective.
-      </p>
-    </Reveal>
-
-    <Reveal>
       <h2>Code of conduct</h2>
       <p>
         The project follows the
@@ -107,3 +125,4 @@ const funding = [
     </Reveal>
   </div>
 </BaseLayout>
+

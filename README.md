@@ -65,8 +65,3 @@ CI gates enforce:
 - **No "TODO" / "coming soon" / "planned" / "milestone" / "roadmap"**
   language in rendered output.
 - **CNML appears as one example among many**, never as the sole reference.
-
-## Legacy
-
-`confium-dot-org/` is a previous Paneron / React site generation
-attempt, retained for archival reference. It is not part of the build.
