@@ -1,0 +1,62 @@
+---
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-line bg-card/50 mt-16">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+      <div class="col-span-2 md:col-span-1">
+        <a href="/" class="font-semibold text-lg">Confium</a>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Threshold-native trust infrastructure for a post-quantum world.
+        </p>
+        <p class="mt-4 text-xs text-muted-foreground">
+          BSD-2-Clause · Funded by NLnet NGI Zero PET + Mozilla MOSS
+        </p>
+      </div>
+
+      <div>
+        <h3 class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">Software</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/software/rust/" class="hover:text-accent">Rust workspace</a></li>
+          <li><a href="/software/ruby/" class="hover:text-accent">Ruby gem</a></li>
+          <li><a href="/software/wasm/" class="hover:text-accent">WASM verifier</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">Project</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/about/" class="hover:text-accent">About</a></li>
+          <li><a href="/contribute/" class="hover:text-accent">Contribute</a></li>
+          <li><a href="/security/" class="hover:text-accent">Security</a></li>
+          <li><a href="/funding/" class="hover:text-accent">Funding</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h3 class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-3">Resources</h3>
+        <ul class="space-y-2 text-sm">
+          <li><a href="/blog/" class="hover:text-accent">Blog</a></li>
+          <li><a href="/specs/" class="hover:text-accent">Specs</a></li>
+          <li><a href="/glossary/" class="hover:text-accent">Glossary</a></li>
+          <li><a href="https://github.com/confium" class="hover:text-accent">GitHub</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="pt-8 border-t border-line flex flex-col md:flex-row justify-between gap-4">
+      <p class="text-xs text-muted-foreground">
+        © {year} Confium contributors. BSD-2-Clause licensed.
+      </p>
+      <div class="flex gap-4 items-center">
+        <a href="https://nlnet.nl/project/Confium/" class="opacity-70 hover:opacity-100">
+          <img src="/assets/nlnet-banner.svg" alt="NLnet" class="h-6" />
+        </a>
+        <a href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/" class="opacity-70 hover:opacity-100">
+          <img src="/assets/ngi-zeropet-banner.svg" alt="NGI Zero PET" class="h-6" />
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

@@ -1,11 +1,36 @@
-node_modules
-tmp
-artifacts
-dist
-_site
-.sass-cache
-.jekyll-cache
-.jekyll-metadata
-vendor
+# dependencies
+node_modules/
+
+# build artifacts
+dist/
+.astro/
+
+# vendored sources (populated by scripts/fetch-sources.mjs at build time)
+vendor/
+
+# legacy site (dead Paneron/React attempt, kept for archival reference)
+confium-dot-org/
+
+# environment
+.env
+.env.local
+.env.*.local
+
+# editor / OS
 .DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# search index (generated at build time)
+public/pagefind/
+
+# legacy Jekyll artifacts
+_site/
+.sass-cache/
+.jekyll-cache/
+.jekyll-metadata
 Gemfile.lock
+tmp/
+artifacts/

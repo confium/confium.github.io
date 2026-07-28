@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Confium"
+  description="Threshold-native trust infrastructure for a post-quantum world."
+>
+  <section class="pt-32 pb-16">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-4">
+        Under construction
+      </p>
+      <h1 class="text-5xl sm:text-6xl font-bold tracking-tight">
+        Threshold-native trust infrastructure
+        <span class="block text-brand-600 dark:text-brand-400 mt-2">
+          for a post-quantum world.
+        </span>
+      </h1>
+      <p class="mt-6 text-xl text-muted-foreground max-w-3xl">
+        Confium is to threshold cryptography what TLS libraries are to
+        transport security — a configurable framework organizations
+        deploy with their own parameters.
+      </p>
+
+      <div class="mt-8 flex flex-wrap gap-3">
+        <a
+          href="/docs/architecture/"
+          class="inline-flex items-center px-5 py-2.5 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium transition-colors shadow-card"
+        >
+          Read the architecture
+        </a>
+        <a
+          href="/software/"
+          class="inline-flex items-center px-5 py-2.5 rounded-md border border-line hover:bg-brand-50/50 dark:hover:bg-brand-900/10 font-medium transition-colors"
+        >
+          Install
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 border-t border-line">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-4">
+        Three deployment modes
+      </p>
+      <div class="grid md:grid-cols-3 gap-6">
+        <div class="rounded-lg border border-line bg-card p-6 shadow-card">
+          <h3 class="font-semibold text-lg">Peer-to-Peer TC</h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Nodes do threshold cryptography directly. Hours to value.
+          </p>
+        </div>
+        <div class="rounded-lg border border-line bg-card p-6 shadow-card">
+          <h3 class="font-semibold text-lg">PKI Drop-in</h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Replace single-party keys with threshold keys. No ecosystem changes.
+          </p>
+        </div>
+        <div class="rounded-lg border border-line bg-card p-6 shadow-card">
+          <h3 class="font-semibold text-lg">Sovereign PKI</h3>
+          <p class="mt-2 text-sm text-muted-foreground">
+            Custom certificate formats for institutions. No single trusted party.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

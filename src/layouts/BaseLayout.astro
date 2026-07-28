@@ -1,0 +1,84 @@
+---
+import '../styles/global.css';
+import '@fontsource/ibm-plex-sans/400.css';
+import '@fontsource/ibm-plex-sans/500.css';
+import '@fontsource/ibm-plex-sans/600.css';
+import '@fontsource/ibm-plex-sans/700.css';
+import '@fontsource/ibm-plex-mono/400.css';
+import '@fontsource/ibm-plex-mono/500.css';
+import SiteHeader from '@components/vue/SiteHeader.vue';
+import SiteSearch from '@components/vue/SiteSearch.vue';
+import SiteFooter from '@components/astro/SiteFooter.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  bodyClass?: string;
+}
+
+const {
+  title,
+  description = 'Threshold-native trust infrastructure for a post-quantum world.',
+  ogImage = '/assets/symbol.svg',
+  bodyClass = '',
+} = Astro.props;
+
+const siteName = 'Confium';
+const fullTitle = title === siteName ? title : `${title} · ${siteName}`;
+const canonical = new URL(Astro.url.pathname, Astro.site);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site)} />
+    <meta property="og:site_name" content={siteName} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
+
+    <script is:inline>
+      // Theme detection — runs before paint to avoid flash.
+      (function () {
+        const stored = localStorage.getItem('confium-theme');
+        const prefersDark =
+          window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = stored || (prefersDark ? 'dark' : 'light');
+        if (theme === 'dark') document.documentElement.classList.add('dark');
+      })();
+    </script>
+  </head>
+  <body class={bodyClass}>
+    <SiteHeader client:load />
+    <SiteSearch client:only="vue" />
+    <main data-pagefind-body>
+      <slot />
+    </main>
+    <SiteFooter />
+
+    <style>
+      body {
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+    </style>
+  </body>
+</html>

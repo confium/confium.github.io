@@ -1,0 +1,17 @@
+---
+import SymbolLogo from './SymbolLogo.astro';
+interface Props {
+  showSymbol?: boolean;
+  class?: string;
+}
+const { showSymbol = true, class: className = '' } = Astro.props;
+---
+
+<span class={`inline-flex items-center gap-2 font-semibold ${className}`}>
+  {showSymbol && (
+    <span class="w-6 h-6 inline-block">
+      <SymbolLogo />
+    </span>
+  )}
+  <span>Confium</span>
+</span>
