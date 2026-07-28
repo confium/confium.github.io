@@ -1,0 +1,249 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+
+interface Term {
+  term: string;
+  anchor: string;
+  def: string;
+  seeAlso?: { label: string; href: string }[];
+}
+
+const terms: Term[] = [
+  {
+    term: 'Attribute-based threshold signing',
+    anchor: 'attribute-based-threshold-signing',
+    def: 'A threshold policy that combines a quorum count ("T-of-N") with diversity constraints on signer attributes (region, jurisdiction, role). Example: "5-of-9 directors from 3 distinct regions". Implemented in confium-attributes.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/attribute-based-threshold/' }],
+  },
+  {
+    term: 'Ceremony',
+    anchor: 'ceremony',
+    def: 'A formal procedure for generating, distributing, or refreshing cryptographic key material. Ceremonies are typically logged and witnessed to ensure the key never existed in a single party\'s sole possession.',
+  },
+  {
+    term: 'CMS',
+    anchor: 'cms',
+    def: 'Cryptographic Message Syntax (RFC 5652). The IETF standard envelope for signed, enveloped, or authenticated data. Confium\'s confium-cms crate implements SignedData envelopes.',
+    seeAlso: [{ label: 'Specs', href: 'https://github.com/confium/specs' }],
+  },
+  {
+    term: 'Composite signature',
+    anchor: 'composite-signature',
+    def: 'A signature that bundles the artifacts of multiple algorithms (e.g. Ed25519 + ECDSA-P256 + ML-DSA-65). Verification succeeds only when every component verifies. Used for post-quantum migration and defense in depth.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/composite-signatures/' }, { label: 'Use case', href: '/use-cases/pq-migration/' }],
+  },
+  {
+    term: 'Consistency proof',
+    anchor: 'consistency-proof',
+    def: 'A Merkle tree proof (RFC 6962 §2.1.2) showing that tree head N+1 extends tree head N — the first N entries are identical. Makes split-view attacks detectable.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/transparency-logs/' }],
+  },
+  {
+    term: 'Coordinator',
+    anchor: 'coordinator',
+    def: 'The Confium service that orchestrates multi-party threshold sessions. Receives partial signatures from signers, aggregates them, and produces the final signature. Does not hold the secret; cannot produce signatures alone.',
+    seeAlso: [{ label: 'Architecture', href: '/docs/architecture/' }],
+  },
+  {
+    term: 'CMP20',
+    anchor: 'cmp20',
+    def: 'A threshold ECDSA protocol (Canetti, Makriyannis, Peled 2020). Three-round signing with a strong security model against malicious coordinators. Implemented in confium-tc-cmp20.',
+  },
+  {
+    term: 'Deployment manifest',
+    anchor: 'deployment-manifest',
+    def: 'A TOML file describing a Confium deployment: signers, quorum policy, algorithm allow-lists, transparency log configuration. Loaded by Confium::Config::Manifest at boot.',
+  },
+  {
+    term: 'Director',
+    anchor: 'director',
+    def: 'In Mode 3 deployments, an authorized signer in the institutional quorum. Directors are typically the parties whose threshold participation is required to issue a certificate.',
+  },
+  {
+    term: 'ECIES',
+    anchor: 'ecies',
+    def: 'Elliptic Curve Integrated Encryption Scheme. A standard for public-key encryption using elliptic curves. Confium\'s confium-tc-ecies-p256 crate implements a threshold variant.',
+  },
+  {
+    term: 'ElGamal encryption',
+    anchor: 'elgamal-encryption',
+    def: 'A public-key encryption scheme with homomorphic properties that make it amenable to threshold decryption. The confium-tc-elgamal-p256 crate implements threshold ElGamal over P-256.',
+  },
+  {
+    term: 'FROST',
+    anchor: 'frost',
+    def: 'Flexible Round-Optimized Schnorr Threshold signatures. A two-round threshold signing protocol optimized for Schnorr-based schemes (Ed25519, Schnorr-P256). Implemented in confium-tc-frost-ed25519 and confium-tc-frost-p256.',
+    seeAlso: [{ label: 'Example', href: 'https://github.com/confium/confium/tree/main/docs/examples/threshold-signing.mdx' }],
+  },
+  {
+    term: 'GG18',
+    anchor: 'gg18',
+    def: 'Gennaro and Goldfeder\'s 2018 threshold ECDSA protocol. The basis for many production threshold ECDSA deployments. Implemented in confium-tc-gg18.',
+  },
+  {
+    term: 'Herzberg refresh',
+    anchor: 'herzberg-refresh',
+    def: 'Proactive share refresh (Herzberg et al. 1995). Periodically re-randomizes shares so that compromise of shares from different periods does not aggregate. Implemented in confium-tc-reshare.',
+  },
+  {
+    term: 'Inclusion proof',
+    anchor: 'inclusion-proof',
+    def: 'A Merkle tree proof (RFC 6962 §2.1.1) demonstrating that a specific entry is in the log, without revealing anything else. ~log N hashes long.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/transparency-logs/' }],
+  },
+  {
+    term: 'JCE provider',
+    anchor: 'jce-provider',
+    def: 'Java Cryptography Extension provider. The standard Java mechanism for plugging in alternative crypto backends. Confium\'s confium-jce-provider crate lets Java applications use threshold signing via standard JCE APIs.',
+  },
+  {
+    term: 'Lagrange interpolation',
+    anchor: 'lagrange-interpolation',
+    def: 'The polynomial math underlying Shamir secret sharing recovery. Given T points on a degree T−1 polynomial, uniquely determines the polynomial and thus its value at x=0 (the secret).',
+    seeAlso: [{ label: 'Concept', href: '/concepts/threshold-crypto-101/' }],
+  },
+  {
+    term: 'Merkle tree',
+    anchor: 'merkle-tree',
+    def: 'A binary tree of hashes where each leaf commits to a data record and each internal node commits to its children. The root hash commits to the entire dataset. Used in transparency logs (RFC 6962).',
+    seeAlso: [{ label: 'Concept', href: '/concepts/transparency-logs/' }],
+  },
+  {
+    term: 'MPC',
+    anchor: 'mpc',
+    def: 'Multi-party computation. A family of techniques letting multiple parties compute a function over their joint inputs without revealing those inputs. Threshold signing is one application of MPC.',
+  },
+  {
+    term: 'OpenPGP card',
+    anchor: 'openpgp-card',
+    def: 'An open standard (based on ISO 7816) for smartcard-based OpenPGP operations. YubiKey and Nitrokey are common hardware implementations. Confium\'s confium-store-openpgp-card backend integrates with these devices.',
+  },
+  {
+    term: 'OpenSSL provider',
+    anchor: 'openssl-provider',
+    def: 'OpenSSL 3.0\'s plugin mechanism for alternative crypto backends. Confium\'s confium-openssl-provider crate lets existing OpenSSL consumers use threshold signing via standard EVP_PKEY APIs.',
+  },
+  {
+    term: 'OpenTimestamps (OTS)',
+    anchor: 'opentimestamps-ots',
+    def: 'A protocol for anchoring arbitrary data in the Bitcoin blockchain, providing irrefutable time-stamped evidence that data existed at a specific time. Used as defense in depth for transparency log tree heads.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/transparency-logs/' }],
+  },
+  {
+    term: 'PKCS#11',
+    anchor: 'pkcs11',
+    def: 'The Cryptographic Token Interface Standard (RSA Laboratories). The standard API for HSMs and smartcards. Confium\'s confium-pkcs11-server lets existing PKCS#11 consumers use threshold signing unchanged.',
+  },
+  {
+    term: 'Quorum',
+    anchor: 'quorum',
+    def: 'The minimum number of parties (T) that must participate in a threshold operation. Express as T-of-N where N is the total number of authorized parties.',
+  },
+  {
+    term: 'Re-sharing',
+    anchor: 're-sharing',
+    def: 'The process of changing the share distribution without changing the underlying secret. Used to add or remove signers, or to proactively refresh shares for security (Herzberg refresh). Implemented in confium-tc-reshare.',
+  },
+  {
+    term: 'RFC 6962',
+    anchor: 'rfc-6962',
+    def: 'Certificate Transparency (B. Laurie, A. Langley, E. Käsper 2013). Defines the Merkle tree transparency log structure, inclusion proofs, and consistency proofs that Confium\'s confium-transparency crate implements.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/transparency-logs/' }],
+  },
+  {
+    term: 'Shamir secret sharing',
+    anchor: 'shamir-secret-sharing',
+    def: 'Adi Shamir\'s 1979 scheme for splitting a secret into N shares such that any T of them reconstruct the secret while any T−1 reveal nothing. Based on polynomial interpolation over a finite field.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/threshold-crypto-101/' }],
+  },
+  {
+    term: 'Share',
+    anchor: 'share',
+    def: 'One of N pieces produced by Shamir secret sharing (or analogous protocols). A share alone reveals nothing about the secret; T shares reconstruct it.',
+  },
+  {
+    term: 'Sovereign PKI',
+    anchor: 'sovereign-pki',
+    def: 'Confium\'s Mode 3 deployment shape: institutional certificate infrastructure where no single party can be trusted. Institutions define their own certificate formats, delegation rules, archival cadence, and quorum composition.',
+    seeAlso: [{ label: 'Mode 3 docs', href: '/docs/mode3-sovereign-pki/' }, { label: 'Use case', href: '/use-cases/sovereign-pki/' }],
+  },
+  {
+    term: 'Threshold cryptography',
+    anchor: 'threshold-cryptography',
+    def: 'A family of cryptographic techniques where multiple parties must cooperate to perform an operation (sign, decrypt), such that no subset smaller than the threshold can do so alone.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/threshold-crypto-101/' }],
+  },
+  {
+    term: 'Transparency log',
+    anchor: 'transparency-log',
+    def: 'An append-only public record (typically a Merkle tree) of every operation a system performs. Makes silent certificate issuance or unauthorized operations detectable. Confium\'s confium-transparency crate implements RFC 6962 semantics.',
+    seeAlso: [{ label: 'Concept', href: '/concepts/transparency-logs/' }],
+  },
+  {
+    term: 'XMLDSig',
+    anchor: 'xmldsig',
+    def: 'XML Signature Syntax and Processing (W3C). The standard for XML-encoded digital signatures. Confium\'s confium-xmldsig crate implements XMLDSig with Exclusive C14N canonicalization.',
+  },
+];
+
+// Group by first letter.
+const byLetter = terms.reduce((acc, t) => {
+  const letter = t.term[0].toUpperCase();
+  if (!acc[letter]) acc[letter] = [];
+  acc[letter].push(t);
+  return acc;
+}, {} as Record<string, Term[]>);
+
+const letters = Object.keys(byLetter).sort();
+---
+
+<BaseLayout title="Glossary" description="Threshold cryptography, PKI, and Confium terminology — A to Z. Each entry cross-linked to the deepest page that uses the term.">
+  <PageHero
+    eyebrow="Glossary"
+    title="A–Z crypto + Confium terms"
+    description="Each entry is 2–4 sentences. Cross-linked to the deepest page that uses the term."
+  />
+
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12" data-pagefind-body>
+    <nav class="mb-12 flex flex-wrap gap-2">
+      {letters.map((letter) => (
+        <a
+          href={`#letter-${letter}`}
+          class="w-9 h-9 inline-flex items-center justify-center rounded-md border border-line bg-card text-sm font-mono hover:border-brand-400 hover:text-brand-600 transition-colors"
+        >
+          {letter}
+        </a>
+      ))}
+    </nav>
+
+    <div class="space-y-12">
+      {letters.map((letter) => (
+        <section id={`letter-${letter}`}>
+          <h2 class="text-2xl font-bold mb-6 text-brand-700 dark:text-brand-300">{letter}</h2>
+          <dl class="space-y-6">
+            {byLetter[letter].map((t) => (
+              <div id={t.anchor} class="scroll-mt-24">
+                <dt class="font-semibold text-lg">{t.term}</dt>
+                <dd class="mt-1 text-muted-foreground">
+                  <p>{t.def}</p>
+                  {t.seeAlso && t.seeAlso.length > 0 && (
+                    <p class="mt-2 text-sm">
+                      See also:
+                      {t.seeAlso.map((s, i) => (
+                        <>
+                          {i > 0 && <span class="mx-1">·</span>}
+                          <a href={s.href} class="text-brand-700 dark:text-brand-300 hover:underline">{s.label}</a>
+                        </>
+                      ))}
+                    </p>
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
