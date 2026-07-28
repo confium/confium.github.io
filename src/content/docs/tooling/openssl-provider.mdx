@@ -1,0 +1,118 @@
+---
+title: "confium-openssl-provider"
+description: "OpenSSL 3.0 provider — exposes Confium threshold signing to modern OpenSSL consumers (nginx, curl, custom C)."
+audience: developer
+order: 27
+---
+
+# `confium-openssl-provider`
+
+OpenSSL 3.0 introduced the *provider* API as the modern replacement
+for engines. A provider is a dynamically-loaded library that
+implements cryptographic operations; OpenSSL dispatches calls to it
+based on algorithm name. Confium's provider makes every
+`EVP_PKEY_sign()`, `EVP_DigestSign()`, and similar call dispatch
+into a Confium threshold session.
+
+## When to deploy
+
+- You have a modern OpenSSL 3.0 consumer (nginx ≥ 1.23, curl ≥ 7.84,
+  custom C using the EVP API).
+- You want the cleanest integration path (no separate server
+  process; the provider loads in-process).
+- You want to selectively use Confium for specific algorithms while
+  keeping OpenSSL's native implementations for others.
+
+## Install
+
+```sh
+cargo install confium-openssl-provider --locked
+```
+
+The install copies the provider library to
+`/usr/local/lib/ossl-modules/confium.so`.
+
+## Configuration
+
+`/etc/confium/openssl-provider.conf`:
+
+```toml
+[coordinator]
+endpoint = "tcp://coordinator.internal:7443"
+
+[algorithms]
+# Confium handles these; OpenSSL's native implementations are used for everything else
+Ed25519 = "confium"
+ECDSA-P256 = "confium"
+ECDSA-P384 = "confium"
+```
+
+## Activate in OpenSSL
+
+Add to `openssl.cnf`:
+
+```
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+ssl_conf = ssl_sect
+
+[provider_sect]
+default = default_sect
+confium = confium_sect
+
+[default_sect]
+activate = 1
+
+[confium_sect]
+activate = 1
+module = /usr/local/lib/ossl-modules/confium.so
+confium_config = /etc/confium/openssl-provider.conf
+```
+
+Test:
+
+```sh
+openssl list -providers
+# Should show: default, confium
+```
+
+## Consumer-side usage
+
+After activation, no consumer code changes. Standard OpenSSL usage
+goes through Confium for the algorithms you've configured:
+
+```sh
+# Generate a key (in production: use Confium's key ceremony)
+openssl genpkey -algorithm Ed25519 -out test.key
+
+# Sign with the key — routes through Confium if Ed25519 = "confium"
+openssl pkeyutl -sign -inkey test.key -rawin -in message.txt -out sig.bin
+```
+
+## Selective use
+
+You can keep OpenSSL's native implementations for some algorithms
+and only route specific ones through Confium:
+
+```toml
+[algorithms]
+Ed25519 = "confium"      # Confium handles
+# ECDSA-P256 = "native"   # (default; OpenSSL's native impl)
+```
+
+Useful for gradual migration.
+
+## Performance
+
+In-process dispatch has near-zero overhead vs OpenSSL's native
+provider (~1ms). End-to-end signing latency is dominated by the
+threshold session itself (~30ms typical in-region).
+
+## See also
+
+- [Tooling overview](./)
+- [PKCS#11 server](./pkcs11-server/) — alternative for older OpenSSL or non-OpenSSL consumers.
+- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
+- [Web TLS use case](/use-cases/web-tls/)
