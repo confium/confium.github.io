@@ -58,13 +58,19 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
 
     <script is:inline>
       // Theme detection — runs before paint to avoid flash.
-      (function () {
-        const stored = localStorage.getItem('confium-theme');
-        const prefersDark =
-          window.matchMedia &&
-          window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = stored || (prefersDark ? 'dark' : 'light');
-        if (theme === 'dark') document.documentElement.classList.add('dark');
+      (() => {
+        const apply = () => {
+          const q = new URLSearchParams(location.search).get('theme');
+          if (q === 'light' || q === 'dark') localStorage.setItem('confium-theme', q);
+          const t = localStorage.getItem('confium-theme');
+          const dark = t ? t === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark);
+        };
+        apply();
+        document.addEventListener('astro:after-swap', apply);
+        window.addEventListener('storage', (e) => {
+          if (e.key === 'confium-theme' || e.key === null) apply();
+        });
       })();
     </script>
   </head>
@@ -75,6 +81,48 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
       <slot />
     </main>
     <SiteFooter />
+
+    <script is:inline>
+      // Reveal-on-scroll: progressively enhance .reveal wrappers with a
+      // small translateY → 0 rise as they enter the viewport. Content is
+      // already fully visible at SSR; this only adds the entrance animation.
+      (function () {
+        if (matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+        const setup = () => {
+          const targets = document.querySelectorAll('.reveal:not(.reveal-in)');
+          if (!targets.length || !('IntersectionObserver' in window)) {
+            targets.forEach((el) => el.classList.add('reveal-in'));
+            return;
+          }
+          const io = new IntersectionObserver(
+            (entries) => {
+              for (const entry of entries) {
+                if (!entry.isIntersecting) continue;
+                const el = entry.target;
+                const delay = parseInt(el.dataset.revealDelay || '0', 10);
+                const distance = el.dataset.revealDistance || '12px';
+                el.style.setProperty('--reveal-delay', delay + 'ms');
+                el.style.setProperty('--reveal-distance', distance);
+                if (delay > 0) {
+                  window.setTimeout(() => el.classList.add('reveal-in'), delay);
+                } else {
+                  el.classList.add('reveal-in');
+                }
+                io.unobserve(el);
+              }
+            },
+            { threshold: 0.1, rootMargin: '0px 0px -40px 0px' },
+          );
+          targets.forEach((t) => io.observe(t));
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', setup, { once: true });
+        } else {
+          setup();
+        }
+        document.addEventListener('astro:after-swap', setup);
+      })();
+    </script>
 
     <style>
       body {

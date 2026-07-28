@@ -177,6 +177,26 @@ body {
   color: #fff;
 }
 
+/* Reveal: SSR always shows the element. When JS adds `.reveal-in` (via the
+   global IntersectionObserver in BaseLayout), a brief keyframe rise plays
+   from translateY(--reveal-distance) → 0. No layout shift, no opacity gate. */
+.reveal {
+  /* default state: visible, no transform */
+}
+.reveal.reveal-in {
+  --reveal-distance: 12px;
+  --reveal-delay: 0ms;
+  animation: confium-rise 600ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation-delay: var(--reveal-delay);
+}
+@keyframes confium-rise {
+  from { transform: translateY(var(--reveal-distance, 12px)); }
+  to   { transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal.reveal-in { animation: none; }
+}
+
 /* Page hero background: pastel tint wash over a 30px graph paper grid,
    masked to fade toward the bottom. Matches RNP's page-hero-bg exactly. */
 .page-hero-bg {

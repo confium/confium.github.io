@@ -1,62 +1,104 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { CONFUM_EVENTS, dispatch, on } from '@lib/events';
+import { onMounted, onUnmounted, ref } from 'vue';
 
-type Theme = 'light' | 'dark' | 'system';
-const theme = ref<Theme>('system');
+type Mode = 'light' | 'dark' | 'system';
 
-function resolveEffective(t: Theme): 'light' | 'dark' {
-  if (t === 'system') {
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+const mode = ref<Mode>('system');
+let media: MediaQueryList | null = null;
+
+const applyMode = (m: Mode) => {
+  const dark =
+    m === 'dark' ||
+    (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.classList.toggle('dark', dark);
+};
+
+const readMode = (): Mode => {
+  const q = new URLSearchParams(location.search).get('theme');
+  if (q === 'light' || q === 'dark') return q;
+  const stored = localStorage.getItem('confium-theme');
+  return stored === 'light' || stored === 'dark' ? stored : 'system';
+};
+
+const cycle = () => {
+  mode.value =
+    mode.value === 'light' ? 'dark' : mode.value === 'dark' ? 'system' : 'light';
+  if (mode.value === 'system') localStorage.removeItem('confium-theme');
+  else localStorage.setItem('confium-theme', mode.value);
+  applyMode(mode.value);
+};
+
+const onMedia = () => {
+  if (mode.value === 'system') applyMode('system');
+};
+
+const onStorage = (e: StorageEvent) => {
+  if (e.key === 'confium-theme' || e.key === null) {
+    mode.value = readMode();
+    applyMode(mode.value);
   }
-  return t;
-}
-
-function applyTheme(t: Theme) {
-  theme.value = t;
-  const effective = resolveEffective(t);
-  if (effective === 'dark') document.documentElement.classList.add('dark');
-  else document.documentElement.classList.remove('dark');
-  localStorage.setItem('confium-theme', t);
-}
-
-function cycle() {
-  const next: Theme = theme.value === 'light' ? 'dark' : theme.value === 'dark' ? 'system' : 'light';
-  applyTheme(next);
-}
-
-let cleanup: (() => void) | null = null;
+};
 
 onMounted(() => {
-  const stored = (localStorage.getItem('confium-theme') as Theme) || 'system';
-  theme.value = stored;
-  cleanup = on(CONFUM_EVENTS.toggleTheme, cycle);
-  window.addEventListener('storage', (e) => {
-    if (e.key === 'confium-theme') applyTheme((e.newValue as Theme) || 'system');
-  });
+  mode.value = readMode();
+  applyMode(mode.value);
+  media = matchMedia('(prefers-color-scheme: dark)');
+  media.addEventListener('change', onMedia);
+  window.addEventListener('storage', onStorage);
 });
 
 onUnmounted(() => {
-  cleanup?.();
+  media?.removeEventListener('change', onMedia);
+  window.removeEventListener('storage', onStorage);
 });
 </script>
 
 <template>
   <button
     type="button"
-    class="inline-flex items-center justify-center w-9 h-9 rounded-md hover:bg-brand-50/50 dark:hover:bg-brand-900/10 transition-colors"
-    :title="`Theme: ${theme}`"
-    aria-label="Toggle theme"
+    class="icon-btn flex h-9 w-9 items-center justify-center rounded-full transition-colors"
+    :aria-label="`Theme: ${mode}. Activate to switch.`"
+    :title="`Theme: ${mode}`"
     @click="cycle"
   >
-    <svg v-if="theme === 'light'" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-      <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+    <svg
+      v-if="mode === 'light'"
+      viewBox="0 0 24 24"
+      class="h-[1.1rem] w-[1.1rem]"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="12" r="4.5" />
+      <path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M18.7 5.3l-1.8 1.8M7.1 16.9l-1.8 1.8" />
     </svg>
-    <svg v-else-if="theme === 'dark'" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-      <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+    <svg
+      v-else-if="mode === 'dark'"
+      viewBox="0 0 24 24"
+      class="h-[1.1rem] w-[1.1rem]"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11Z" />
     </svg>
-    <svg v-else class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-      <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.8 1.6L11.3 14.954A1 1 0 0110 14.155V9.155H6a1 1 0 01-.8-1.6l4.7-6.5z" clip-rule="evenodd" />
+    <svg
+      v-else
+      viewBox="0 0 24 24"
+      class="h-[1.1rem] w-[1.1rem]"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="4.5" width="18" height="12" rx="1.5" />
+      <path d="M9 20h6" />
     </svg>
   </button>
 </template>
