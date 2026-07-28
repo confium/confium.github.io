@@ -1,0 +1,32 @@
+---
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+export async function getStaticPaths() {
+  const docs = await getCollection('docs');
+  return docs.map((doc) => ({
+    params: { id: doc.id },
+    props: { doc, allDocs: docs },
+  }));
+}
+
+const { doc, allDocs } = Astro.props;
+const { Content, headings } = await render(doc);
+
+const sidebar = allDocs
+  .sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99))
+  .map((d) => ({
+    label: d.data.title,
+    href: `/docs/${d.id}/`,
+    current: d.id === doc.id,
+  }));
+---
+
+<DocsLayout
+  title={doc.data.title}
+  description={doc.data.description}
+  sidebar={sidebar}
+  headings={headings}
+>
+  <Content />
+</DocsLayout>

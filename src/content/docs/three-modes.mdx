@@ -1,0 +1,65 @@
+---
+title: Three deployment modes
+description: Mode 1 (Peer-to-Peer TC), Mode 2 (PKI Drop-in), Mode 3 (Sovereign PKI). One engine, three integration shapes.
+audience: developer
+order: 2
+---
+
+# Three deployment modes
+
+Confium is layered across three deployment modes. The same engine
+and the same primitives serve all three — what differs is where the
+integration boundary sits and what shape the trust relationship
+takes.
+
+## At a glance
+
+| Mode | Name | Integration shape | When to choose |
+| --- | --- | --- | --- |
+| 1 | **Peer-to-Peer TC** | Nodes exchange threshold messages directly | You control both sides of the channel and want minimal moving parts |
+| 2 | **PKI Drop-in** | Existing PKCS#11 / OpenSSL / JCE consumer + Confium server | You have an existing PKI consumer that needs to migrate to threshold keys |
+| 3 | **Sovereign PKI** | Custom certificate formats, custom workflows, multi-stakeholder governance | You are an institution where no single party can be trusted |
+
+## Why three modes
+
+Threshold cryptography is a *primitive*. How you deploy it depends on
+what you're plugging it into.
+
+- If you're building a new distributed system from scratch, you want
+  peer-to-peer: every node speaks the protocol directly. (Mode 1)
+- If you have an existing PKI consumer (a TLS terminator, a code
+  signer, an HSM-backed signing service), you want a drop-in: the
+  consumer keeps talking PKCS#11 / OpenSSL / JCE; Confium translates
+  each call into a threshold session behind the scenes. (Mode 2)
+- If you're an institution that needs custom certificate formats,
+  delegation rules, archival cadence, or quorum composition — the
+  kind of thing a conventional CA can't represent — you want Mode 3.
+
+The three modes are not mutually exclusive. A single deployment may
+use Mode 2 internally (to migrate an existing code signer) and
+Mode 3 externally (to issue certificates that downstream verifiers
+trust).
+
+## What's common
+
+Regardless of mode, every deployment shares:
+
+- The **engine** (`libconfium`) and its plugin loader.
+- The **threshold protocols** (FROST, CMP20, GG18, threshold ElGamal).
+- The **coordinator** for async multi-party sessions.
+- The **transparency log** for tamper-evident audit.
+- The **attribute DSL** for quorum policies.
+
+What changes is the *adapter* on top: peer-to-peer network code, a
+PKCS#11 server, or a Sovereign PKI profile.
+
+## Going deeper
+
+- [Mode 1 — Peer-to-Peer TC](./mode1-peer-tc.mdx)
+- [Mode 2 — PKI Drop-in](./mode2-pki-drop-in.mdx)
+- [Mode 3 — Sovereign PKI](./mode3-sovereign-pki.mdx)
+
+## See also
+
+- [Architecture](./architecture.mdx)
+- [Components](./components.mdx)

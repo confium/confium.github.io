@@ -1,0 +1,107 @@
+---
+title: Post-quantum migration
+description: Migrate from classical to post-quantum signatures via composite signatures. Software upgrade, not HSM replacement. No certificate re-issuance flag day.
+audience: developer
+order: 8
+---
+
+# Post-quantum migration
+
+The post-quantum migration problem is hard. Every existing
+certificate in the world is signed with a classical algorithm
+(RSA, ECDSA, Ed25519). When a sufficiently large quantum computer
+arrives, every one of those signatures becomes forgeable. But you
+can't re-issue every certificate on a single flag day — the
+installed base of verifiers won't all upgrade simultaneously.
+
+Confium's answer: **composite signatures**. A composite signature
+contains the artifacts of multiple algorithms (e.g. Ed25519 +
+ECDSA-P256 + ML-DSA-65); verifiers check all components and accept
+the signature only if every component verifies. Migration becomes a
+software upgrade, not an HSM replacement.
+
+## How composite signatures work
+
+A composite signature is a value type that bundles:
+
+- A list of `(algorithm_oid, public_key, signature)` tuples.
+- Optional metadata describing the policy under which the composite
+  was produced.
+
+Verification is per-component:
+
+1. For each component, look up the verifier for its algorithm OID.
+2. Verify the component's signature against the message.
+3. If every component verifies, the composite is valid.
+4. If any component fails or any required algorithm is missing, the
+   composite is invalid.
+
+## Migration timeline
+
+### Phase 1 — Classical only (today)
+
+Existing certificates signed with Ed25519 or ECDSA-P256. Verifiers
+accept.
+
+### Phase 2 — Hybrid (migration begins)
+
+New certificates signed with a composite of (classical + PQ).
+Verifiers split into two populations:
+
+- **Upgraded** verifiers check both components. They accept the
+  composite as valid.
+- **Legacy** verifiers don't understand composites; they fall back
+  to the classical component and continue to accept.
+
+This is the key property: **adding a PQ component does not break
+legacy verifiers**.
+
+### Phase 3 — PQ required
+
+Once every verifier has been upgraded, the deployment policy is
+tightened: composite signatures must include a PQ component.
+Signers stop emitting classical-only signatures.
+
+### Phase 4 — PQ only
+
+Eventually the classical component can be removed. New certificates
+are PQ-only. The classical component is retained for archival
+verification of pre-migration signatures.
+
+## Software upgrade, not HSM replacement
+
+The entire migration happens via:
+
+1. A `confium-composite` crate update that knows about ML-DSA-65.
+2. A plugin that provides the ML-DSA-65 verifier (currently via
+   caller-supplied callback; native support arrives when a suitable
+   pure-Rust verifier crate ships).
+3. A deployment policy update that requires the new component.
+
+No new HSM. No re-issuance of every certificate. No flag day.
+
+## Caller-supplied PQ verifiers
+
+For PQ algorithms without a bundled pure-Rust verifier, Confium
+accepts a caller-supplied verifier callback. The deployment wires
+its preferred ML-DSA / SLH-DSA implementation (Botan plugin,
+in-process Rust crate, FFI to a C library, or a remote verification
+service) into the composite verifier.
+
+```ruby
+sig = Confium::Composite::Signature.new(components)
+result = sig.verify(message, {
+  "ML-DSA-65" => ->(pk, msg, sig) { my_ml_dsa_verifier.verify(pk, msg, sig) },
+})
+```
+
+A missing verifier for any component is a hard failure, not a
+soft-accept. This is critical: the composite layer never silently
+accepts on the subset of components it can verify.
+
+## See also
+
+- [Architecture](./architecture.mdx)
+- [Mode 2 — PKI Drop-in](./mode2-pki-drop-in.mdx)
+- [Use case: PQ migration](/use-cases/pq-migration/)
+- [Concepts: Composite signatures](/concepts/composite-signatures/)
