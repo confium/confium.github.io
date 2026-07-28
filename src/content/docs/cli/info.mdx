@@ -1,0 +1,77 @@
+---
+title: "confium info"
+description: "Show detailed information about an installed Confium plugin."
+audience: developer
+order: 19
+---
+
+# `confium info`
+
+## Synopsis
+
+```sh
+confium info <plugin>[@version] [--json]
+```
+
+## Description
+
+Prints detailed information about a specific installed plugin:
+metadata (name, version, vendor, license), implemented interfaces
+and their versions, declared dependencies, signing key fingerprint,
+and installation timestamp.
+
+## Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| `<plugin>` | Yes | Plugin name with optional `@version`. |
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--json` | Emit machine-readable JSON. |
+
+## Examples
+
+```sh
+confium info botan
+
+# JSON for scripting
+confium info botan --json | jq '.metadata'
+```
+
+## Sample output
+
+```
+Plugin:    botan
+Version:   3.0.0
+Vendor:    Ribose Open
+License:   BSD-2-Clause
+Fingerprint: sha256:9b1d96e3...
+
+Interfaces:
+  hash v0      (SHA-256, SHA-384, SHA-512, SM3)
+  cipher v1    (AES-128-GCM, AES-256-GCM, ChaCha20-Poly1305)
+  signature v0 (Ed25519, ECDSA-P256, ECDSA-P384)
+
+Dependencies:
+  (none)
+
+Installed: 2026-07-28T11:42:13Z
+Source:    registry.confium.org/botan@3.0.0
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Plugin not installed. |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium list`](./list/)
+- [`confium trust`](./trust/)
+- [CLI overview](./)

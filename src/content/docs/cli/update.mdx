@@ -1,0 +1,74 @@
+---
+title: "confium update"
+description: "Update an installed plugin to the latest version. Currently a stub awaiting the confium-net HTTP-fetching crate."
+audience: developer
+order: 17
+---
+
+# `confium update`
+
+## Status: stub
+
+Like [`confium install`](./install/), `update` parses arguments and
+emits the right shape, but the actual download path uses a
+`NoopDownloader`. Real network fetching awaits the `confium-net`
+crate.
+
+## Synopsis
+
+```sh
+confium update [<plugin>] [--all] [--check]
+```
+
+## Description
+
+Updates one or more installed plugins to the latest version from
+the registry. Without arguments, updates all installed plugins
+where a newer version is available.
+
+The SHA-256 of the new artifact is verified against the manifest's
+signature. The trusted-publisher list is consulted; updates from
+untrusted publishers are rejected unless `--no-trust` is given.
+
+## Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| `<plugin>` | No | Plugin name to update. If omitted, all installed plugins are checked. |
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--all` | Update all installed plugins. |
+| `--check` | Only check for available updates; do not apply. |
+| `--no-trust` | Skip the trusted-publisher check. |
+| `--yes` | Skip confirmation prompts. |
+| `--json` | Emit machine-readable JSON. |
+
+## Examples
+
+```sh
+# Check what updates are available
+confium update --check
+
+# Update a specific plugin
+confium update botan
+
+# Update everything
+confium update --all --yes
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | No updates available, or update failed. |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium install`](./install/)
+- [`confium list`](./list/)
+- [CLI overview](./)

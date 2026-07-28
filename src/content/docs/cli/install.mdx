@@ -1,0 +1,82 @@
+---
+title: "confium install"
+description: "Install a Confium plugin from the registry. Currently a stub awaiting the confium-net HTTP-fetching crate."
+audience: developer
+order: 15
+---
+
+# `confium install`
+
+## Status: stub
+
+The `install` command parses arguments and dispatches to the
+registry client, but the actual download uses a `NoopDownloader`
+that returns immediately without fetching bytes. Real network
+fetching awaits the `confium-net` HTTP crate. Until then, you can
+install plugins manually:
+
+```sh
+# Manual install:
+cp my-plugin.so ~/.confium/plugins/
+confium trust add --publisher my-publisher-key
+```
+
+## Synopsis
+
+```sh
+confium install <plugin>[@version] [--force] [--no-trust]
+```
+
+## Description
+
+Installs a plugin from the Confium registry to the local plugin
+store (`~/.confium/plugins/`). Resolves the plugin against the
+registry, downloads the artifact, verifies the SHA-256 against
+the manifest's signature, and stages it under the local plugin
+directory.
+
+If the plugin declares dependencies on other providers, those are
+checked at load time and the install fails with a clear error if
+any are unmet.
+
+## Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| `<plugin>` | Yes | Plugin name with optional `@version` suffix. Examples: `botan`, `botan@3.0`, `openssl@3.0.8`. |
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--force` | Overwrite if the plugin is already installed. |
+| `--no-trust` | Skip the trusted-publisher check (use with caution). |
+| `--json` | Emit machine-readable JSON. |
+
+## Examples
+
+```sh
+# Install the latest version of the botan plugin
+confium install botan
+
+# Install a specific version
+confium install botan@3.0
+
+# Force reinstall
+confium install botan --force
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Network or verification failure. |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium remove`](./remove/)
+- [`confium update`](./update/)
+- [`confium trust`](./trust/)
+- [CLI overview](./)
