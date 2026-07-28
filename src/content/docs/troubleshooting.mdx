@@ -1,0 +1,301 @@
+---
+title: Troubleshooting
+description: Operational gotchas, common errors, and their fixes for Confium deployments and consumers.
+audience: developer
+order: 14
+---
+
+# Troubleshooting
+
+Common operational issues and their fixes. If your issue isn't
+here, check [the FAQ](./faq.mdx) or ask on
+[GitHub Discussions](https://github.com/confium/confium/discussions).
+
+## Installation
+
+### `gem install confium` fails to build the native extension
+
+The Ruby gem compiles a Rust native extension at install time.
+You need:
+
+- Ruby ≥ 3.1
+- Rust stable 1.85+ (`rustup default stable`)
+- A C toolchain (`cc`, `make`)
+
+Verify:
+```sh
+ruby --version    # >= 3.1
+rustc --version   # >= 1.85
+cc --version
+```
+
+If you see `error: linking with cc failed`, install Xcode CLI
+tools (macOS) or `build-essential` (Debian/Ubuntu).
+
+### `cargo add confium-core` pulls an old version
+
+The workspace version is pinned in `Cargo.toml`. If you need the
+latest, use the git dependency:
+
+```toml
+[dependencies]
+confium-core = { git = "https://github.com/confium/confium.git", branch = "main" }
+```
+
+### WASM package fails to load in the browser
+
+The `@confium/confium-wasm` package targets `wasm32-unknown-unknown`
+with `wasm-bindgen`. Make sure you:
+
+1. Initialize before use: `await init();`.
+2. Use the right import form for your bundler:
+   ```javascript
+   import init, { CompositeSignature } from "@confium/confium-wasm";
+   ```
+3. Add the right Content-Type headers if self-hosting:
+   `application/wasm`.
+
+## Ruby
+
+### `Confium::ParseError` when loading a PEM
+
+Most common causes:
+
+- The PEM has Windows line endings (`\r\n`) but is being read
+  with `File.read` in text mode (which can re-translate). Read in
+  binary mode: `File.open(path, "rb", &:read)`.
+- The PEM is missing begin/end markers. Verify:
+  ```
+  -----BEGIN CERTIFICATE-----
+  ...
+  -----END CERTIFICATE-----
+  ```
+- The PEM is concatenated incorrectly. Each PEM block needs its
+  own begin/end markers.
+
+### `Confium::VerificationError` from path validation
+
+```ruby
+result = Confium::PKI::PathValidator.validate(
+  leaf: cert, intermediates: [inter], root: root,
+)
+result.valid?   # => false
+result.errors   # => [{ chain_index: 0, check: "signature", ... }]
+```
+
+Read `result.errors` — each error has `chain_index`, `check`,
+and `details`. Common causes:
+
+- `check: "signature"` — wrong root, expired cert, or revoked
+  cert. Check the chain order: leaf, intermediates, root.
+- `check: "validity"` — cert is expired or not-yet-valid.
+- `check: "name_constraints"` — cert violates name constraints
+  defined in root.
+
+### `Confium::ThresholdError: insufficient quorum`
+
+The coordinator couldn't reach threshold T. Check:
+
+- Are enough signers online? `confium list-signers`.
+- Are signers' shares valid? Run `confium signer self-test` on
+  each.
+- Is the policy correct? Read the deployment manifest's
+  `[quorum]` section.
+
+### `Confium::PolicyViolationError: disallowed algorithm`
+
+The policy allow-list doesn't include the algorithm. Update
+`Confium::Policy.allowed_signature_algorithms` or the deployment
+manifest's `[policy]` section.
+
+## Rust
+
+### `error[E0599]: no method named X found on type Y`
+
+Confium's public API is concentrated in trait definitions. If a
+method isn't found, you may be missing a trait import:
+
+```rust
+use confium_composite::VerifierCallback;  // bring the trait in
+```
+
+### Compile errors with `Scalar::from_repr`
+
+`p256::Scalar::from_repr` returns `CtOption<Scalar>`, not
+`Option<Scalar>`. Convert explicitly:
+
+```rust
+let scalar = Option::<Scalar>::from(Scalar::from_repr(bytes))
+    .ok_or_else(|| MyError::InvalidScalar)?;
+```
+
+### `cargo test` is slow
+
+Some integration tests spawn coordinators and signers, which
+adds startup time. Run unit tests only:
+
+```sh
+cargo test --workspace --lib
+```
+
+## WASM
+
+### `RuntimeError: unreachable` in browser console
+
+The WASM module panics. Most common cause: missing
+initialization. Make sure `await init();` runs before any other
+Confium call.
+
+### Bundle size is too large
+
+The `@confium/confium-wasm` package has per-subsystem Cargo
+features. Tree-shake to just what you need:
+
+```toml
+# Cargo.toml (if you're building yourself)
+[features]
+verify-composite = []
+verify-transparency = []
+verify-attributes = []
+verify-pki = []
+default = ["verify-composite", "verify-transparency", "verify-attributes", "verify-pki"]
+```
+
+In npm, use the pre-built subset packages
+(`@confium/confium-wasm-composite`, etc.) when available.
+
+## Operations
+
+### Coordinator can't reach signers
+
+Check connectivity:
+```sh
+confium ping-signer --coordinator coord.internal:7443 --id director-1
+```
+
+Common causes:
+
+- Firewall blocking the coordinator's QUIC port (default 7443).
+- Signer identity mismatch (the signer's `--identity` doesn't
+  match the coordinator's configured signer ID).
+- TLS certificate issues. The coordinator verifies signer
+  certificates; if they're expired or wrong-CA, signing fails.
+
+### Transparency log is growing unboundedly
+
+That's by design — the log is append-only. Add storage, or
+configure log rotation (which preserves the cryptographic chain
+by snapshotting roots periodically).
+
+### Signers joining late
+
+The coordinator holds session state for in-flight sessions. If
+signers join after a session starts, they can still participate
+in subsequent rounds. Sessions time out after a configurable
+interval (default: 24 hours).
+
+### Witness detects divergence
+
+This is the split-view attack detection firing. Investigate
+immediately:
+
+1. Compare tree heads between coordinators.
+2. Identify the divergent entries.
+3. Determine whether the divergence is malicious (operator
+   compromise) or operational (split-brain, network partition).
+4. If malicious: switch to backup log; replay recent tree heads;
+   initiate incident response.
+
+### Audit log shows unexpected signer identity
+
+If `signers` in the audit record contains an identity you don't
+recognize, the deployment manifest's `[[signers]]` section may
+have a stale entry. Audit the manifest, remove the stale signer,
+and re-share to invalidate any share that signer may hold.
+
+## Plugin authoring
+
+### `cfmp_*` symbols missing from built library
+
+Ensure `crate-type = ["cdylib"]` in `[lib]`:
+
+```toml
+[lib]
+crate-type = ["cdylib"]
+```
+
+Then verify exports:
+```sh
+nm -D target/release/libmy_plugin.so | grep cfmp
+```
+
+### Plugin loads but `InterfaceNotSupported`
+
+The interface name in `cfmp_query_interfaces` doesn't match
+what the host requested, or the version byte is higher than the
+host supports. Check:
+
+- Interface name spelling (case-sensitive).
+- Version byte — start with 0 and bump only when the contract
+  changes.
+
+### `PluginDependencyUnmet` on load
+
+A declared dependency is missing or out of range. Run
+`confium list` to see loaded plugins; check the version range in
+your `Dependency::provider(...)` call.
+
+## Build / CI
+
+### Site build fails with MDX errors
+
+If you're using `@astrojs/mdx`, JSX-trigger characters in content
+can break parsing. Specifically:
+
+- `<word ...>` in content is parsed as a JSX tag.
+- `cfmp_<interface>_*` in inline code triggers tag parsing.
+
+Fix: escape `<` and `>` in code-block-adjacent content, or
+reword to avoid the pattern. See the [MDX migration notes](https://mdxjs.com/migrating/v2/).
+
+### `globLoader is not a function` in Astro 7
+
+The loader import changed in Astro 7. Use:
+
+```ts
+import { glob } from 'astro/loaders';
+```
+
+Not:
+```ts
+import { globLoader } from 'astro:content';
+```
+
+### `Could not resolve import` for `@layouts/*`
+
+The path alias must be declared in `tsconfig.json`:
+
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@layouts/*": ["src/layouts/*"]
+    }
+  }
+}
+```
+
+## Where to get more help
+
+- [GitHub Discussions](https://github.com/confium/confium/discussions) — for questions.
+- [GitHub Issues](https://github.com/confium/confium/issues) — for bugs.
+- [/security/](/security/) — for security disclosures.
+- [Audience guides](/audiences/) — role-specific deep dives.
+
+## See also
+
+- [FAQ](./faq.mdx)
+- [Architecture](./architecture.mdx)
+- [Security model](./security-model.mdx)
+- [Conventions](https://github.com/confium/confium/tree/main/docs/conventions.mdx)
+  (Rust workspace)

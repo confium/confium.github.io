@@ -1,0 +1,143 @@
+---
+title: Timestamping service
+description: RFC 3161 timestamp authority with multi-stakeholder governance. No single operator can backdate or omit timestamps.
+mode: 3
+order: 15
+---
+
+import SplitViewAttackDiagram from '../../components/brand/SplitViewAttackDiagram.astro';
+
+# Timestamping service
+
+A timestamp authority (TSA) provides cryptographic proof that a
+given document existed at a specific time. The standard is RFC 3161,
+widely used in legal filings, patent applications, code signing,
+and long-term archival. Today's TSAs are operated by single
+organizations (Symantec/DigiCert, Sectigo, free services like
+Google's) which means the operator is trusted not to backdate or
+omit timestamps.
+
+Confium replaces this with a threshold-operated TSA: T-of-N
+servers run by independent operators must cooperate to issue a
+timestamp token. No single operator can backdate or selectively
+omit.
+
+## When to choose this use case
+
+- You operate a timestamp service and want to eliminate the single-
+  operator trust model.
+- You're building a consortium TSA where multiple organizations
+  (e.g. a standards body) cooperatively provide the service.
+- You want timestamps anchored in a public medium (Bitcoin via OTS)
+  for irrefutable time proof.
+- You're deploying a sovereign timestamp infrastructure for legal /
+  regulatory use (e.g. patent filing, court evidence).
+
+## How Confium solves it
+
+A threshold TSA deployment has:
+
+- **Multiple TSA servers** operated by independent organizations.
+- **Threshold key** split across the servers; T-of-N required per
+  timestamp.
+- **RFC 3161 compliant output**: standard TimeStampResp tokens
+  that any RFC 3161 client accepts.
+- **Transparency log** recording every issued timestamp.
+- **OTS anchoring** in Bitcoin for defense in depth.
+
+<SplitViewAttackDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The split-view attack on the left is exactly what a threshold TSA
+defeats. Without witness gossip and OTS anchoring, a single
+operator can present different timestamp histories to different
+verifiers. With Confium's three-layer defense, the attack
+collapses.
+
+## RFC 3161 compliance
+
+The output is a standard TimeStampResp:
+
+```
+TimeStampResp ::= SEQUENCE {
+    status                  PKIStatusInfo,
+    timeStampToken          TimeStampToken OPTIONAL
+}
+
+TimeStampToken ::= ContentInfo
+    -- contentType = id-signedData
+    -- content = SignedData
+    -- eContent = TSTInfo
+```
+
+The TSTInfo contains the message imprint (hash of the document
+being timestamped), the TSA's serial number, the time of
+timestamping, and policy information. The signature is produced
+by a Confium threshold signing session.
+
+## Client-side usage
+
+Standard RFC 3161 clients work unchanged. For example, with
+OpenSSL:
+
+```sh
+# Submit a hash to the TSA; get a timestamp token back.
+echo -n "data to timestamp" | openssl dgst -sha256 -binary \
+  | openssl ts -query -digest -sha256 -data - \
+  | curl -sS -H "Content-Type: application/timestamp-query" \
+         --data-binary @- \
+         https://tsa.confium.org/ \
+  > response.tsr
+
+# Verify the token against the TSA's certificate chain.
+openssl ts -verify -in response.tsr \
+  -queryfile query.tsq \
+  -CAfile tsa-ca.pem \
+  -untrusted tsa-cert.pem
+```
+
+The client sees a standard RFC 3161 TSA. It doesn't know the
+backend is threshold.
+
+## OTS anchoring
+
+For the strongest time proof, Confium anchors every batch of
+timestamps in Bitcoin via OpenTimestamps:
+
+1. Every hour (configurable), the TSA computes the Merkle root
+   of all timestamps issued in that period.
+2. The root hash is submitted to OpenTimestamps.
+3. OTS anchors the hash in a Bitcoin transaction (within ~10
+   minutes to a few hours).
+4. The OTS proof is stored alongside the timestamp.
+
+A verifier can independently prove: "this timestamp existed at
+Bitcoin block height N, which occurred at YYYY-MM-DD HH:MM:SS UTC".
+
+## Use cases
+
+- **Patent filing**: Prior art evidence. A threshold TSA operated
+  by a patent office consortium (USPTO, EPO, JPO) plus an
+  independent standards body.
+- **Court evidence**: Legal filings. Threshold TSA + OTS anchoring
+  for irrefutable time proof.
+- **Code signing**: Sigstore-style timestamping of release
+  signatures. Threshold operation eliminates the single-TSA trust.
+- **Long-term archival**: Re-timestamping as algorithms evolve
+  (RFC 4998 ERS).
+
+## Standards mapping
+
+- **RFC 3161**: Time-Stamp Protocol (TSP). Confium produces standard
+  TimeStampResp tokens.
+- **RFC 4998**: Evidence Record Syntax (ERS). Long-term archival
+  with periodic re-timestamping.
+- **RFC 6962**: Certificate Transparency. Used internally for the
+  TSA's transparency log.
+- **OpenTimestamps**: Bitcoin anchoring for irrefutable time proof.
+
+## See also
+
+- [Transparency logs concept](/concepts/transparency-logs/)
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Long-term archival use case](/use-cases/long-term-archival/)
+- [Architecture](/docs/architecture/)

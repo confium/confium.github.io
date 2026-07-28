@@ -1,0 +1,131 @@
+---
+title: IoT device attestation
+description: Threshold firmware signing and device identity attestation for IoT deployments. Firmware updates require multi-party sign-off.
+mode: 2
+order: 10
+---
+
+# IoT device attestation
+
+IoT deployments face two structural security problems: firmware
+updates must be signed by someone the devices trust, and device
+identity must be attestable to relying parties. Both today rely on
+single-key signing operations that, if compromised, allow an
+attacker to push malicious firmware to millions of devices or
+impersonate any device.
+
+Confium replaces single-key firmware signing with threshold signing:
+T-of-N authorized signers (engineering, security, operations) must
+co-sign each release. Device identity attestation uses threshold
+signing per device-batch.
+
+## When to choose this use case
+
+- You ship firmware to embedded devices at scale (consumer electronics,
+  industrial sensors, automotive ECUs, medical devices).
+- A compromised signing key would let an attacker push malicious
+  firmware to your entire fleet.
+- You need defense in depth: a single rogue employee or compromised
+  build server should not be enough to ship signed firmware.
+- Your device identity attestation must be verifiable by third parties
+  (service providers, regulators) without trusting you alone.
+
+## How Confium solves it
+
+### Firmware signing
+
+Each firmware release goes through:
+
+1. Build produces a binary; its hash is computed.
+2. Hash is submitted to the Confium coordinator with a policy like
+   "2-of-3 engineering + 1-of-2 security".
+3. Authorized signers review and approve (or reject).
+4. Coordinator combines approvals into a single signature.
+5. Firmware + signature + transparency log proof published.
+
+Devices verify the signature against a threshold-attested root key
+before applying the update.
+
+### Device identity attestation
+
+Each device (or device batch) gets a threshold-signed identity
+certificate. The certificate's signing key is split across the
+manufacturer, an independent lab, and optionally a regulator.
+No single party can issue device certificates alone.
+
+```
+[ Device manufacturing line ]
+       |
+       | request identity cert (with device-unique public key)
+       v
+[ Coordinator ]
+   |          |          |
+   v          v          v
+[Manufacturer][Lab]  [Regulator]
+   |          |          |
+   +-- T-of-N quorum ----+
+              |
+                   v
+   [ Device identity certificate (standard X.509) ]
+              |
+                   v
+   [ Embedded in device; presented to relying parties ]
+```
+
+## Code sketch
+
+Sign a firmware release:
+
+```rust
+use confium_composite::CompositeSignature;
+use confium_tc_frost_p256::FrostP256;
+
+let fw_hash = sha256(firmware_bytes);
+
+let session = Coordinator::start_session(
+    message: &fw_hash,
+    algorithm: "ECDSA-P256",
+    quorum: QuorumPolicy {
+        threshold: 3,
+        attributes: Attributes::from([
+            ("engineering", 2),
+            ("security", 1),
+        ]),
+    },
+)?;
+
+// Signers review the firmware hash and approve.
+let final_sig = session.wait_for_completion()?;
+
+// Embed final_sig in the firmware manifest. Devices verify before update.
+```
+
+## Long-lived firmware
+
+IoT firmware in the field can run unchanged for 5–10 years (or
+longer for industrial / medical devices). Signatures on that
+firmware must remain verifiable for the device's entire lifespan.
+Composite signatures with a PQ component ensure that even after
+quantum computers break the classical algorithm, the firmware
+still verifies.
+
+## Supply-chain provenance
+
+Every firmware release and every device certificate anchors into a
+transparency log. Relying parties (other devices, cloud services,
+regulators) can independently verify the full history:
+
+- Which firmware was released, when, by whom.
+- Which devices were issued certificates, when, by which
+  manufacturing line.
+- Whether any firmware release was ever revoked.
+
+See [supply-chain provenance](/use-cases/supply-chain/) for the
+broader pattern.
+
+## See also
+
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [Code signing use case](/use-cases/code-signing/)
+- [Supply-chain provenance](/use-cases/supply-chain/)
+- [PQ migration](/use-cases/pq-migration/)

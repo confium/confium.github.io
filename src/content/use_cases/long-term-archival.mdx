@@ -1,0 +1,160 @@
+---
+title: Long-term archival
+description: RFC 4998 Evidence Record Syntax with multi-stakeholder governance and OTS Bitcoin anchoring. Signatures verifiable for centuries.
+mode: 3
+order: 16
+---
+
+import KeyLifecycleDiagram from '../../components/brand/KeyLifecycleDiagram.astro';
+
+# Long-term archival
+
+Some signatures must remain verifiable for decades or centuries:
+government records, patent filings, court evidence, archival
+scientific data, treaty documents, mortgage filings. The
+challenge: every cryptographic algorithm has a finite expected
+lifetime. SHA-1 is broken; SHA-256 will eventually be broken;
+RSA and ECDSA will fall to quantum computers. How do you keep
+signatures verifiable across algorithm generations?
+
+Confium's answer combines three layers:
+
+1. **RFC 4998 Evidence Record Syntax (ERS)** — periodically
+   re-timestamp evidence with current algorithms.
+2. **Composite signatures** — include both classical and PQ
+   components from day one.
+3. **OTS anchoring** — irrefutable time proof via Bitcoin.
+
+## When to choose this use case
+
+- You maintain records that must remain verifiable for 25+ years
+  (regulatory archive, treaty documents, scientific data).
+- You're operating a sovereign archive (national archives, patent
+  offices, court systems).
+- You need to migrate archives as algorithms age without breaking
+  existing verifications.
+- You want irrefutable time proof that survives institutional /
+  jurisdictional change.
+
+## How Confium solves it
+
+<KeyLifecycleDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+A long-term archival deployment maintains evidence records that
+outlive any individual signing key. The lifecycle:
+
+1. **Original signature** at time T₀ with algorithm A (e.g.
+   Ed25519 + ML-DSA-65 composite).
+2. **Archival timestamps** at T₀, T₁, T₂, ... via RFC 3161 TSA.
+3. **Algorithm renewal**: when algorithm A is deprecated, the
+   archive re-timestamps all evidence with algorithm B (the new
+   standard). The original signature remains valid because we
+   can prove it existed before A was broken.
+4. **OTS anchoring** at every renewal: Bitcoin proof that the
+   re-timestamp happened at a specific time.
+
+## RFC 4998 Evidence Record
+
+The Evidence Record wraps the original signature with a chain
+of archival timestamps:
+
+```
+EvidenceRecord ::= SEQUENCE {
+    version                   INTEGER { v1(1) },
+    digestAlgorithms          SEQUENCE OF AlgorithmIdentifier,
+    cryptoInfos               [0] SEQUENCE OF CryptoInfo OPTIONAL,
+    encryptionInfo            [1] EncryptionInfo OPTIONAL,
+    archiveTimeStampSequence  ArchiveTimeStampSequence
+}
+
+ArchiveTimeStampSequence ::= SEQUENCE OF ArchiveTimeStampChain
+```
+
+Each `ArchiveTimeStampChain` covers a period; chains chain together
+to form the full evidence record. When the current chain's
+algorithm gets old, a new chain is added with the new algorithm.
+
+## Composite signatures from day one
+
+For new archival records, Confium produces composite signatures
+containing both classical (Ed25519, ECDSA-P256) and post-quantum
+(ML-DSA-65) components. Today both verify; tomorrow when classical
+falls to quantum, the PQ component still holds. No algorithm
+renewal needed for the quantum transition.
+
+## OTS anchoring
+
+For the strongest time proof, every archival batch anchors in
+Bitcoin:
+
+```ruby
+batch_root = Confium::Transparency.compute_root(recent_archives)
+
+ots_proof = Confium::OTS.submit(
+  hash: batch_root,
+  calendar: "https://btc.calendar.confium.org",
+)
+
+# Store the OTS proof alongside the archive. Future verifiers can
+# independently prove the batch existed at Bitcoin block height N.
+archive_record.attach_ots_proof(ots_proof)
+```
+
+Bitcoin's proof-of-work chain provides irrefutable time proof
+that survives institutional collapse, jurisdictional change, or
+even the dissolution of the issuing organization.
+
+## Algorithm renewal
+
+When an algorithm gets deprecated (e.g. SHA-1 was deprecated in
+2017, RSA-1024 in 2010):
+
+1. The archive computes a new hash of every record using the new
+   algorithm (SHA-384, SHA-512, or future hash).
+2. Each new hash is timestamped by the TSA.
+3. The timestamp is itself anchored in Bitcoin.
+4. The evidence record is extended with a new ArchiveTimeStampChain.
+
+The original record remains verifiable because we can prove:
+"At time T₀, this record existed with hash H using algorithm A.
+At time T_n, we renewed to hash H' using algorithm A'. The
+chain of custody is intact."
+
+## Sovereign archive example
+
+A national archive deploying Confium might configure:
+
+```toml
+[archive]
+backend = "lmdb"
+path = "/var/lib/confium/archive"
+
+[archive.signing]
+algorithm = "composite"
+components = ["ECDSA-P384", "Ed25519", "ML-DSA-65"]
+require_pq_component = true
+
+[archive.timestamping]
+tsa_endpoint = "tsa://tsa.confium.org"
+renewal_interval_days = 365
+hash_algorithm_future = "SHA-512"  # used at next renewal
+
+[archive.anchoring]
+ots_calendar = "https://btc.calendar.confium.org"
+anchor_interval_hours = 1
+
+[archive.quorum]
+threshold = 3
+total = 5
+attributes = { "archivist" => 2, "oversight" => 2, "regulator" => 1 }
+```
+
+Every archival event requires T-of-N quorum; every event anchors
+in transparency log + OTS.
+
+## See also
+
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Timestamping service use case](/use-cases/timestamping/)
+- [Compliance officer guide](/audiences/compliance/)
+- [PQ migration](/docs/pq-migration/)
