@@ -1,0 +1,98 @@
+---
+title: "confium trust"
+description: "Manage the trusted-publisher list — which publishers' plugins the local install will accept."
+audience: developer
+order: 21
+---
+
+# `confium trust`
+
+## Synopsis
+
+```sh
+confium trust add    <publisher-key> [--alias <name>]
+confium trust remove <publisher-key-or-alias>
+confium trust list   [--json]
+confium trust verify <publisher-key>
+```
+
+## Description
+
+Manages the trusted-publisher list stored in
+`~/.confium/trust.toml`. Plugins signed by untrusted publishers
+are rejected by `install` and `update` unless `--no-trust` is
+passed.
+
+## Subcommands
+
+### `trust add`
+
+Adds a publisher's signing key to the trusted list. The key can
+be specified as a fingerprint or a path to a public key file.
+
+```sh
+confium trust add --alias ribose 9B1D96E3...
+```
+
+### `trust remove`
+
+Removes a publisher from the trusted list. Accepts either the
+fingerprint or the alias.
+
+```sh
+confium trust remove ribose
+```
+
+### `trust list`
+
+Lists all trusted publishers.
+
+```sh
+confium trust list
+```
+
+### `trust verify`
+
+Verifies that a publisher's key matches the trusted list. Useful
+for CI scripts.
+
+```sh
+confium trust verify 9B1D96E3...
+```
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--alias <name>` | Set a friendly alias (for `add`). |
+| `--json` | Emit machine-readable JSON (for `list`). |
+
+## Examples
+
+```sh
+# Add the official Ribose publisher
+confium trust add 9B1D96E3... --alias ribose
+
+# List all trusted publishers
+confium trust list
+
+# Remove by alias
+confium trust remove ribose
+
+# Script-friendly verify (exits 0 if trusted)
+confium trust verify 9B1D96E3... && echo "trusted"
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Publisher not found (for `remove` / `verify`). |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium install`](./install/)
+- [`confium info`](./info/)
+- [CLI overview](./)

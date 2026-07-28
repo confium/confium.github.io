@@ -1,0 +1,115 @@
+---
+title: "Confium CLI"
+description: "The confium command-line tool — install, manage, and operate Confium plugins, signers, and the local configuration store."
+audience: developer
+order: 13
+---
+
+import CLIArchitectureDiagram from '../../../components/brand/CLIArchitectureDiagram.astro';
+
+# Confium CLI
+
+The `confium` command-line tool is the primary user-facing interface
+to the engine. It manages the local plugin store, the configuration,
+the trusted-publisher list, and the registry client.
+
+## Install
+
+```sh
+cargo install confium-cli --locked
+```
+
+Or, if you have the workspace checked out:
+
+```sh
+cargo install --path crates/confium-cli --locked
+```
+
+Verify:
+
+```sh
+$ confium version
+confium 0.3.0
+```
+
+## Commands
+
+| Command | Status | Description |
+| --- | --- | --- |
+| [`confium version`](./version/) | ✅ functional | Print version information. |
+| [`confium install`](./install/) | ⚠️ stub (awaits `confium-net`) | Install a plugin from the registry. |
+| [`confium remove`](./remove/) | ✅ functional | Remove an installed plugin. |
+| [`confium update`](./update/) | ⚠️ stub (awaits `confium-net`) | Update a plugin to the latest version. |
+| [`confium list`](./list/) | ✅ functional | List installed plugins. |
+| [`confium info`](./info/) | ✅ functional | Show details for one plugin. |
+| [`confium search`](./search/) | ✅ functional | Search the registry for plugins. |
+| [`confium trust`](./trust/) | ✅ functional | Manage the trusted-publisher list. |
+| [`confium config`](./config/) | ✅ functional | Read and write local configuration. |
+
+Two commands (`install`, `update`) are stubs that await the
+`confium-net` HTTP-fetching crate. They parse arguments and emit
+the right shape; the actual download path uses a `NoopDownloader`
+that returns immediately. When `confium-net` lands, the swap is a
+single trait change.
+
+## Architecture
+
+<CLIArchitectureDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The CLI talks to:
+
+- The **local plugin store** (filesystem under `~/.confium/plugins/`).
+- The **configuration store** (`~/.confium/config.toml`).
+- The **trusted-publisher list** (`~/.confium/trust.toml`).
+- The **plugin registry** (HTTPS to `registry.confium.org`).
+
+For daemon-mode operations (signing sessions, transparency log
+interaction), use the separate [`confiumd`](./daemon/) binary.
+
+## Conventions
+
+All commands:
+
+- Exit `0` on success.
+- Exit `2` on usage error (bad arguments).
+- Exit `1` on operational failure (plugin not found, network error).
+- Print human-readable output to stdout by default.
+- Print machine-readable output to stdout with `--json` where supported.
+
+## Shell completion
+
+Generate completion scripts:
+
+```sh
+confium completion bash > /etc/bash_completion.d/confium
+confium completion zsh > /usr/local/share/zsh/site-functions/_confium
+confium completion fish > ~/.config/fish/completions/confium.fish
+```
+
+## Configuration file
+
+The CLI reads `~/.confium/config.toml`:
+
+```toml
+[registry]
+url = "https://registry.confium.org"
+cache_dir = "~/.confium/cache"
+
+[plugins]
+dir = "~/.confium/plugins"
+
+[log]
+level = "info"   # trace, debug, info, warn, error
+```
+
+Override the location with `--config <path>` or `CONFium_CONFIG`
+environment variable.
+
+## See also
+
+- [`confiumd`](./daemon/) — the daemon binary.
+- [`confium-publish`](./publish/) — the plugin-author tool.
+- [Plugin author guide](https://github.com/confium/confium/tree/main/docs/plugin-author-guide.mdx)
+  (Rust workspace docs).
+- [Developer guide](/audiences/developers/) — using the CLI in development.
+- [Operator guide](/audiences/operators/) — running the CLI in production.

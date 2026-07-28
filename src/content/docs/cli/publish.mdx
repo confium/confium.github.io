@@ -1,0 +1,130 @@
+---
+title: "confium-publish"
+description: "The plugin author's publishing tool — wraps a plugin artifact, signs the manifest, and prepares it for submission to the Confium registry."
+audience: developer
+order: 24
+---
+
+# `confium-publish`
+
+`confium-publish` is the plugin author's companion to `confium install`.
+It loads your built plugin, computes its SHA-256, generates a
+`manifest.toml`, signs the manifest with your publisher PGP key, and
+writes a directory tree ready to drop into the registry repository.
+
+## Install
+
+```sh
+cargo install confium-publish --locked
+```
+
+## Synopsis
+
+```sh
+confium-publish <plugin-path> --publisher <key-id> [--out <dir>] [--version <ver>]
+```
+
+## Examples
+
+```sh
+# Build your plugin
+cargo build --release
+
+# Publish (creates ./dist/my-plugin@0.1.0/ with manifest.toml + signature)
+confium-publish ./target/release/libmy_plugin.so \
+  --publisher A1B2C3D4 \
+  --version 0.1.0 \
+  --out ./dist
+
+# Submit as a PR against the registry repo
+cd ../confium-registry
+cp -r ../my-plugin/dist/my-plugin@0.1.0 ./plugins/
+git checkout -b add-my-plugin-0.1.0
+git add .
+git commit -m "Add my-plugin@0.1.0"
+git push
+# Open PR...
+```
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--publisher <key-id>` | PGP key ID for signing. Required. |
+| `--version <ver>` | Plugin version (defaults to `CARGO_PKG_VERSION`). |
+| `--out <dir>` | Output directory. Default: `./dist`. |
+| `--name <name>` | Override the plugin name (defaults to library name). |
+| `--vendor <name>` | Vendor name for the manifest metadata. |
+| `--license <spdx>` | License SPDX identifier (e.g. `BSD-2-Clause`). |
+| `--interface <name>` | Declare an implemented interface (repeatable). |
+
+## Manifest output
+
+The tool writes:
+
+```
+dist/
+└── my-plugin@0.1.0/
+    ├── manifest.toml         # plugin metadata + SHA-256
+    ├── manifest.sig          # detached PGP signature
+    ├── artifact.sha256       # SHA-256 of the .so/.dylib/.dll
+    └── README.md             # generated from manifest
+```
+
+`manifest.toml` example:
+
+```toml
+[plugin]
+name = "my-plugin"
+version = "0.1.0"
+vendor = "Example Corp"
+license = "BSD-2-Clause"
+
+[artifact]
+path = "libmy_plugin.so"
+sha256 = "9b1d96e3..."
+
+[[interfaces]]
+name = "hash"
+version = 0
+algorithms = ["SHA-256", "SHA-512"]
+
+[signing]
+publisher = "A1B2C3D4"
+signature = "manifest.sig"
+```
+
+## Trusted publisher setup
+
+Before publishing, you need a PGP key pair that the registry
+recognizes as a trusted publisher:
+
+1. Generate a key (or use an existing one).
+2. Submit the public key to the registry's trusted-publishers list
+   via PR.
+3. Once merged, your signed manifests will be accepted by
+   `confium install` for users who trust the registry.
+
+## Verification
+
+The publish tool verifies your plugin loads correctly before
+generating the manifest:
+
+```sh
+$ confium-publish ./target/release/libmy_plugin.so --publisher A1B2C3D4
+[INFO] Loading plugin...
+[INFO] Querying interfaces...
+[INFO]   hash v0
+[INFO] Computing SHA-256...
+[INFO] Generating manifest...
+[INFO] Signing manifest with A1B2C3D4...
+[INFO] Wrote dist/my-plugin@0.1.0/
+```
+
+## See also
+
+- [CLI overview](./)
+- [`confiumd`](./daemon/)
+- [Plugin author guide](https://github.com/confium/confium/tree/main/docs/plugin-author-guide.mdx)
+  (Rust workspace docs).
+- [Contributor guide](/audiences/contributors/) — for new plugin authors.

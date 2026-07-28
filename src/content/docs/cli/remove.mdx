@@ -1,0 +1,61 @@
+---
+title: "confium remove"
+description: "Remove an installed Confium plugin from the local store."
+audience: developer
+order: 16
+---
+
+# `confium remove`
+
+## Synopsis
+
+```sh
+confium remove <plugin>[@version] [--purge]
+```
+
+## Description
+
+Removes a plugin from the local plugin store. If the plugin has
+multiple versions installed, only the specified version is removed
+unless `--purge` is given.
+
+## Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| `<plugin>` | Yes | Plugin name with optional `@version` suffix. |
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--purge` | Remove all installed versions. |
+| `--yes` | Skip the interactive confirmation prompt. |
+| `--json` | Emit machine-readable JSON. |
+
+## Examples
+
+```sh
+# Remove a specific version
+confium remove botan@3.0
+
+# Remove all versions
+confium remove botan --purge
+
+# Non-interactive
+confium remove botan --purge --yes
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Plugin not installed. |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium install`](./install/)
+- [`confium list`](./list/)
+- [CLI overview](./)

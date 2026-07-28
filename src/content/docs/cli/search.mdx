@@ -1,0 +1,76 @@
+---
+title: "confium search"
+description: "Search the Confium plugin registry for available plugins."
+audience: developer
+order: 20
+---
+
+# `confium search`
+
+## Synopsis
+
+```sh
+confium search [<query>] [--interface <name>] [--algorithm <name>] [--json]
+```
+
+## Description
+
+Searches the Confium plugin registry for plugins matching the
+query. Results are ranked by relevance and include name, version,
+publisher, and a short description.
+
+## Arguments
+
+| Argument | Required | Description |
+| --- | --- | --- |
+| `<query>` | No | Free-text query (plugin name, vendor, description). If omitted, returns all plugins. |
+
+## Options
+
+| Flag | Description |
+| --- | --- |
+| `--interface <name>` | Filter by interface (e.g. `hash`, `signature`). |
+| `--algorithm <name>` | Filter by algorithm. |
+| `--limit <n>` | Limit results (default 25). |
+| `--json` | Emit machine-readable JSON. |
+
+## Examples
+
+```sh
+# Search by name
+confium search botan
+
+# Filter by interface
+confium search --interface signature
+
+# Find all PQ-signature plugins
+confium search --algorithm ML-DSA-65
+
+# JSON output
+confium search botan --json
+```
+
+## Sample output
+
+```
+NAME          VERSION  PUBLISHER         DESCRIPTION
+botan         3.0.0    Ribose Open       Botan crypto plugin (FIPS-capable)
+botan-fips    3.0.0    Ribose Open       Botan built in FIPS 140 mode
+ring          0.17.8   BoringSSL         Ring crypto plugin (performance)
+
+3 results (limit 25)
+```
+
+## Exit status
+
+| Code | Meaning |
+| --- | --- |
+| 0 | Success. |
+| 1 | Registry unreachable. |
+| 2 | Usage error. |
+
+## See also
+
+- [`confium install`](./install/)
+- [`confium info`](./info/)
+- [CLI overview](./)
