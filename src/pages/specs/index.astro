@@ -1,0 +1,60 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+
+const specs = (await getCollection('specs')).sort((a, b) =>
+  a.data.upstream_path.localeCompare(b.data.upstream_path),
+);
+
+const byCategory = specs.reduce((acc, s) => {
+  const cat = s.data.category || 'spec';
+  if (!acc[cat]) acc[cat] = [];
+  acc[cat].push(s);
+  return acc;
+}, {} as Record<string, typeof specs>);
+
+const categoryLabels: Record<string, string> = {
+  architecture: 'Architecture',
+  modes: 'Deployment modes',
+  transparency: 'Transparency',
+  security: 'Security',
+  spec: 'Specifications',
+};
+
+const categories = Object.keys(byCategory).sort();
+---
+
+<BaseLayout title="Specs" description="Authoritative Confium specifications — architecture, deployment modes, transparency log, security model.">
+  <PageHero
+    eyebrow="Specs"
+    title="Normative specifications"
+    description="The authoritative specs live at github.com/confium/specs. This page renders them through the central site for unified navigation and search."
+  />
+
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 py-12 space-y-12">
+    {categories.map((cat) => (
+      <section>
+        <h2 class="text-xl font-bold mb-4">{categoryLabels[cat] ?? cat}</h2>
+        <ul class="space-y-3">
+          {byCategory[cat].map((s) => (
+            <li>
+              <a
+                href={`/specs/${s.id}/`}
+                class="group block rounded-lg border border-line bg-card p-5 hover:border-brand-300 dark:hover:border-brand-700 transition-colors"
+              >
+                <div class="flex items-baseline justify-between gap-2">
+                  <h3 class="font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300">
+                    {s.data.title}
+                  </h3>
+                  <span class="text-xs font-mono text-muted-foreground">{s.data.upstream_path}</span>
+                </div>
+                <p class="mt-1 text-sm text-muted-foreground">{s.data.description}</p>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
+</BaseLayout>

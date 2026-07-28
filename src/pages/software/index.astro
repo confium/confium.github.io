@@ -1,0 +1,53 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+
+const software = (await getCollection('software')).sort(
+  (a, b) => (a.data.weight ?? 99) - (b.data.weight ?? 99),
+);
+---
+
+<BaseLayout title="Software" description="Confium ships as a Rust workspace, a Ruby gem, and a WASM verifier package. Pick your binding.">
+  <PageHero
+    eyebrow="Software"
+    title="Three bindings, one engine"
+    description="The Rust workspace is the source of truth. Ruby and WASM wrap the same engine for different ecosystems."
+  />
+
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 py-12 space-y-6">
+    {software.map((s, i) => (
+      <Reveal delayMs={i * 70}>
+        <article class="rounded-lg border border-line bg-card p-6 shadow-card">
+          <div class="grid md:grid-cols-[minmax(0,1fr)_auto] gap-4 items-start">
+            <div>
+              <h2 class="text-2xl font-bold">{s.data.name}</h2>
+              <p class="mt-2 text-muted-foreground">{s.data.description}</p>
+              {s.data.docs_repo && (
+                <p class="mt-3 text-xs font-mono text-muted-foreground">
+                  Docs source: {s.data.docs_repo}/tree/{s.data.docs_ref}/{s.data.docs_subtree}
+                </p>
+              )}
+            </div>
+            <div class="md:text-right">
+              <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2">
+                Install
+              </p>
+              <code class="font-mono text-sm bg-brand-50/40 dark:bg-brand-900/15 px-3 py-1.5 rounded-md">
+                {s.data.install_command}
+              </code>
+              {s.data.docs_repo && (
+                <p class="mt-3">
+                  <a href={`/software/${s.id}/docs/`} class="text-brand-700 dark:text-brand-300 hover:underline text-sm font-medium">
+                    Browse docs →
+                  </a>
+                </p>
+              )}
+            </div>
+          </div>
+        </article>
+      </Reveal>
+    ))}
+  </div>
+</BaseLayout>
