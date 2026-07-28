@@ -16,6 +16,7 @@
     "check:links:external": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'"
   },
   "dependencies": {
+    "@astrojs/mdx": "7.0.4",
     "@astrojs/rss": "4.0.19",
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/vue": "7.0.1",
