@@ -1,0 +1,136 @@
+---
+title: "confium-pkcs11-server"
+description: "PKCS#11 v3.0 server — exposes Confium threshold signing to existing PKCS#11 consumers (OpenSSL ENGINE, Java SunPKCS11, nginx)."
+audience: developer
+order: 26
+---
+
+import AdapterPatternDiagram from '../../../components/brand/AdapterPatternDiagram.astro';
+
+# `confium-pkcs11-server`
+
+The PKCS#11 server is the drop-in adapter for the most widely
+deployed HSM interface in the world. Existing PKCS#11 consumers
+— OpenSSL's `ENGINE_pkcs11`, Java's `SunPKCS11` provider, nginx
+with `ssl_engine pkcs11`, plus countless enterprise applications —
+connect to the server and see what looks like a hardware HSM.
+Under the hood, every `C_Sign()` call dispatches into a Confium
+threshold session.
+
+## When to deploy
+
+- You have an existing PKCS#11 consumer and want threshold signing
+  without rewriting it.
+- You're migrating off a physical HSM but want to keep the consumer
+  code unchanged.
+- You need to support multiple consumers (nginx, Java, OpenSSL) with
+  a single signing backend.
+
+## Install
+
+```sh
+cargo install confium-pkcs11-server --locked
+```
+
+## Architecture
+
+<AdapterPatternDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+## Configuration
+
+`/etc/confium/pkcs11-server.toml`:
+
+```toml
+[server]
+socket_path = "/var/run/confium/pkcs11.sock"
+coordinator = "tcp://coordinator.internal:7443"
+
+[slot."0"]
+token_label = "confium-default"
+signer = "director-1"
+pin_env = "CONFium_PKCS11_PIN"
+
+[slot."1"]
+token_label = "confium-backup"
+signer = "director-2"
+pin_env = "CONFium_PKCS11_BACKUP_PIN"
+```
+
+## Consumer-side configuration
+
+### OpenSSL `ENGINE_pkcs11`
+
+```
+# openssl.cnf
+openssl_conf = openssl_init
+
+[openssl_init]
+engines = engine_section
+
+[engine_section]
+pkcs11 = pkcs11_section
+
+[pkcs11_section]
+engine_id = pkcs11
+dynamic_path = /usr/lib/engines-3/pkcs11.so
+MODULE_PATH = /usr/local/lib/confium-pkcs11.so
+init = 0
+```
+
+### Java `SunPKCS11`
+
+```java
+Provider p = Security.getProvider("SunPKCS11");
+p = p.configure("""
+name = Confium
+library = /usr/local/lib/libconfium-pkcs11.so
+slot = 0
+""");
+Security.addProvider(p);
+```
+
+### nginx
+
+```nginx
+ssl_engine pkcs11;
+ssl_certificate "pkcs11:token=confium-default;object=server-cert";
+ssl_certificate_key "pkcs11:token=confium-default;object=server-key";
+```
+
+## Run
+
+```sh
+sudo confium-pkcs11-server \
+  --config /etc/confium/pkcs11-server.toml
+```
+
+systemd unit:
+
+```ini
+[Unit]
+Description=Confium PKCS#11 server
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/confium-pkcs11-server \
+  --config /etc/confium/pkcs11-server.toml
+Restart=on-failure
+User=confium
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## Latency
+
+A typical PKCS#11 `C_Sign()` call to the server:
+- Local co-located coordinator: ~5ms overhead.
+- Coordinator + 3 signers in-region (QUIC): ~30ms end-to-end.
+- Cross-region async session: bounded by signer availability.
+
+## See also
+
+- [Tooling overview](./)
+- [OpenSSL provider](./openssl-provider/) — alternative for native OpenSSL 3.0.
+- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
+- [Operator guide](/audiences/operators/)

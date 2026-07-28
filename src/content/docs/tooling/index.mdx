@@ -1,0 +1,52 @@
+---
+title: Tooling
+description: "Binaries and adapter libraries shipped by the Confium workspace — beyond the CLI."
+audience: developer
+order: 25
+---
+
+# Tooling
+
+Beyond the [`confium` CLI](../cli/), the workspace ships five binaries
+and four adapter libraries. Each is documented in its own page below.
+
+## Binaries
+
+| Tool | Crate | Description |
+| --- | --- | --- |
+| [`confiumd`](../cli/daemon/) | `confium-daemon` | Long-running JSON-RPC service for signing sessions, transparency log, PKI operations. |
+| [`confium-publish`](../cli/publish/) | `confium-publish` | Plugin author's publishing tool — wraps, signs, and stages plugins for the registry. |
+| [`confium-pkcs11-server`](./pkcs11-server/) | `confium-pkcs11-server` | PKCS#11 v3.0 server — exposes Confium as an HSM to existing PKCS#11 consumers. |
+| [`confium-test-harness`](./test-harness/) | `confium-test-harness` | NIST MPTS evaluation harness. |
+| `sim` | `confium-test-harness` | Multi-party threshold simulation runner. |
+
+## Adapter libraries
+
+| Adapter | Crate | Consumers |
+| --- | --- | --- |
+| [OpenSSL provider](./openssl-provider/) | `confium-openssl-provider` | nginx, Apache, custom OpenSSL consumers. |
+| [JCE provider](./jce-provider/) | `confium-jce-provider` | Java applications via KeyStore / Cipher / Signature APIs. |
+| [TLS signer](./tls-signer/) | `confium-tls-signer` | TLS 1.3 signature callback for high-value domains. |
+
+The adapter pattern is uniform: existing consumer code stays
+unchanged, but every cryptographic call dispatches into a Confium
+threshold session behind the scenes.
+
+## Choosing
+
+- **Existing PKCS#11 consumer** (OpenSSL `ENGINE_pkcs11`, Java SunPKCS11,
+  nginx with PKCS#11 module)? Use `confium-pkcs11-server`.
+- **OpenSSL 3.0 native consumer** (modern nginx, curl, custom C)?
+  Use `confium-openssl-provider`.
+- **Java application**? Use `confium-jce-provider`.
+- **TLS terminator needing threshold signing**? Use `confium-tls-signer`.
+
+See [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/) for the broader
+integration story.
+
+## See also
+
+- [CLI reference](../cli/)
+- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
+- [Architecture](../architecture/)
+- [Operator guide](/audiences/operators/)

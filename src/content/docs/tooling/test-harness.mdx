@@ -1,0 +1,109 @@
+---
+title: "confium-test-harness"
+description: "NIST MPTS evaluation harness + multi-party threshold simulation runner."
+audience: evaluator
+order: 30
+---
+
+# `confium-test-harness`
+
+The test harness is the canonical tool for evaluating Confium against
+NIST's Multi-Party Threshold Schemes (MPTS) reference vectors and for
+benchmarking protocol implementations.
+
+## Install
+
+```sh
+cargo install confium-test-harness --locked
+```
+
+The harness provides two binaries:
+
+- `confium-test-harness` — runs the official test-vector suite.
+- `sim` — multi-party threshold simulation runner.
+
+## Test vectors
+
+Run the NIST MPTS test vectors:
+
+```sh
+$ confium-test-harness mpts_vectors
+running 247 tests across 6 protocols...
+frost-ed25519: 48/48 passed
+frost-p256: 48/48 passed
+cmp20: 42/42 passed
+gg18: 39/39 passed
+composite: 36/36 passed
+transparency: 34/34 passed
+
+All 247 tests passed.
+```
+
+The vector files live at
+[`crates/confium-test-harness/tests/vectors/`](https://github.com/confium/confium/tree/main/crates/confium-test-harness/tests/vectors).
+
+## Benchmarks
+
+Run the official benchmark suite:
+
+```sh
+$ confium-test-harness bench --suite standard
+running 18 benchmarks across 3 modes (single-key, threshold-sync, threshold-async)...
+
+sign_frost_p256_sync_3_of_5:    2.1ms ± 0.1ms
+sign_frost_p256_async_3_of_5:   148ms ± 12ms
+sign_cmp20_3_of_5:              3.4ms ± 0.2ms
+sign_gg18_3_of_5:               5.8ms ± 0.4ms
+verify_ecdsa_p256:              0.8ms ± 0.05ms   (no threshold overhead)
+reshare_3_of_5:                 3.2ms ± 0.2ms
+...
+```
+
+Results match the numbers published in the
+[evaluators guide](/audiences/evaluators/).
+
+## Simulation runner
+
+`sim` simulates multi-party signing sessions across multiple
+processes on a single host (for development / CI):
+
+```sh
+# Start a coordinator
+sim coordinator --port 7000 &
+
+# Start 5 signers
+for i in 1 2 3 4 5; do
+  sim signer --id "p$i" --coordinator localhost:7000 &
+done
+
+# Submit a sign request
+sim sign --coordinator localhost:7000 \
+  --message "test" \
+  --algorithm ECDSA-P256 \
+  --quorum 3-of-5
+
+# Watch the session progress
+sim watch --coordinator localhost:7000
+```
+
+## CI integration
+
+The harness is designed for CI pipelines:
+
+```yaml
+# .github/workflows/test.yml
+- name: Run Confium test vectors
+  run: confium-test-harness mpts_vectors --junit results.xml
+
+- name: Upload results
+  uses: actions/upload-artifact@v4
+  with:
+    name: confium-test-results
+    path: results.xml
+```
+
+## See also
+
+- [Evaluators guide](/audiences/evaluators/) — performance numbers and protocol references.
+- [Tooling overview](./)
+- [Test vectors in the workspace](https://github.com/confium/confium/tree/main/crates/confium-test-harness/tests/vectors)
