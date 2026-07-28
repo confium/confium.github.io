@@ -1,0 +1,114 @@
+---
+title: TLS 1.3 signer adapter
+description: "TLS 1.3 signature callback — threshold signing for high-value domain TLS handshakes."
+audience: developer
+order: 35
+---
+
+# TLS 1.3 signer adapter
+
+The TLS signer is a library that provides a TLS 1.3 signature
+callback hook. Modern TLS libraries (OpenSSL, BoringSSL, rustls)
+support asynchronous signature callbacks; the Confium TLS signer
+plugs in and routes each handshake signature through a threshold
+session.
+
+## When to choose the TLS signer
+
+- You operate a high-value TLS-terminating service (banking,
+  identity provider, government, root CA).
+- A single signing key on the terminator is a structural risk.
+- You want signing authority split across multiple parties or
+  regions.
+- You can tolerate ~150ms handshake overhead (typical for a
+  cross-region threshold session).
+
+## Install (Rust)
+
+```toml
+[dependencies]
+confium-tls-signer = "0.3"
+rustls = "0.23"   # or your TLS library of choice
+```
+
+## Usage with rustls
+
+```rust
+use rustls::sign::SigningKey;
+use confium_tls_signer::ThresholdSigningKey;
+
+let signing_key = ThresholdSigningKey::new(
+    "tcp://coordinator.internal:7443",
+    my_cert_public_key,
+    "ECDSA-P256",
+)?;
+
+// Hand this to rustls as the server's signing key.
+let server_config = ServerConfig::builder()
+    .with_no_client_auth()
+    .with_certifier(cert_chain, vec![signing_key]);
+```
+
+Each TLS handshake that requires a signature triggers a threshold
+session. The output is a standard ECDSA-P256 signature; the client
+sees nothing different.
+
+## Usage with OpenSSL 3.0
+
+OpenSSL 3.0's provider API supports signing callbacks. Use the
+`confium-openssl-provider` and configure it for the TLS handshake
+algorithm:
+
+```toml
+[algorithms]
+ECDSA-P256 = "confium"
+```
+
+See [the OpenSSL adapter docs](./openssl/) for details.
+
+## Latency considerations
+
+A TLS handshake adds ~150ms with a cross-region threshold session.
+For high-traffic sites:
+
+- **Co-locate coordinator with terminator.** Drops to ~30ms.
+- **Batch handshakes per session.** A threshold session can
+  produce multiple signatures per round, amortizing the round-trip
+  cost.
+- **Cache session resumption tickets aggressively.** Resumption
+  doesn't require a new signature, so resumed connections have
+  zero threshold overhead.
+- **Use session tickets with shorter validity.** Forces more
+  frequent full handshakes (more threshold sessions), but each
+  session can batch.
+
+## Compatibility
+
+| TLS library | Status |
+| --- | --- |
+| rustls | ✅ full support via `SigningKey` trait. |
+| OpenSSL 3.0 | ✅ via the provider API. |
+| BoringSSL | ✅ via the provider API (OpenSSL-compatible). |
+| wolfSSL | ⏳ callback API exists; integration in progress. |
+| Java JSSE | ✅ via the JCE provider + SunJSSE. |
+| Go crypto/tls | ⏳ `crypto.Signer` interface — adapter in progress. |
+
+## High-availability considerations
+
+For high-traffic TLS deployments, deploy the coordinator
+redundantly:
+
+- Multiple coordinator processes behind a load balancer.
+- Shared transparency log state across coordinators (via the
+  transparency log service).
+- Each coordinator talks to the same signer set.
+- Client-side TLS handshakes hit any available coordinator; the
+  threshold session is stateless across coordinators (state is in
+  the signers + transparency log).
+
+## See also
+
+- [Web TLS use case](/use-cases/web-tls/)
+- [OpenSSL adapter](./openssl/)
+- [JCE adapter](./jce/)
+- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)

@@ -1,0 +1,173 @@
+---
+title: OpenSSL 3.0 provider adapter
+description: "OpenSSL 3.0 provider — expose Confium to modern OpenSSL consumers in-process."
+audience: developer
+order: 33
+---
+
+# OpenSSL 3.0 provider adapter
+
+OpenSSL 3.0 (released 2021) introduced the **provider** API as the
+modern replacement for engines. A provider is a dynamically-loaded
+library that implements cryptographic operations; OpenSSL dispatches
+calls to it based on algorithm name. The Confium provider makes
+every `EVP_PKEY_sign()`, `EVP_DigestSign()`, and similar call
+dispatch into a Confium threshold session.
+
+## When to choose the OpenSSL provider
+
+- Your consumer uses OpenSSL 3.0+ natively (modern nginx, curl,
+  custom C using the EVP API).
+- You want in-process integration (no separate server process).
+- You want selective algorithm routing (Confium for some algorithms,
+  native for others).
+
+## Advantages over PKCS#11
+
+| Aspect | OpenSSL provider | PKCS#11 |
+| --- | --- | --- |
+| Process model | In-process | Separate server process |
+| Latency overhead | ~1ms | ~5ms |
+| Configuration | Single openssl.cnf | Server config + consumer config |
+| Algorithm routing | Per-algorithm | Per-slot |
+| Consumer changes needed | None (auto-routed via config) | Load MODULE_PATH |
+
+The OpenSSL provider is the preferred path when both options are
+available. The PKCS#11 server is for consumers that don't speak
+the provider API (OpenSSL 1.x, Java, proprietary apps).
+
+## Install
+
+```sh
+cargo install confium-openssl-provider --locked
+```
+
+The install copies the provider library to
+`/usr/local/lib/ossl-modules/confium.so`.
+
+## Configuration
+
+`/etc/confium/openssl-provider.conf`:
+
+```toml
+[coordinator]
+endpoint = "tcp://coordinator.internal:7443"
+timeout_ms = 5000
+
+[algorithms]
+# Confium handles these; OpenSSL's native implementations are used for everything else
+Ed25519 = "confium"
+ECDSA-P256 = "confium"
+ECDSA-P384 = "confium"
+```
+
+## Activate
+
+Add to `/etc/ssl/openssl.cnf`:
+
+```
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+ssl_conf = ssl_sect
+
+[provider_sect]
+default = default_sect
+confium = confium_sect
+
+[default_sect]
+activate = 1
+
+[confium_sect]
+activate = 1
+module = /usr/local/lib/ossl-modules/confium.so
+confium_config = /etc/confium/openssl-provider.conf
+```
+
+Verify the provider is loaded:
+
+```sh
+openssl list -providers
+```
+
+Expected output:
+
+```
+Providers:
+  base
+    name: OpenSSL Base Provider
+    version: 3.0.13
+    status: active
+  default
+    name: OpenSSL Default Provider
+    version: 3.0.13
+    status: active
+  confium
+    name: Confium Provider
+    version: 0.3.0
+    status: active
+```
+
+## Consumer-side usage
+
+After activation, consumer code is unchanged. Standard OpenSSL
+operations route through Confium for the configured algorithms:
+
+```sh
+# Generate a key (in production: use Confium's key ceremony)
+openssl genpkey -algorithm Ed25519 -out test.key
+
+# Sign — routes through Confium since Ed25519 = "confium"
+openssl pkeyutl -sign -inkey test.key -rawin -in message.txt -out sig.bin
+
+# Verify — uses OpenSSL native (faster; verification is the same)
+openssl pkeyutl -verify -inkey test.key -rawin -in message.txt -sigfile sig.bin
+```
+
+## Selective routing
+
+Keep OpenSSL's native implementations for some algorithms and only
+route specific ones through Confium:
+
+```toml
+[algorithms]
+Ed25519 = "confium"
+# ECDSA-P256 omitted — uses OpenSSL's native implementation
+```
+
+Useful for gradual migration: route just one algorithm through
+Confium at first, expand as confidence grows.
+
+## Troubleshooting
+
+### Provider not loaded
+
+```sh
+$ openssl list -providers
+Providers:
+  default
+    ...
+```
+
+If `confium` isn't listed:
+
+- Verify the path in `openssl.cnf` matches where the `.so` lives.
+- Check `openssl version` — provider API requires 3.0+.
+- Run `openssl list -providers -verbose` for error messages.
+
+### "algorithm not found"
+
+The algorithm isn't in your `[algorithms]` section, or it's not
+a Confium-supported algorithm. Check the supported list:
+
+```sh
+openssl list -signature-algorithms -provider confium
+```
+
+## See also
+
+- [Adapters overview](./)
+- [PKCS#11 adapter](./pkcs11/) — alternative for older OpenSSL or non-OpenSSL consumers.
+- [Web TLS use case](/use-cases/web-tls/)
+- [confium-openssl-provider crate](https://github.com/confium/confium/tree/main/crates/confium-openssl-provider)

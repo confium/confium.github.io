@@ -1,0 +1,209 @@
+---
+title: JCE provider adapter
+description: "Java Cryptography Extension provider — expose Confium to Java applications via KeyStore / Cipher / Signature APIs."
+audience: developer
+order: 34
+---
+
+# JCE provider adapter
+
+Java applications access cryptography through the Java Cryptography
+Architecture (JCA), backed by JCE providers. The standard providers
+(`SunRsaSign`, `SunEC`, `SunPKCS11`) implement cryptography in-process
+or bridge to a PKCS#11 module. Confium ships a JCE provider that
+routes signature operations through Confium threshold sessions.
+
+## When to choose the JCE provider
+
+- Your Java application signs (or verifies) signatures where
+  single-key custody is a structural risk.
+- You want threshold governance on Java-based services (Spring Boot,
+  enterprise apps, Android apps with custom crypto).
+- You want to keep the standard `java.security` API without bridging
+  through PKCS#11.
+
+## Advantages over PKCS#11
+
+| Aspect | JCE provider | PKCS#11 via SunPKCS11 |
+| --- | --- | --- |
+| Configuration | Java properties | SunPKCS11 config + server config |
+| Performance | In-process | IPC to server |
+| Algorithm routing | Per-algorithm | Per-slot |
+| Type safety | Strong Java types | Native bridge |
+| Android | ✓ supported | ✗ (SunPKCS11 not on Android) |
+
+## Install
+
+### Maven
+
+```xml
+<dependency>
+  <groupId>org.confium</groupId>
+  <artifactId>confium-jce-provider</artifactId>
+  <version>0.3.0</version>
+</dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'org.confium:confium-jce-provider:0.3.0'
+```
+
+### Manual
+
+```sh
+curl -L https://github.com/confium/confium/releases/download/v0.3.0/confium-jce-provider-0.3.0.jar \
+  -o /opt/confium/confium-jce-provider.jar
+
+# Add to classpath at runtime:
+java -cp /opt/confium/confium-jce-provider.jar:your-app.jar com.example.App
+```
+
+## Register the provider
+
+### Static registration (`$JAVA_HOME/conf/security/java.security`)
+
+```
+security.provider.10 = org.confium.jce.ConfiumProvider
+```
+
+### Runtime registration (preferred for application code)
+
+```java
+import org.confium.jce.ConfiumProvider;
+import java.security.Security;
+
+public class App {
+    public static void main(String[] args) {
+        // Register with the highest priority so Confium is preferred
+        // for algorithms it implements.
+        Security.insertProviderAt(new ConfiumProvider(), 1);
+
+        // Now standard java.security APIs work
+        // ...
+    }
+}
+```
+
+## Configuration
+
+`/etc/confium/jce-provider.properties` (or
+`~/.confium/jce-provider.properties`):
+
+```properties
+coordinator.endpoint=tcp://coordinator.internal:7443
+coordinator.timeout_ms=5000
+algorithms=Ed25519,ECDSA-P256,ECDSA-P384
+defaultSigner=director-1
+```
+
+Override the config path with the system property
+`-Dconfium.config=/path/to/config.properties`.
+
+## Usage
+
+After registration, standard Java crypto APIs work unchanged:
+
+```java
+import java.security.*;
+
+// Generate a keypair (or load from Confium KeyStore)
+KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519");
+KeyPair kp = kpg.generateKeyPair();
+
+// Sign — routes through Confium
+Signature sig = Signature.getInstance("Ed25519");
+sig.initSign(kp.getPrivate());
+sig.update("message".getBytes(UTF_8));
+byte[] signature = sig.sign();
+
+// Verify — uses native Java crypto (verification is the same)
+Signature verifier = Signature.getInstance("Ed25519");
+verifier.initVerify(kp.getPublic());
+verifier.update("message".getBytes(UTF_8));
+boolean valid = verifier.verify(signature);
+```
+
+## KeyStore integration
+
+Confium exposes threshold signing keys via the standard `KeyStore`
+API:
+
+```java
+KeyStore ks = KeyStore.getInstance("Confium");
+ks.load(null, null);  // no password; the keystore is virtual
+
+// Enumerate available signers
+Enumeration<String> aliases = ks.aliases();
+while (aliases.hasMoreElements()) {
+    String alias = aliases.nextElement();
+    System.out.println(alias);
+}
+
+// Get a private key — this is a reference that triggers a threshold
+// session when used to sign
+PrivateKey pk = (PrivateKey) ks.getKey("director-1", null);
+```
+
+## Spring Boot integration
+
+In a Spring Boot app, register the provider in `@Configuration`:
+
+```java
+@Configuration
+public class CryptoConfig {
+    @PostConstruct
+    public void registerConfium() {
+        Security.insertProviderAt(new ConfiumProvider(), 1);
+    }
+}
+```
+
+Then any `Signature.getInstance("Ed25519")` call routes through
+Confium automatically.
+
+## Android
+
+The JCE provider works on Android API 26+ (Android 8.0 Oreo).
+For older Android, consider the WASM verifier package via JNI.
+
+In your Android app's `Application.onCreate`:
+
+```java
+public class MyApplication extends Application {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Security.insertProviderAt(new ConfiumProvider(), 1);
+    }
+}
+```
+
+## Troubleshooting
+
+### `No such algorithm: Ed25519`
+
+Confium isn't registered, or the algorithm isn't in the
+`algorithms` config. Verify:
+
+```java
+Provider p = Security.getProvider("Confium");
+System.out.println(p);  // Should print provider info
+System.out.println(p.getService("Signature", "Ed25519"));  // Should be non-null
+```
+
+### `TimeoutException`
+
+The coordinator is unreachable. Check:
+
+- The `coordinator.endpoint` value.
+- Network connectivity.
+- Coordinator logs.
+
+## See also
+
+- [Adapters overview](./)
+- [PKCS#11 adapter](./pkcs11/) — alternative via `SunPKCS11`.
+- [Java JCA documentation](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/security/Provider.html)
+- [Source code](https://github.com/confium/confium/tree/main/crates/confium-jce-provider)
