@@ -1,0 +1,78 @@
+---
+/**
+ * Coordinator session lifecycle — async multi-party signing across
+ * geographically distributed parties.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 480 360"
+  class={className}
+  role="img"
+  aria-labelledby="session-title"
+  set:html={`
+    <title id="session-title">Coordinator session lifecycle: async multi-party threshold signing across geographically distributed parties.</title>
+
+    <!-- Time axis on left -->
+    <line x1="50" y1="40" x2="50" y2="320" stroke="#5f6680" stroke-width="1.5"/>
+    <polygon points="50,40 46,50 54,50" fill="#5f6680"/>
+    <text x="40" y="50" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="700" fill="#5f6680">T+0h</text>
+    <text x="40" y="130" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">T+2h</text>
+    <text x="40" y="210" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">T+5h</text>
+    <text x="40" y="290" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="#5f6680">T+9h</text>
+
+    <!-- Coordinator timeline (middle) -->
+    <line x1="240" y1="40" x2="240" y2="320" stroke="#1a7bec" stroke-width="3"/>
+    <rect x="190" y="20" width="100" height="32" rx="8" fill="#1a7bec"/>
+    <text x="240" y="40" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="white">Coordinator</text>
+
+    <!-- Party timelines -->
+    <!-- Tokyo -->
+    <line x1="120" y1="60" x2="120" y2="320" stroke="#00c2c9" stroke-width="2"/>
+    <rect x="70" y="60" width="100" height="32" rx="8" fill="#00c2c9"/>
+    <text x="120" y="80" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="white">Tokyo</text>
+
+    <!-- New York -->
+    <line x1="360" y1="60" x2="360" y2="320" stroke="#ffdc4a" stroke-width="2"/>
+    <rect x="310" y="60" width="100" height="32" rx="8" fill="#ffdc4a"/>
+    <text x="360" y="80" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="#14172b">New York</text>
+
+    <!-- Frankfurt -->
+    <line x1="120" y1="160" x2="120" y2="320" stroke="#00c2c9" stroke-width="2" stroke-dasharray="3 3"/>
+
+    <!-- Round 1: Tokyo commits at T+0 -->
+    <text x="240" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="700" fill="#1a7bec">Round 1</text>
+    <line x1="120" y1="120" x2="240" y2="120" stroke="#00c2c9" stroke-width="2" marker-end="url(#ar-cyan)"/>
+    <text x="180" y="115" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#009e80">commit</text>
+
+    <!-- Round 2: Frankfurt commits at T+5 -->
+    <text x="240" y="200" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="700" fill="#1a7bec">Round 2</text>
+    <line x1="120" y1="200" x2="240" y2="200" stroke="#00c2c9" stroke-width="2"/>
+    <text x="180" y="195" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#009e80">partial sig</text>
+
+    <!-- Threshold reached: NY joins at T+9 -->
+    <text x="240" y="280" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" font-weight="700" fill="#009e80">QUORUM ✓</text>
+    <line x1="360" y1="280" x2="240" y2="280" stroke="#ffdc4a" stroke-width="2"/>
+    <text x="300" y="275" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="9" fill="#a07d0a">final share</text>
+
+    <!-- Final signature output -->
+    <rect x="160" y="305" width="160" height="36" rx="8" fill="#00dfb7"/>
+    <text x="240" y="328" text-anchor="middle" font-family="IBM Plex Sans, sans-serif" font-size="11" font-weight="700" fill="#14172b">signature produced</text>
+
+    <!-- Annotations on right -->
+    <text x="465" y="120" text-anchor="end" font-family="IBM Plex Sans, sans-serif" font-size="9" font-style="italic" fill="#5f6680">Async:</text>
+    <text x="465" y="132" text-anchor="end" font-family="IBM Plex Sans, sans-serif" font-size="9" font-style="italic" fill="#5f6680">parties join</text>
+    <text x="465" y="144" text-anchor="end" font-family="IBM Plex Sans, sans-serif" font-size="9" font-style="italic" fill="#5f6680">when online</text>
+
+    <defs>
+      <marker id="ar-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#00c2c9"/>
+      </marker>
+    </defs>
+  `}
+/>

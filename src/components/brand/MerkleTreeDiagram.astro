@@ -1,0 +1,104 @@
+---
+/**
+ * RFC 6962 Merkle tree — leaves, internal nodes, root. Shows the
+ * domain-separated hashing (0x01 leaves, 0x02 internal) and one
+ * inclusion proof path.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className = '' } = Astro.props;
+---
+
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 480 360"
+  class={className}
+  role="img"
+  aria-labelledby="merkle-title"
+  set:html={`
+    <title id="merkle-title">RFC 6962 Merkle tree: leaves hashed with 0x01 prefix, internal nodes with 0x02 prefix; root commits to the entire set.</title>
+    <defs>
+      <linearGradient id="mt-root" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#1a7bec"/>
+        <stop offset="100%" stop-color="#00c2c9"/>
+      </linearGradient>
+    </defs>
+
+    <!-- Root -->
+    <rect x="200" y="22" width="80" height="36" rx="8" fill="url(#mt-root)"/>
+    <text x="240" y="44" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" font-weight="700" fill="white">ROOT</text>
+
+    <!-- L1: two internal nodes -->
+    <rect x="100" y="100" width="80" height="36" rx="6" fill="white" stroke="#1a7bec" stroke-width="1.5"/>
+    <text x="140" y="122" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#1a7bec">H(01|L|R)</text>
+
+    <rect x="300" y="100" width="80" height="36" rx="6" fill="white" stroke="#1a7bec" stroke-width="1.5"/>
+    <text x="340" y="122" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#1a7bec">H(01|L|R)</text>
+
+    <!-- Lines from root to L1 -->
+    <line x1="220" y1="58" x2="140" y2="100" stroke="#dfe8f2" stroke-width="1.5"/>
+    <line x1="260" y1="58" x2="340" y2="100" stroke="#dfe8f2" stroke-width="1.5"/>
+
+    <!-- L2: 4 internal nodes -->
+    <g font-family="IBM Plex Mono, monospace" font-size="9">
+      <rect x="40" y="178" width="70" height="32" rx="6" fill="white" stroke="#00c2c9"/>
+      <text x="75" y="198" text-anchor="middle" fill="#009e80">H(01|..)</text>
+
+      <rect x="135" y="178" width="70" height="32" rx="6" fill="white" stroke="#00c2c9"/>
+      <text x="170" y="198" text-anchor="middle" fill="#009e80">H(01|..)</text>
+
+      <rect x="240" y="178" width="70" height="32" rx="6" fill="white" stroke="#00c2c9"/>
+      <text x="275" y="198" text-anchor="middle" fill="#009e80">H(01|..)</text>
+
+      <rect x="335" y="178" width="70" height="32" rx="6" fill="white" stroke="#00c2c9"/>
+      <text x="370" y="198" text-anchor="middle" fill="#009e80">H(01|..)</text>
+    </g>
+
+    <!-- Lines L1 to L2 -->
+    <line x1="120" y1="136" x2="75" y2="178" stroke="#dfe8f2"/>
+    <line x1="160" y1="136" x2="170" y2="178" stroke="#dfe8f2"/>
+    <line x1="320" y1="136" x2="275" y2="178" stroke="#dfe8f2"/>
+    <line x1="360" y1="136" x2="370" y2="178" stroke="#dfe8f2"/>
+
+    <!-- Leaves (entry hashes) -->
+    <g font-family="IBM Plex Sans, sans-serif" font-size="10" font-weight="600">
+      <rect x="35" y="252" width="70" height="40" rx="6" fill="#eef4fa" stroke="#dfe8f2"/>
+      <text x="70" y="270" text-anchor="middle" fill="#23273a" font-size="9" font-family="IBM Plex Mono">0x01</text>
+      <text x="70" y="285" text-anchor="middle" fill="#4f5469">entry[0]</text>
+
+      <rect x="130" y="252" width="70" height="40" rx="6" fill="#fff4d6" stroke="#ffdc4a" stroke-width="1.5"/>
+      <text x="165" y="270" text-anchor="middle" fill="#a07d0a" font-size="9" font-family="IBM Plex Mono">0x01</text>
+      <text x="165" y="285" text-anchor="middle" fill="#a07d0a" font-weight="700">entry[1] ★</text>
+
+      <rect x="235" y="252" width="70" height="40" rx="6" fill="#eef4fa" stroke="#dfe8f2"/>
+      <text x="270" y="270" text-anchor="middle" fill="#23273a" font-size="9" font-family="IBM Plex Mono">0x01</text>
+      <text x="270" y="285" text-anchor="middle" fill="#4f5469">entry[2]</text>
+
+      <rect x="330" y="252" width="70" height="40" rx="6" fill="#eef4fa" stroke="#dfe8f2"/>
+      <text x="365" y="270" text-anchor="middle" fill="#23273a" font-size="9" font-family="IBM Plex Mono">0x01</text>
+      <text x="365" y="285" text-anchor="middle" fill="#4f5469">entry[3]</text>
+    </g>
+
+    <!-- Lines L2 to leaves -->
+    <line x1="70" y1="210" x2="70" y2="252" stroke="#dfe8f2"/>
+    <line x1="170" y1="210" x2="165" y2="252" stroke="#dfe8f2"/>
+    <line x1="275" y1="210" x2="270" y2="252" stroke="#dfe8f2"/>
+    <line x1="370" y1="210" x2="365" y2="252" stroke="#dfe8f2"/>
+
+    <!-- Inclusion proof arrows (gold path for entry[1]) -->
+    <line x1="165" y1="252" x2="170" y2="210" stroke="#ffdc4a" stroke-width="2.5"/>
+    <line x1="170" y1="210" x2="75" y2="178" stroke="#ffdc4a" stroke-width="2.5"/>
+    <line x1="170" y1="178" x2="120" y2="136" stroke="#ffdc4a" stroke-width="2.5"/>
+    <line x1="140" y1="100" x2="220" y2="58" stroke="#ffdc4a" stroke-width="2.5"/>
+
+    <!-- Legend -->
+    <g font-family="IBM Plex Sans, sans-serif" font-size="9">
+      <rect x="40" y="320" width="10" height="10" fill="#ffdc4a"/>
+      <text x="56" y="329" fill="#4f5469">inclusion proof for entry[1]</text>
+
+      <rect x="220" y="320" width="10" height="10" fill="url(#mt-root)"/>
+      <text x="236" y="329" fill="#4f5469">root = commitment to all leaves</text>
+    </g>
+  `}
+/>

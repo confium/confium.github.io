@@ -5,6 +5,10 @@ audience: developer
 order: 4
 ---
 
+import MerkleTreeDiagram from '../../components/brand/MerkleTreeDiagram.astro';
+import SplitViewAttackDiagram from '../../components/brand/SplitViewAttackDiagram.astro';
+import DefenseInDepthDiagram from '../../components/brand/DefenseInDepthDiagram.astro';
+
 # Transparency logs
 
 A transparency log is an append-only public record of every
@@ -40,6 +44,13 @@ The log is a Merkle tree built from SHA-256 hashes:
 - Each leaf is `SHA-256(0x01 || entry_hash)`.
 - Each internal node is `SHA-256(0x02 || left_child || right_child)`.
 - The root hash commits to the entire set of leaves.
+
+<MerkleTreeDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The diagram shows a 4-leaf tree. The gold path traces the inclusion
+proof for entry[1]: the verifier starts with the leaf hash, combines
+it with each sibling up the tree, and checks the final result
+equals the published root.
 
 Domain separation (`0x01` for leaves, `0x02` for internal nodes)
 prevents leaf values from being interpreted as internal nodes and
@@ -82,6 +93,17 @@ Without consistency proofs, a log operator can present two
 different tree heads to different verifiers, and nobody can
 detect it:
 
+<SplitViewAttackDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The left side shows the attack: a compromised log operator presents
+head A to verifier A and head B (with a different root) to verifier
+B. Both can verify their own inclusion proofs against their own
+heads. Neither knows the other's head exists.
+
+The right side shows the defense: witnesses gossip heads between
+coordinators. If two coordinators have different heads for the same
+tree size, the witnesses detect the divergence.
+
 1. Verifier A receives tree head N.
 2. Verifier B receives a different tree head N' (with a different root).
 3. Both verifiers can verify their own inclusion proofs against
@@ -94,6 +116,8 @@ detect it:
 Consistency proofs alone are necessary but not sufficient —
 verifiers must also communicate (gossip) so they know about each
 other's heads. Three layers:
+
+<DefenseInDepthDiagram class="w-full max-w-2xl mx-auto my-8" />
 
 1. **Consistency proofs** — every new tree head extends the
    previous one. Implemented in `confium-transparency`.

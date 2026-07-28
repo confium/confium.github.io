@@ -5,6 +5,8 @@ audience: developer
 order: 3
 ---
 
+import CompositeSignatureDiagram from '../../components/brand/CompositeSignatureDiagram.astro';
+
 # Composite signatures
 
 A composite signature is a single signature value that contains
@@ -13,6 +15,16 @@ when every component verifies. The point: defense-in-depth and
 post-quantum migration without a flag day.
 
 ## The shape of a composite
+
+A composite signature bundles the artifacts of multiple algorithms
+into one value. Verification succeeds only when every component
+verifies against the same message.
+
+<CompositeSignatureDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+The diagram shows three components — Ed25519 (classical), ECDSA-P256
+(classical), and ML-DSA-65 (post-quantum). Break any single algorithm
+and the composite still holds: the other components still verify.
 
 A composite signature is a list of `(algorithm_oid, signature_bytes)`
 pairs, optionally with public key references and metadata:
