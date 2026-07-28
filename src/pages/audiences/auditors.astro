@@ -1,0 +1,168 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PageHero from '../../components/astro/PageHero.astro';
+import Reveal from '../../components/vue/Reveal.vue';
+---
+
+<BaseLayout
+  title="For security auditors"
+  description="Audit checklist, evidence collection guide, and common findings for auditing Confium deployments. SOC 2, ISO 27001, FedRAMP, eIDAS."
+>
+  <PageHero
+    eyebrow="For security auditors"
+    title="Audit a Confium deployment"
+    description="Third-party auditors need to verify Confium deployments for SOC 2, ISO 27001, FedRAMP, and eIDAS. This page provides the audit checklist, evidence collection guide, and common findings."
+  />
+
+  <div class="mx-auto w-full max-w-4xl px-6 py-12 md:py-16 prose dark:prose-invert">
+    <Reveal>
+      <h2>Audit checklist</h2>
+      <p>
+        The following items should be verified during a Confium
+        deployment audit. Each item maps to a standard control
+        framework (SOC 2 CC, ISO 27001 Annex A, NIST 800-53).
+      </p>
+      <table>
+        <thead>
+          <tr><th>#</th><th>Check</th><th>Evidence</th><th>Framework</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>1</td><td>Quorum policy matches governance requirements</td><td>Deployment manifest TOML</td><td>SOC 2 CC6.1</td></tr>
+          <tr><td>2</td><td>Share storage is encrypted at rest</td><td>Signer configuration + key store audit</td><td>SOC 2 CC6.7</td></tr>
+          <tr><td>3</td><td>Transparency log is append-only and externally verifiable</td><td>Inclusion proof for sample entries</td><td>SOC 2 CC7.2</td></tr>
+          <tr><td>4</td><td>Coordinator is deployed redundantly (HA)</td><td>Infrastructure diagram + health check output</td><td>ISO 27001 A.17.1</td></tr>
+          <tr><td>5</td><td>Proactive share refresh runs on schedule</td><td>Cron / systemd timer logs + audit log entries</td><td>NIST AU-6</td></tr>
+          <tr><td>6</td><td>FIPS mode is enabled if required</td><td>Confium::Policy.fips_mode value in audit log</td><td>FIPS 140-2</td></tr>
+          <tr><td>7</td><td>Algorithm allow-list matches jurisdictional requirements</td><td>Policy TOML section</td><td>eIDAS / FedRAMP</td></tr>
+          <tr><td>8</td><td>Witness gossip is operational</td><td>Witness logs showing no divergence alerts</td><td>SOC 2 CC7.2</td></tr>
+          <tr><td>9</td><td>OTS anchoring in Bitcoin is current</td><td>Latest OTS proof timestamp</td><td>SOC 2 CC7.3</td></tr>
+          <tr><td>10</td><td>Audit log is tamper-evident</td><td>Transparency log consistency proof from audit log to current root</td><td>SOC 2 CC7.2</td></tr>
+          <tr><td>11</td><td>Signer identities are attribute-verified</td><td>Identity backend configuration + signer attribute records</td><td>SOC 2 CC6.1</td></tr>
+          <tr><td>12</td><td>Key ceremony was conducted with required witnesses</td><td>Ceremony documentation + transparency log entry for key generation</td><td>NIST SC-12</td></tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Evidence collection guide</h2>
+      <p>
+        For each audit item, collect the following evidence:
+      </p>
+
+      <h3>Coordinator state</h3>
+      <pre><code class="language-sh" set:html={`# Current coordinator version and configuration
+confiumd --version
+cat /etc/confium/daemon.toml
+
+# Active signers
+curl --unix-socket /var/run/confium.sock \\
+  -H "Content-Type: application/json" \\
+  -d '{"jsonrpc":"2.0","method":"list_signers","id":1}'`}></code></pre>
+
+      <h3>Transparency log state</h3>
+      <pre><code class="language-sh"># Current tree root and size
+confium-log root
+confium-log size
+
+# Verify inclusion for a sample entry
+confium-log inclusion-proof --sequence 12345 | confium-log verify</code></pre>
+
+      <h3>Policy and FIPS mode</h3>
+      <pre><code class="language-sh"># Read the active policy
+confium config get fips_mode
+confium config get allowed_signature_algorithms</code></pre>
+
+      <h3>Audit log</h3>
+      <pre><code class="language-sh"># Export recent audit events
+confium-log export --from 2026-01-01 --to 2026-07-28 --format json > audit-export.json
+
+# Verify the export is anchored in the transparency log
+confium-log verify-export --file audit-export.json</code></pre>
+
+      <h3>Witness state</h3>
+      <pre><code class="language-sh"># Check witness health
+confium witness status --peers coord-eu.internal,coord-apac.internal
+
+# Verify no divergence detected
+confium witness log --grep divergence</code></pre>
+    </Reveal>
+
+    <Reveal>
+      <h2>Common findings and remediation</h2>
+      <table>
+        <thead><tr><th>Finding</th><th>Risk</th><th>Remediation</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Share refresh not running on schedule</td>
+            <td>Long-running share aggregation attack window</td>
+            <td>Enable <code>confium-tc-reshare</code> on monthly cron; verify in audit log.</td>
+          </tr>
+          <tr>
+            <td>Single coordinator (no HA)</td>
+            <td>Coordinator failure halts all signing</td>
+            <td>Deploy a second coordinator in a different availability zone.</td>
+          </tr>
+          <tr>
+            <td>FIPS mode not enabled</td>
+            <td>Non-validated crypto in regulated environments</td>
+            <td>Set <code>fips_mode = true</code> in deployment manifest; use Botan FIPS plugin.</td>
+          </tr>
+          <tr>
+            <td>Witness gossip disabled</td>
+            <td>Split-view attacks undetectable</td>
+            <td>Deploy witnesses per region; configure gossip interval (default: 1 hour).</td>
+          </tr>
+          <tr>
+            <td>OTS anchoring stale</td>
+            <td>No irrefutable time proof for recent entries</td>
+            <td>Verify OTS calendar endpoint; check last anchor timestamp.</td>
+          </tr>
+          <tr>
+            <td>Key ceremony undocumented</td>
+            <td>No evidence that key generation followed governance</td>
+            <td>Document ceremony participants, timestamps, and transparency log entry.</td>
+          </tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Independent verification</h2>
+      <p>
+        Auditors should not trust the operator's word. Verify
+        independently:
+      </p>
+      <ol>
+        <li><strong>Transparency log</strong>: compute the Merkle root from the raw entries and compare to the published root.</li>
+        <li><strong>Inclusion proofs</strong>: verify 3-5 random entries' inclusion proofs against the root.</li>
+        <li><strong>OTS anchors</strong>: verify Bitcoin transaction timestamps independently via a blockchain explorer.</li>
+        <li><strong>Policy compliance</strong>: cross-reference the deployment manifest with the jurisdictional requirements.</li>
+        <li><strong>Key ceremony</strong>: verify the transparency log entry for key generation matches the documented ceremony.</li>
+      </ol>
+    </Reveal>
+
+    <Reveal>
+      <h2>Framework mapping</h2>
+      <table>
+        <thead><tr><th>Framework</th><th>Confium coverage</th></tr></thead>
+        <tbody>
+          <tr><td>SOC 2 Type II</td><td>CC6.1 (access), CC6.7 (encryption), CC7.2 (monitoring), CC7.3 (incident response)</td></tr>
+          <tr><td>ISO 27001</td><td>A.8.24 (cryptography), A.17.1 (continuity), A.8.15 (logging)</td></tr>
+          <tr><td>NIST 800-53</td><td>SC-12 (key establishment), AU-6 (audit review), SI-2 (flaw remediation)</td></tr>
+          <tr><td>FedRAMP</td><td>Requires FIPS 140-2 validated crypto + structured audit log</td></tr>
+          <tr><td>eIDAS</td><td>Qualified Electronic Signature requirements (P-384+, audit trail, long-term verifiability)</td></tr>
+        </tbody>
+      </table>
+    </Reveal>
+
+    <Reveal>
+      <h2>Where to go next</h2>
+      <ul>
+        <li><a href="/docs/security-model/">Security model</a> — the threat table and defense layers.</li>
+        <li><a href="/audiences/compliance/">Compliance officer guide</a> — for the deployment-side counterpart.</li>
+        <li><a href="/docs/compliance/">Compliance docs</a> — FIPS, jurisdictional policies, audit format.</li>
+        <li><a href="/docs/transparency-logs/">Transparency logs</a> — how to independently verify.</li>
+      </ul>
+    </Reveal>
+  </div>
+</BaseLayout>
