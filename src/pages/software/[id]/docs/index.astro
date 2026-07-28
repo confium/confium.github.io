@@ -1,0 +1,68 @@
+---
+import { getCollection } from 'astro:content';
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import PageHero from '../../../components/astro/PageHero.astro';
+
+export async function getStaticPaths() {
+  const software = await getCollection('software');
+  const paths = [];
+  for (const sw of software) {
+    if (!sw.data.docs_repo) continue;
+    // Look up vendor docs for this software id.
+    const vendorId = sw.id; // 'rust', 'ruby'
+    const docs = (await getCollection('softwareDocs')).filter((d) => {
+      return d.id.includes(`/${vendorId}/docs/`);
+    });
+    paths.push({
+      params: { id: sw.id },
+      props: { sw, docs },
+    });
+  }
+  return paths;
+}
+
+const { sw, docs } = Astro.props;
+
+const sidebar = docs
+  .sort((a, b) => a.id.localeCompare(b.id))
+  .map((d) => {
+    const slug = d.id.split(`/${sw.id}/docs/`)[1]?.replace(/\.mdx?$/, '') || '';
+    return {
+      label: d.data.title ?? slug,
+      href: `/software/${sw.id}/docs/${slug}/`,
+    };
+  });
+---
+
+<DocsLayout
+  title={`${sw.data.name} docs`}
+  description={`Documentation for the Confium ${sw.data.name} ${sw.id === 'rust' ? 'workspace' : 'gem'}.`}
+  sidebar={sidebar}
+  sourcePath={`${sw.data.docs_repo}/tree/${sw.data.docs_ref}/${sw.data.docs_subtree}`}
+>
+  <PageHero
+    eyebrow={sw.data.name}
+    title={`${sw.data.name} documentation`}
+    description={sw.data.description}
+  />
+
+  <div class="mt-8 prose prose-lg dark:prose-invert max-w-none">
+    {docs.length === 0 ? (
+      <p>
+        Documentation for {sw.data.name} has not been pulled yet. The site
+        build runs <code>scripts/fetch-sources.mjs</code> to sparse-checkout
+        <code>{sw.data.docs_repo}/{sw.data.docs_subtree}/</code> into
+        <code>vendor/{sw.id}/</code> at build time. If this message persists
+        after a fresh build, the upstream repo may be unreachable.
+      </p>
+    ) : (
+      <ul>
+        {sidebar.map((item) => (
+          <li>
+            <a href={item.href}>{item.label}</a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</DocsLayout>
