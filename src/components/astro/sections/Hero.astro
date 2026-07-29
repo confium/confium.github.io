@@ -1,0 +1,84 @@
+---
+/**
+ * Hero — the homepage's opening thesis.
+ *
+ * The thesis is the one thing only Confium can say:
+ *
+ *     No single party can sign alone.
+ *
+ * Stating it as copy is weaker than demonstrating it. So the hero
+ * leads with the QuorumPlayground — a visitor who drags the
+ * slider for 20 seconds understands the product. No diagram or
+ * copy will do it faster.
+ *
+ * Behind the content: a large ModeVenn (three-circle brand motif)
+ * as a translucent backdrop. The brand identity is visible at
+ * first glance and ties to the Three Modes section below.
+ */
+import QuorumPlayground from '../../vue/QuorumPlayground.vue';
+import ModeVenn from '../primitives/ModeVenn.astro';
+import SymbolLogo from '../../brand/SymbolLogo.astro';
+---
+
+<section class="hero-gradient relative overflow-hidden text-white">
+  <div class="hero-grid absolute inset-0" aria-hidden="true"></div>
+
+  <!-- Three-circle motif as hero backdrop -->
+  <div
+    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[36rem] opacity-25 pointer-events-none hidden lg:block"
+    aria-hidden="true"
+  >
+    <ModeVenn variant="feature" class="w-full h-full" />
+  </div>
+
+  <div class="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-28 md:pb-24 md:pt-36">
+    <div class="grid items-center gap-10 lg:grid-cols-[1.05fr_1fr]">
+      <div>
+        <div class="flex items-center gap-3 mb-6">
+          <span class="w-12 h-7 inline-block drop-shadow-lg">
+            <SymbolLogo class="w-full h-full" />
+          </span>
+          <p class="mono-label !text-white/80">
+            Threshold cryptography · Post-quantum ready · Open source
+          </p>
+        </div>
+
+        <h1 class="display-mono-lg text-white font-bold text-balance">
+          No single party<br />
+          can sign alone.
+        </h1>
+
+        <p class="mt-6 max-w-xl text-lg leading-relaxed text-white/85">
+          Confium is the threshold-native trust infrastructure for
+          settings where no single party can be fully trusted alone.
+          A configurable quorum must participate. Every operation
+          anchors into a transparency log.
+        </p>
+
+        <div class="mt-8 flex flex-wrap items-center gap-3">
+          <a href="/docs/architecture/" class="btn btn-white">
+            Read the architecture
+            <span aria-hidden="true">→</span>
+          </a>
+          <a href="#install" class="btn btn-outline-white">
+            Install
+          </a>
+          <a href="/concepts/threshold-crypto-101/" class="btn btn-outline-white">
+            New to threshold crypto?
+          </a>
+        </div>
+
+        <p class="mt-6 text-xs font-mono text-white/60 tracking-wider">
+          BSD-2-Clause · No licensing fees · Sponsored by NLnet + Mozilla MOSS
+        </p>
+      </div>
+
+      <div class="lg:justify-self-end w-full max-w-md lg:w-[34rem]">
+        <p class="mono-label !text-white/70 mb-3 text-center lg:text-left">
+          Drag the slider. Watch what happens.
+        </p>
+        <QuorumPlayground client:load />
+      </div>
+    </div>
+  </div>
+</section>

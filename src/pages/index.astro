@@ -1,89 +1,35 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import HeroDecrypt from '../components/vue/HeroDecrypt.vue';
-import ModeSelector from '../components/vue/ModeSelector.vue';
-import QuorumPlayground from '../components/vue/QuorumPlayground.vue';
+import Hero from '../components/astro/sections/Hero.astro';
+import ThreeModes from '../components/astro/sections/ThreeModes.astro';
+import SignOff from '../components/astro/sections/SignOff.astro';
+import Section from '../components/astro/primitives/Section.astro';
+import Card from '../components/astro/Card.astro';
+import CtaLink from '../components/astro/primitives/CtaLink.astro';
+import Timeline from '../components/astro/primitives/Timeline.astro';
 import InstallTabs from '../components/vue/InstallTabs.vue';
 import Reveal from '../components/vue/Reveal.vue';
-import ThreeModeDiagram from '../components/brand/ThreeModeDiagram.astro';
-import SymbolLogo from '../components/brand/SymbolLogo.astro';
+import { PROOF_POINTS, DEPLOYMENTS, STEPS } from '../data/homepage';
 
-const differences = [
+const blogPosts = [
   {
-    title: 'Software upgrade, not HSM replacement',
-    body: 'Migrate to post-quantum signatures without re-issuing every certificate. Add an ML-DSA-65 component alongside Ed25519 via composite signatures; verifiers that haven\'t upgraded still accept the classical component, verifiers that have already migrated. No flag day, no forklift upgrade, no new hardware.',
+    href: '/blog/2026-07-28-introducing-confium/',
+    title: 'Introducing Confium',
+    excerpt: 'Why we built a threshold-native trust infrastructure framework, and what ships today.',
+    category: 'Announcement',
   },
   {
-    title: 'Catches silent certificate fraud',
-    body: 'Every signing operation anchors into an append-only Merkle transparency log implementing RFC 6962. Split-view attacks become detectable via consistency proofs and witness gossip between coordinators. Optional OpenTimestamps anchoring in Bitcoin gives an irrefutable "what head existed at time T" record.',
+    href: '/blog/2026-07-28-sovereign-pki-launch/',
+    title: 'Sovereign PKI launch',
+    excerpt: 'Mode 3 deep dive — institutional trust without a single point of failure.',
+    category: 'Deep dive',
   },
   {
-    title: 'Standards-only — no vendor lock-in',
-    body: 'PKCS#11 v3.0, OpenSSL 3.0 provider, JCE provider, CMS (RFC 5652), X.509, RFC 6962 transparency. Confium slots into existing infrastructure; it never asks you to adopt a proprietary protocol or a single-vendor SDK.',
+    href: '/blog/2026-07-28-pq-migration-walkthrough/',
+    title: 'PQ migration walkthrough',
+    excerpt: 'How composite signatures turn migration into a software upgrade.',
+    category: 'Walkthrough',
   },
-  {
-    title: 'Globally distributed signers',
-    body: 'The async coordinator handles round-trip latency across continents. Parties don\'t need to be online simultaneously — sessions complete over hours or days. A director in Tokyo can sign during their workday; a director in New York submits theirs hours later; the coordinator combines when quorum is reached.',
-  },
-  {
-    title: 'Open source, BSD-2-Clause',
-    body: 'No per-transaction fees, no proprietary protocol, no CLAU. Funded by the European Commission through NLnet\'s NGI Zero PET program and by Mozilla MOSS. Project decisions stay with the maintainer collective.',
-  },
-  {
-    title: 'No unsafe code, anywhere',
-    body: 'Every crate carries `#![forbid(unsafe_code)]`. FFI is centralized in confium-core and uses edition 2024\'s #[unsafe(no_mangle)] form. All threshold protocols (FROST, CMP20, GG18) ship real cryptography — not stubs, not placeholders, not unfinished work.',
-  },
-];
-
-const modes = [
-  {
-    id: 'peer-tc',
-    name: 'Peer-to-Peer TC',
-    tagline: 'Direct threshold cryptography between nodes.',
-    description:
-      'The simplest deployment: nodes exchange threshold signing messages directly over the transport of choice. No intermediary, no PKI, no translation layer. Use this when you control both ends of the channel and you want minimal moving parts.',
-    bullets: [
-      'MPC, distributed custody, BFT consensus',
-      'Async sessions across hours or days',
-      'Two-round FROST signing, three-round CMP20',
-    ],
-    href: '/docs/mode1-peer-tc/',
-  },
-  {
-    id: 'pki-drop-in',
-    name: 'PKI Drop-in',
-    tagline: 'Threshold keys, unchanged consumers.',
-    description:
-      'Drop Confium in front of existing PKCS#11, OpenSSL, or JCE consumers. They keep working unchanged — but every signature now requires a threshold quorum behind the scenes. This is the natural home for post-quantum migration via composite signatures.',
-    bullets: [
-      'PKCS#11 v3.0 server, OpenSSL 3.0 provider, JCE, TLS signer',
-      'HSM replacement without replacing the HSM consumer',
-      'Composite Ed25519 + ECDSA-P256 + ML-DSA-65 signatures',
-    ],
-    href: '/docs/mode2-pki-drop-in/',
-  },
-  {
-    id: 'sovereign-pki',
-    name: 'Sovereign PKI',
-    tagline: 'Institutional PKI without a single trusted party.',
-    description:
-      'Custom certificate formats, delegation rules, archival cadence, and quorum composition for institutions where no single stakeholder can be trusted. Sovereignty over formats, jurisdictions, governance — the things conventional PKI locks down.',
-    bullets: [
-      'Custom certificate profiles via confium-cert',
-      'Attribute-based quorum: 5-of-9 directors from 3 regions',
-      'Transparency log + OTS anchoring + RFC 4998 ERS archival',
-    ],
-    href: '/docs/mode3-sovereign-pki/',
-  },
-];
-
-const deployments = [
-  { name: 'Calibration registries', body: 'BIPM-style metrology chains where measurements must be traceable to a sovereign reference.' },
-  { name: 'Pharma regulator approvals', body: 'Multi-jurisdiction regulatory sign-off on clinical trial data and drug approvals.' },
-  { name: 'Academic accreditation', body: 'Cross-institutional degree and credential verification without a single trusted authority.' },
-  { name: 'Supply-chain provenance', body: 'Manufacturing step attestation anchored in a public transparency log.' },
-  { name: 'Treaty organizations', body: 'Multi-state cooperative instruments requiring concurrent sovereign approval.' },
-  { name: 'Certified instruments registry', body: 'A reference Mode 3 deployment among many others.' },
 ];
 ---
 
@@ -92,565 +38,127 @@ const deployments = [
   description="Threshold-native trust infrastructure for a post-quantum world. A configurable framework organizations deploy with their own parameters."
   headerOverlay
 >
-  <!-- ===================== Hero ===================== -->
-  <section class="hero-gradient relative overflow-hidden text-white">
-    <div class="hero-grid absolute inset-0" aria-hidden="true"></div>
-    <!-- Floating logo watermark -->
-    <div class="absolute top-32 right-8 w-48 h-28 opacity-15 hidden lg:block" aria-hidden="true">
-      <SymbolLogo class="w-full h-full" />
-    </div>
-    <div class="relative mx-auto w-full max-w-6xl px-6 pb-20 pt-28 md:pb-24 md:pt-36">
-      <div class="grid items-center gap-10 lg:grid-cols-[1.15fr_1fr]">
-        <div>
-          <div class="flex items-center gap-3 mb-6">
-            <span class="w-12 h-7 inline-block drop-shadow-lg">
-              <SymbolLogo class="w-full h-full" />
-            </span>
-            <p class="mono-label text-white/80">Threshold cryptography · Post-quantum ready · Open source</p>
-          </div>
-          <h1 class="text-balance font-sans text-4xl font-bold leading-[1.12] tracking-tight text-white md:text-5xl md:leading-[1.08]">
-            <HeroDecrypt client:visible text="Threshold-native trust infrastructure" />
-            <span class="block text-white/90 mt-2">
-              for a post-quantum world.
-            </span>
-          </h1>
-          <p class="mt-6 max-w-xl text-lg leading-relaxed text-white/85">
-            Confium is to threshold cryptography what TLS libraries are to
-            transport security. You bring the algorithms, the quorum policy,
-            the certificate profile — Confium provides the engine, the
-            coordinator, the adapters, and the audit trail.
-          </p>
-          <p class="mt-3 max-w-xl text-base leading-relaxed text-white/70">
-            No single party holds the signing key. A configurable quorum
-            must participate. Every operation anchors into a transparency
-            log. BSD-2-Clause, sponsored by NLnet and NGI Zero PET.
-          </p>
-          <div class="mt-8 flex flex-wrap items-center gap-3">
-            <a href="/docs/architecture/" class="btn btn-white">
-              Read the architecture
-              <span aria-hidden="true">→</span>
-            </a>
-            <a href="#install" class="btn btn-outline-white">
-              Install
-            </a>
-            <a href="/concepts/threshold-crypto-101/" class="btn btn-outline-white">
-              New to threshold crypto?
-            </a>
-          </div>
-        </div>
+  <Hero />
 
-        <div class="lg:justify-self-end">
-          <!-- Three-mode architecture SVG diagram -->
-          <ThreeModeDiagram class="w-full max-w-md lg:w-[34rem] drop-shadow-2xl" />
-        </div>
-      </div>
-    </div>
-  </section>
+  <ThreeModes />
 
-  <!-- ===================== Stats band ===================== -->
-  <section class="border-b border-line bg-surface-dim">
-    <div class="mx-auto w-full max-w-6xl px-6 py-8">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-        <div>
-          <p class="font-sans text-3xl md:text-4xl font-bold text-accent">43</p>
-          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Rust crates</p>
-        </div>
-        <div>
-          <p class="font-sans text-3xl md:text-4xl font-bold text-accent2">725+</p>
-          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Tests passing</p>
-        </div>
-        <div>
-          <p class="font-sans text-3xl md:text-4xl font-bold text-gold-ink">3</p>
-          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Deployment modes</p>
-        </div>
-        <div>
-          <p class="font-sans text-3xl md:text-4xl font-bold text-accent">10+</p>
-          <p class="mt-1 text-xs font-mono uppercase tracking-wider text-faint">Protocol implementations</p>
-        </div>
-      </div>
+  <Section
+    eyebrow="How it works"
+    title="From key generation to audited signature"
+    lead="A signing operation passes through five stages. The secret is created once, split into N shares, and never reconstructed. Every signing event anchors into a transparency log for audit."
+  >
+    <Timeline steps={STEPS} />
+    <div class="mt-6">
+      <CtaLink
+        href="/concepts/threshold-crypto-101/"
+        label="Read the threshold crypto primer"
+      />
     </div>
-  </section>
+  </Section>
 
-  <!-- ===================== Three modes ===================== -->
-  <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
+  <Section
+    tone="blue"
+    eyebrow="What makes Confium different"
+    title="Six properties no single-key PKI gives you"
+    lead="Conventional PKI assumes a single trusted CA. Every property below is a structural weakness of that model — and a structural property of Confium's threshold-native design."
+  >
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {PROOF_POINTS.map((d, i) => (
+        <Reveal delayMs={i * 50}>
+          <Card title={d.title} description={d.body} />
+        </Reveal>
+      ))}
+    </div>
+  </Section>
+
+  <Section
+    id="install"
+    eyebrow="Get started"
+    title="Install in your language"
+    lead="Three bindings ship today. The Rust workspace is the source of truth; the Ruby gem and WASM verifier package wrap the same engine for different ecosystems. Each gets you to a working Confium consumer in under five minutes."
+  >
+    <div class="grid lg:grid-cols-[1.3fr_1fr] gap-8 items-start">
       <Reveal>
-        <p class="mono-label">Three deployment modes</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          One engine, three integration shapes
-        </h2>
-        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          The same primitives serve all three. What changes is the integration
-          boundary — peer-to-peer network code, a PKCS#11 adapter, or a full
-          Sovereign PKI profile with custom certificate formats and attribute-based
-          quorum policies.
-        </p>
+        <InstallTabs client:visible />
       </Reveal>
-
-      <div class="mt-10">
-        <ModeSelector client:visible />
-      </div>
-
-      <div class="mt-12 grid gap-4 md:grid-cols-3">
-        {modes.map((mode, i) => (
-          <Reveal delayMs={i * 70}>
-            <a
-              href={mode.href}
-              class="card card-hover group block h-full p-6"
-            >
-              <div class="flex items-baseline justify-between gap-3">
-                <h3 class="font-sans text-xl font-bold">{mode.name}</h3>
-                <span class="text-accent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">→</span>
-              </div>
-              <p class="mt-1 text-sm font-mono text-faint">{mode.tagline}</p>
-              <p class="mt-4 text-sm leading-relaxed text-muted">{mode.description}</p>
-              <ul class="mt-4 space-y-1.5 text-sm">
-                {mode.bullets.map((b) => (
-                  <li class="flex gap-2 text-muted">
-                    <span class="text-accent2 mt-1.5 w-1.5 h-1.5 rounded-full bg-current flex-shrink-0" aria-hidden="true"></span>
-                    <span>{b}</span>
-                  </li>
-                ))}
-              </ul>
-            </a>
-          </Reveal>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== Find your path ===================== -->
-  <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">For you</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          Find your path
-        </h2>
-        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          Confium is a heavy system with many audiences. Pick your role
-          below and you land on a page tailored to your concerns —
-          business value, threat model, code examples, deployment
-          runbook, compliance matrix, or evaluation data.
-        </p>
-      </Reveal>
-
-      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { href: '/audiences/executives/', name: 'Executives', body: 'Business value, risk reduction, compliance, cost model, vendor independence.', accent: 'text-accent' },
-          { href: '/audiences/architects/', name: 'Security architects', body: 'Threat model, integration patterns, defense in depth, failure modes.', accent: 'text-accent2' },
-          { href: '/audiences/developers/', name: 'Developers', body: 'Ruby / Rust / WASM quickstarts, typed error model, code examples.', accent: 'text-accent' },
-          { href: '/audiences/operators/', name: 'PKI operators', body: 'Deployment runbook, monitoring hooks, backup and recovery, upgrades.', accent: 'text-accent2' },
-          { href: '/audiences/compliance/', name: 'Compliance officers', body: 'FIPS 140 mode, jurisdictional policies, audit log format, framework mapping.', accent: 'text-gold-ink' },
-          { href: '/audiences/evaluators/', name: 'Evaluators and researchers', body: 'Test vectors, performance benchmarks, protocol references, comparison matrix.', accent: 'text-gold-ink' },
-        ].map((a, i) => (
-          <Reveal delayMs={i * 50}>
-            <a href={a.href} class="card card-hover group block h-full p-5">
-              <p class={`mono-label !${a.accent}`}>{a.name}</p>
-              <h3 class="mt-2 font-sans text-lg font-bold group-hover:text-accent transition-colors">
-                {a.name}
-              </h3>
-              <p class="mt-2 text-sm leading-relaxed text-muted">{a.body}</p>
-              <p class="mt-3 text-xs text-accent group-hover:underline">
-                Read the guide →
-              </p>
-            </a>
-          </Reveal>
-        ))}
-      </div>
-
-      <p class="mt-8 text-sm text-muted text-center">
-        <a href="/audiences/" class="text-accent hover:text-accent-deep font-semibold">
-          See all audiences →
-        </a>
-      </p>
-    </div>
-  </section>
-
-  <!-- ===================== How it works ===================== -->
-  <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">How it works</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          From key generation to audited signature
-        </h2>
-        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          A signing operation passes through five stages. The secret
-          is created once, split into N shares, and never reconstructed.
-          Every signing event anchors into a transparency log for
-          audit.
-        </p>
-      </Reveal>
-
-      <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
-        {[
-          { step: '1', title: 'Generate', body: 'Distributed key generation ceremony. Secret exists once, then is split.', color: 'accent' },
-          { step: '2', title: 'Distribute', body: 'Shares go to N parties. No single party holds the full key.', color: 'accent2' },
-          { step: '3', title: 'Sign', body: 'T-of-N quorum co-signs without reconstructing the secret.', color: 'accent' },
-          { step: '4', title: 'Refresh', body: 'Shares re-randomize periodically. Compromise windows shrink.', color: 'gold-ink' },
-          { step: '5', title: 'Anchor', body: 'Event lands in transparency log. Public, auditable, immutable.', color: 'accent2' },
-        ].map((s, i) => (
-          <Reveal delayMs={i * 60}>
-            <div class="card card-hover h-full p-5 relative">
-              <span class={`absolute -top-3 left-5 w-7 h-7 rounded-full bg-${s.color} text-white font-mono text-xs font-bold flex items-center justify-center shadow-card`}>
-                {s.step}
-              </span>
-              <h3 class="mt-3 font-sans text-base font-bold">{s.title}</h3>
-              <p class="mt-1.5 text-xs leading-relaxed text-muted">{s.body}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-
-      <p class="mt-6 text-sm">
-        <a href="/concepts/threshold-crypto-101/" class="font-semibold text-accent hover:text-accent-deep">
-          Read the threshold crypto primer →
-        </a>
-      </p>
-    </div>
-  </section>
-
-  <!-- ===================== What makes Confium different ===================== -->
-  <section class="band-blue border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">What makes Confium different</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          Six properties no single-key PKI gives you
-        </h2>
-        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          Conventional PKI assumes a single trusted CA. Every property below
-          is a structural weakness of that model — and a structural property
-          of Confium's threshold-native design.
-        </p>
-      </Reveal>
-      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {differences.map((d, i) => (
-          <Reveal delayMs={i * 50}>
-            <div class="card card-hover h-full p-6">
-              <h3 class="font-sans text-lg font-bold">{d.title}</h3>
-              <p class="mt-2 text-sm leading-relaxed text-muted">{d.body}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== What Confium is NOT ===================== -->
-  <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">What Confium is not</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          Three common misclassifications
-        </h2>
-      </Reveal>
-      <div class="mt-10 grid gap-4 md:grid-cols-3">
-        <div class="card h-full p-6">
-          <div class="flex items-baseline gap-3">
-            <span class="font-mono text-2xl text-accent2">×</span>
-            <h3 class="font-sans text-lg font-bold">Not a crypto library</h3>
-          </div>
-          <p class="mt-2 text-sm leading-relaxed text-muted">
-            Crypto libraries (ring, rust-crypto) provide primitives. Confium
-            loads those primitives via plugins and orchestrates them across
-            multiple parties. Algorithms are pluggable, not embedded.
-          </p>
-        </div>
-        <div class="card h-full p-6">
-          <div class="flex items-baseline gap-3">
-            <span class="font-mono text-2xl text-accent2">×</span>
-            <h3 class="font-sans text-lg font-bold">Not an HSM</h3>
-          </div>
-          <p class="mt-2 text-sm leading-relaxed text-muted">
-            HSMs store keys in tamper-resistant hardware. Confium integrates
-            with HSMs via PKCS#11 / TPM — the threshold protocol runs in
-            software, the secrets stay wherever you put them.
-          </p>
-        </div>
-        <div class="card h-full p-6">
-          <div class="flex items-baseline gap-3">
-            <span class="font-mono text-2xl text-accent2">×</span>
-            <h3 class="font-sans text-lg font-bold">Not just OpenPGP</h3>
-          </div>
-          <p class="mt-2 text-sm leading-relaxed text-muted">
-            RNP is one consumer of Confium. The framework speaks every major
-            standard — PKCS#11, OpenSSL 3.0, JCE, CMS, X.509, RFC 6962.
-            OpenPGP is one shape, not the whole story.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== Quorum playground ===================== -->
-  <section class="band-teal border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <div class="grid lg:grid-cols-[1fr_1.1fr] gap-12 items-start">
-        <Reveal>
-          <p class="mono-label">Interactive</p>
-          <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-            No single party can sign alone
-          </h2>
-          <p class="mt-4 text-lg leading-relaxed text-muted">
-            Threshold cryptography splits the signing key across N parties.
-            Any T of them can produce a valid signature jointly. Fewer than
-            T reveals nothing useful — the math doesn't even let you tell
-            whether you have the right answer.
-          </p>
-          <p class="mt-3 text-base leading-relaxed text-muted">
-            Drag the sliders below to model any quorum policy. Try T = 2
-            with only 1 party participating: the playground shows "No
-            signature possible". Reach the threshold and the status flips
-            green.
-          </p>
-          <ul class="mt-6 space-y-2 text-sm text-muted">
-            <li class="flex gap-2">
-              <span class="text-accent2">→</span>
-              <span>The full secret is never reconstructed on any single machine.</span>
+      <Reveal delayMs={80}>
+        <div class="card p-6 bg-surface-dim border-accent/20">
+          <p class="mono-label !text-accent">Five-minute path</p>
+          <h3 class="mt-2 font-sans text-lg font-bold">Verify a signature, end to end</h3>
+          <ol class="mt-4 space-y-3 text-sm text-muted">
+            <li class="flex gap-3">
+              <span class="font-mono text-accent font-bold flex-shrink-0">1.</span>
+              <span><code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">gem install confium</code> — installs the gem and builds the native extension.</span>
             </li>
-            <li class="flex gap-2">
-              <span class="text-accent2">→</span>
-              <span>Compromising T−1 parties reveals zero information.</span>
+            <li class="flex gap-3">
+              <span class="font-mono text-accent font-bold flex-shrink-0">2.</span>
+              <span>Require and parse a certificate: <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">Confium::PKI::Certificate.from_pem(...)</code></span>
             </li>
-            <li class="flex gap-2">
-              <span class="text-accent2">→</span>
-              <span>Policies compose: 5-of-9 directors from 3 distinct regions.</span>
+            <li class="flex gap-3">
+              <span class="font-mono text-accent font-bold flex-shrink-0">3.</span>
+              <span>Validate the chain via <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">PathValidator</code>.</span>
             </li>
-          </ul>
-          <a
-            href="/concepts/threshold-crypto-101/"
-            class="mt-6 inline-flex items-center gap-1 font-sans font-semibold text-accent hover:text-accent-deep transition-colors"
-          >
-            Read the threshold crypto primer
-            <span aria-hidden="true">→</span>
-          </a>
-        </Reveal>
-        <Reveal delayMs={120}>
-          <QuorumPlayground client:visible />
-        </Reveal>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== Install ===================== -->
-  <section id="install" class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">Get started</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          Install in your language
-        </h2>
-        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          Three bindings ship today. The Rust workspace is the source of truth;
-          the Ruby gem and WASM verifier package wrap the same engine for
-          different ecosystems. Each gets you to a working Confium consumer
-          in under five minutes.
-        </p>
-      </Reveal>
-      <div class="mt-10 grid lg:grid-cols-[1.3fr_1fr] gap-8 items-start">
-        <Reveal>
-          <InstallTabs client:visible />
-        </Reveal>
-        <Reveal delayMs={80}>
-          <div class="card p-6 bg-surface-dim border-accent/20">
-            <p class="mono-label !text-accent">Five-minute path</p>
-            <h3 class="mt-2 font-sans text-lg font-bold">Verify a signature, end to end</h3>
-            <ol class="mt-4 space-y-3 text-sm text-muted">
-              <li class="flex gap-3">
-                <span class="font-mono text-accent font-bold flex-shrink-0">1.</span>
-                <span><code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">gem install confium</code> — installs the gem and builds the native extension.</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="font-mono text-accent font-bold flex-shrink-0">2.</span>
-                <span>Require and parse a certificate: <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">Confium::PKI::Certificate.from_pem(...)</code></span>
-              </li>
-              <li class="flex gap-3">
-                <span class="font-mono text-accent font-bold flex-shrink-0">3.</span>
-                <span>Validate the chain via <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">PathValidator</code>.</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="font-mono text-accent font-bold flex-shrink-0">4.</span>
-                <span>Verify a composite signature with the per-algorithm callbacks.</span>
-              </li>
-              <li class="flex gap-3">
-                <span class="font-mono text-accent font-bold flex-shrink-0">5.</span>
-                <span>Anchor the verification event in a transparency log.</span>
-              </li>
-            </ol>
-            <a href="/audiences/developers/" class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-deep">
-              Full developer guide <span aria-hidden="true">→</span>
-            </a>
-          </div>
-        </Reveal>
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== Reference deployments ===================== -->
-  <section class="band-gold border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">Reference deployments</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          Where Sovereign PKI is the right shape
-        </h2>
-        <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
-          Institutional certificate infrastructure where no single party can
-          be trusted. These are six scenarios where Mode 3 is already the
-          natural fit — not an exhaustive list.
-        </p>
-      </Reveal>
-      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {deployments.map((d, i) => (
-          <Reveal delayMs={i * 50}>
-            <div class="card card-hover h-full p-6">
-              <h3 class="font-sans text-lg font-bold">{d.name}</h3>
-              <p class="mt-2 text-sm leading-relaxed text-muted">{d.body}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-      <p class="mt-8 text-sm text-muted">
-        <a href="/use-cases/sovereign-pki/" class="font-semibold text-accent hover:text-accent-deep">
-          Read the Sovereign PKI use case →
-        </a>
-      </p>
-    </div>
-  </section>
-
-  <!-- ===================== Latest from the blog ===================== -->
-  <section class="border-b border-line bg-surface-dim">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <div class="flex items-baseline justify-between flex-wrap gap-3">
-          <div>
-            <p class="mono-label">From the blog</p>
-            <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-              Recent writing
-            </h2>
-          </div>
-          <a href="/blog/" class="text-sm font-semibold text-accent hover:text-accent-deep">
-            All posts →
-          </a>
-        </div>
-      </Reveal>
-      <div class="mt-10 grid md:grid-cols-3 gap-4">
-        {[
-          { href: '/blog/2026-07-28-introducing-confium/', title: 'Introducing Confium', excerpt: 'Why we built a threshold-native trust infrastructure framework, and what ships today.', category: 'Announcement' },
-          { href: '/blog/2026-07-28-sovereign-pki-launch/', title: 'Sovereign PKI launch', excerpt: 'Mode 3 deep dive — institutional trust without a single point of failure.', category: 'Deep dive' },
-          { href: '/blog/2026-07-28-pq-migration-walkthrough/', title: 'PQ migration walkthrough', excerpt: 'How composite signatures turn migration into a software upgrade.', category: 'Walkthrough' },
-        ].map((post, i) => (
-          <Reveal delayMs={i * 60}>
-            <a href={post.href} class="card card-hover group block h-full p-6">
-              <p class="mono-label !text-accent">{post.category}</p>
-              <h3 class="mt-2 font-sans text-lg font-bold group-hover:text-accent transition-colors">
-                {post.title}
-              </h3>
-              <p class="mt-2 text-sm leading-relaxed text-muted">{post.excerpt}</p>
-              <p class="mt-4 text-xs text-accent group-hover:underline">Read post →</p>
-            </a>
-          </Reveal>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- ===================== Final CTA ===================== -->
-  <section class="border-b border-line hero-gradient relative overflow-hidden text-white">
-    <div class="hero-grid absolute inset-0 opacity-50" aria-hidden="true"></div>
-    <div class="relative mx-auto w-full max-w-4xl px-6 py-16 md:py-24 text-center">
-      <Reveal>
-        <h2 class="font-sans text-3xl md:text-5xl font-bold tracking-tight text-balance">
-          Start building with Confium today
-        </h2>
-        <p class="mt-5 max-w-2xl mx-auto text-lg leading-relaxed text-white/85">
-          Install in your language of choice, verify your first
-          signature in five minutes, and join the open-source
-          threshold-trust collective.
-        </p>
-        <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a href="/docs/getting-started/" class="btn btn-white">
-            Get started
-            <span aria-hidden="true">→</span>
-          </a>
-          <a href="#install" class="btn btn-outline-white">
-            Install
-          </a>
-          <a href="https://github.com/confium" class="btn btn-outline-white" aria-label="GitHub">
-            <svg class="w-4 h-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-              <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" />
-            </svg>
-            GitHub
-          </a>
-        </div>
-        <p class="mt-6 text-xs font-mono text-white/60 tracking-wider">
-          BSD-2-Clause · No licensing fees · Sponsored by NLnet + Mozilla MOSS
-        </p>
-      </Reveal>
-    </div>
-  </section>
-
-  <!-- ===================== Sponsorship ===================== -->
-  <section class="border-b border-line">
-    <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
-      <Reveal>
-        <p class="mono-label">Sponsored by</p>
-        <h2 class="mt-3 font-sans text-3xl font-bold tracking-tight md:text-4xl">
-          Funded by the European Commission<br class="hidden sm:inline" /> through NGI Zero PET
-        </h2>
-        <p class="mt-4 max-w-3xl text-lg leading-relaxed text-muted">
-          Confium is developed in the open with the support of the
-          <a href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/" class="text-accent hover:text-accent-deep font-medium">NGI Zero PET</a>
-          program — a European Commission initiative administered by
-          <a href="https://nlnet.nl/" class="text-accent hover:text-accent-deep font-medium">NLnet</a>
-          that funds open-source work strengthening the privacy and trust
-          properties of the internet. Additional support from
-          <a href="https://www.mozilla.org/moss/" class="text-accent hover:text-accent-deep font-medium">Mozilla MOSS</a>.
-        </p>
-      </Reveal>
-
-      <Reveal delayMs={100}>
-        <div class="mt-12 grid sm:grid-cols-3 gap-4 max-w-4xl">
-          <a
-            href="https://nlnet.nl/project/Confium/"
-            class="card card-hover group p-6 flex flex-col items-center text-center"
-          >
-            <div class="h-20 flex items-center justify-center mb-4">
-              <img src="/assets/nlnet-banner.svg" alt="NLnet" class="max-h-20 w-auto" loading="lazy" />
-            </div>
-            <p class="font-sans text-sm font-semibold">NLnet</p>
-            <p class="mt-1 text-xs text-faint">Project sponsor</p>
-            <p class="mt-3 text-xs text-accent group-hover:underline">nlnet.nl/project/Confium →</p>
-          </a>
-
-          <a
-            href="https://www.ngi.eu/ngi-projects/ngi-zero-pet/"
-            class="card card-hover group p-6 flex flex-col items-center text-center"
-          >
-            <div class="h-20 flex items-center justify-center mb-4">
-              <img src="/assets/ngi-zeropet-banner.svg" alt="NGI Zero PET" class="max-h-20 w-auto" loading="lazy" />
-            </div>
-            <p class="font-sans text-sm font-semibold">NGI Zero PET</p>
-            <p class="mt-1 text-xs text-faint">European Commission · Next Generation Internet</p>
-            <p class="mt-3 text-xs text-accent group-hover:underline">ngi.eu/ngi-zero-pet →</p>
-          </a>
-
-          <a
-            href="https://www.mozilla.org/moss/"
-            class="card card-hover group p-6 flex flex-col items-center text-center"
-          >
-            <div class="h-20 flex items-center justify-center mb-4">
-              <span class="font-sans text-3xl font-bold">mozilla</span>
-            </div>
-            <p class="font-sans text-sm font-semibold">Mozilla MOSS</p>
-            <p class="mt-1 text-xs text-faint">Open Source Support</p>
-            <p class="mt-3 text-xs text-accent group-hover:underline">mozilla.org/moss →</p>
+            <li class="flex gap-3">
+              <span class="font-mono text-accent font-bold flex-shrink-0">4.</span>
+              <span>Verify a composite signature with the per-algorithm callbacks.</span>
+            </li>
+            <li class="flex gap-3">
+              <span class="font-mono text-accent font-bold flex-shrink-0">5.</span>
+              <span>Anchor the verification event in a transparency log.</span>
+            </li>
+          </ol>
+          <a href="/audiences/developers/" class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-deep">
+            Full developer guide <span aria-hidden="true">→</span>
           </a>
         </div>
       </Reveal>
     </div>
-  </section>
+  </Section>
+
+  <Section
+    tone="gold"
+    eyebrow="Reference deployments"
+    title="Where Sovereign PKI is the right shape"
+    lead="Institutional certificate infrastructure where no single party can be trusted. These are six scenarios where Mode 3 is already the natural fit — not an exhaustive list."
+  >
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {DEPLOYMENTS.map((d, i) => (
+        <Reveal delayMs={i * 50}>
+          <Card title={d.name} description={d.body} tone="gold" />
+        </Reveal>
+      ))}
+    </div>
+    <CtaLink
+      href="/use-cases/sovereign-pki/"
+      label="Read the Sovereign PKI use case"
+      tone="gold"
+      block
+    />
+  </Section>
+
+  <Section
+    eyebrow="From the blog"
+    title="Recent writing"
+    class="bg-surface-dim"
+  >
+    <div class="grid md:grid-cols-3 gap-4">
+      {blogPosts.map((post, i) => (
+        <Reveal delayMs={i * 60}>
+          <Card
+            eyebrow={post.category}
+            title={post.title}
+            description={post.excerpt}
+            href={post.href}
+          />
+        </Reveal>
+      ))}
+    </div>
+    <CtaLink
+      href="/blog/"
+      label="All posts"
+      block
+    />
+  </Section>
+
+  <SignOff />
 </BaseLayout>

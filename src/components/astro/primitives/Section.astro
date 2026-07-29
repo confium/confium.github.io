@@ -1,0 +1,84 @@
+---
+/**
+ * Section — the canonical page-section wrapper.
+ *
+ * Owns: max-width container, vertical rhythm, optional header
+ * (eyebrow + title + lead), optional background tone.
+ *
+ * Does NOT own: card grids, timelines, interactive widgets — those
+ * go in the default slot.
+ *
+ * OCP: section variations come from the named `header` slot. The
+ * declarative props (`eyebrow` / `title` / `lead`) cover the
+ * common case; if you need a quote or a code snippet or a
+ * pull-stat as the section opener, use `<slot name="header" />`
+ * instead and the props are ignored.
+ */
+import type { BrandTone } from '@data/homepage';
+
+interface Props {
+  eyebrow?: string;
+  title?: string;
+  lead?: string;
+  /** Tints the background. `undefined` = neutral surface. */
+  tone?: BrandTone;
+  /** Add a bottom hairline (default true). */
+  bordered?: boolean;
+  /** Element id for in-page anchors. */
+  id?: string;
+  /** Extra classes on the outer <section>. */
+  class?: string;
+}
+
+const {
+  eyebrow,
+  title,
+  lead,
+  tone,
+  bordered = true,
+  id,
+  class: className = '',
+} = Astro.props;
+
+const toneBg = tone === 'blue'
+  ? 'bg-tint-blue'
+  : tone === 'teal'
+    ? 'bg-tint-teal'
+    : tone === 'gold'
+      ? 'bg-tint-gold'
+      : '';
+
+const hasHeaderSlot = Astro.slots.has('header');
+const hasDefaultSlot = Astro.slots.has('default');
+---
+
+<section
+  id={id}
+  class:list={[
+    'relative',
+    bordered && 'border-b border-line',
+    toneBg,
+    className,
+  ]}
+>
+  <div class="mx-auto w-full max-w-6xl px-6 py-12 md:py-16">
+    {hasHeaderSlot ? (
+      <slot name="header" />
+    ) : (eyebrow || title || lead) && (
+      <header class="reveal">
+        {eyebrow && <p class="mono-label">{eyebrow}</p>}
+        {title && (
+          <h2 class="display-mono mt-3">{title}</h2>
+        )}
+        {lead && (
+          <p class="mt-4 max-w-2xl text-lg leading-relaxed text-muted">{lead}</p>
+        )}
+      </header>
+    )}
+    {hasDefaultSlot && (
+      <div class:list={[ (eyebrow || title || lead || hasHeaderSlot) && 'mt-10' ]}>
+        <slot />
+      </div>
+    )}
+  </div>
+</section>

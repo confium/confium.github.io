@@ -38,11 +38,14 @@
   --accent-deep: #0f5fc4;
   --accent2: #009e80;
   --gold-ink: #a07d0a;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
   --code-bg: #14172b;
   --code-fg: #e8eaf2;
   --tint-blue: #e6f0fe;
   --tint-teal: #dcf8f0;
   --tint-gold: #fff4d6;
+  --tint-warning: #fef3c7;
   --brand-grad: linear-gradient(135deg, #1a7bec 0%, #00c2c9 45%, #00dfb7 100%);
 }
 
@@ -58,10 +61,13 @@
   --accent-deep: #8fbcf8;
   --accent2: #2be8c8;
   --gold-ink: #ffdc4a;
+  --warning: #fbbf24;
+  --warning-soft: color-mix(in oklab, #fbbf24 14%, #0b0e1a);
   --code-bg: #070a14;
   --tint-blue: color-mix(in oklab, #1a7bec 13%, #0b0e1a);
   --tint-teal: color-mix(in oklab, #00dfb7 10%, #0b0e1a);
   --tint-gold: color-mix(in oklab, #ffdc4a 13%, #0b0e1a);
+  --tint-warning: color-mix(in oklab, #fbbf24 14%, #0b0e1a);
 }
 
 @theme inline {
@@ -76,9 +82,12 @@
   --color-accent-deep: var(--accent-deep);
   --color-accent2: var(--accent2);
   --color-gold-ink: var(--gold-ink);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --color-tint-blue: var(--tint-blue);
   --color-tint-teal: var(--tint-teal);
   --color-tint-gold: var(--tint-gold);
+  --color-tint-warning: var(--tint-warning);
   --color-code-bg: var(--code-bg);
   --color-code-fg: var(--code-fg);
 }
@@ -111,6 +120,26 @@ body {
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--fg-faint);
+}
+
+/* Display headlines render in Plex Mono at display weight —
+   gives the whole site a "technical specification" voice that
+   matches the threshold-cryptography subject. Body copy stays in
+   Plex Sans for readability. */
+.display-mono {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+}
+
+.display-mono-lg {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  font-size: clamp(2.5rem, 5vw, 4rem);
 }
 
 .gradient-rule {
@@ -273,6 +302,17 @@ body {
   background: transparent;
 }
 .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+.btn-ghost {
+  border: 1px solid var(--line);
+  color: var(--fg);
+  background: var(--surface);
+}
+.btn-ghost:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
 
 .btn-outline-white {
   border: 1px solid rgb(255 255 255 / 0.4);

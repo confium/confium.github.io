@@ -1,0 +1,44 @@
+---
+/**
+ * CtaLink — the "Read more →" pattern repeated across the site.
+ *
+ * One paragraph element, three concerns: destination, label,
+ * trailing arrow. Tone matches the section context.
+ */
+import type { BrandTone } from '@data/homepage';
+import { TONE_COLOR } from '@data/homepage';
+
+interface Props {
+  href: string;
+  label: string;
+  tone?: BrandTone;
+  /** Render inline (default) or as a block above other content. */
+  block?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  label,
+  tone = 'blue',
+  block = false,
+  class: className = '',
+} = Astro.props;
+
+const toneText = `text-${TONE_COLOR[tone]}`;
+const tag = block ? 'p' : 'span';
+---
+
+<tag
+  class:list={[
+    'font-semibold hover:underline underline-offset-4 decoration-2 transition-colors',
+    toneText,
+    block ? 'mt-8 text-center' : '',
+    className,
+  ]}
+>
+  <a href={href} class="inline-flex items-center gap-1">
+    {label}
+    <span aria-hidden="true">→</span>
+  </a>
+</tag>
