@@ -7,6 +7,14 @@ order: 9
 
 # Transparency logs
 
+> **`confium-transparency` 0.4.0 shipped a corrected
+> `consistency_proof` + `verify_consistency` implementation per
+> RFC 6962 §2.1.3.** The 0.3.x API is incompatible — the proof
+> shape changed. If you have stored consistency proofs from 0.3.x,
+> regenerate them from the originating tree; they cannot be
+> verified by 0.4.0+. See the
+> [changelog](https://github.com/confium/confium/blob/main/CHANGELOG.md).
+
 Every signing operation in a Confium deployment can anchor into an
 append-only Merkle transparency log implementing RFC 6962 semantics.
 The log provides cryptographic inclusion proofs and consistency

@@ -1,0 +1,95 @@
+---
+title: Benchmarks
+description: "Criterion benchmarks for the confium hot paths. Composite signature verification, transparency log operations. Run locally or in CI."
+audience: evaluator
+order: 16
+---
+
+# Benchmarks
+
+The `confium-benchmarks` crate ships
+[criterion](https://bheisler.github.io/criterion.rs/) benches for
+the operations that show up in every Confium deployment:
+composite signature verification and transparency-log operations.
+
+These benches are the **source of truth** for performance claims.
+Any "Confium verifies at X signatures/sec" number on this site or
+in talks should come from running these benches on the cited
+hardware.
+
+## What's benched
+
+| Bench | Covers |
+| --- | --- |
+| `composite_verify` | `CompositeSignature::verify` with one Ed25519 component, one ECDSA-P256 component, and the hybrid Ed25519 + ECDSA-P256 envelope. |
+| `transparency` | `MerkleTree::append`, inclusion-proof generation, inclusion-proof verification, consistency-proof verification (RFC 6962). |
+
+Each bench uses `Throughput::Elements(1)` so criterion reports
+per-operation latency. Run on the hardware you'll deploy to.
+
+## Running
+
+```sh
+git clone https://github.com/confium/confium
+cd confium
+cargo bench -p confium-benchmarks
+```
+
+The first run establishes a baseline. Subsequent runs compare
+against it and flag regressions. Criterion writes HTML reports to
+`target/criterion/`.
+
+## CI integration
+
+The benches are publish = false (Cargo.toml), so they don't ship
+to crates.io. CI runs them on every push to main and on PRs that
+touch `confium-composite` or `confium-transparency`. Regression
+threshold: 5% slowdown fails the workflow.
+
+## Reading the output
+
+A typical run reports:
+
+```
+composite_verify/ed25519/1_component
+                        time:   [482.13 µs 483.97 µs 486.05 µs]
+
+composite_verify/ecdsa_p256/1_component
+                        time:   [1.0232 ms 1.0279 ms 1.0331 ms]
+
+composite_verify/hybrid/2_component
+                        time:   [1.5124 ms 1.5183 ms 1.5247 ms]
+```
+
+The hybrid (Ed25519 + ECDSA-P256) cost is approximately the sum
+of the two single-component costs. That's the structural property
+composite signatures buy you — verifiers pay for both algorithms,
+which is the point: an attacker has to break both to forge.
+
+## Caveats
+
+- **What this measures**: pure cryptographic verification on a
+  single core. It does NOT include JSON-RPC dispatch, network
+  I/O, or transparency-log anchoring latency. End-to-end signing
+  session latency is dominated by the threshold protocol rounds,
+  not by these primitives.
+- **Hardware matters**: a number measured on an M2 is not a
+  number you'll see on a `c6i.2xlarge`. Always cite the hardware.
+- **Algorithm choice matters**: Ed25519 is faster than ECDSA-P256
+  for both signing and verification. The hybrid is slower than
+  either alone — that's the cost of post-quantum readiness.
+
+## NIST MPTS harness
+
+For evaluation against the NIST Multi-Party Threshold Schemes
+reference vectors, use `confium-test-harness` (separate crate).
+That's the official MPTS test-vector runner and produces the
+numbers submitted for NIST evaluation.
+
+## See also
+
+- [Evaluators and researchers](/audiences/evaluators/) — context
+  for using these numbers in evaluation.
+- [Architecture](/docs/architecture/) — where the hot paths sit
+  in the engine + coordinator + adapter stack.
+- [`confium-benchmarks` source](https://github.com/confium/confium/tree/main/crates/confium-benchmarks).
