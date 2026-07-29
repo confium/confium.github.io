@@ -18,4 +18,11 @@ exclude = [
   '^https://docs\.redhat\.com/',
   # Cirrus CI blocks non-browser TLS clients.
   '^https://cirrus-ci\.com/',
+  # npmjs blocks anonymous head requests.
+  '^https://www\.npmjs\.com/',
+  # openpgp.org key search returns 404 for keys not yet uploaded.
+  '^https://keys\.openpgp\.org/',
+  # NLnet project page returns 404 from the link checker — the canonical
+  # NLnet landing page is the right target.
+  '^https://nlnet\.nl/project/',
 ]

@@ -11,7 +11,7 @@ import CompositeSignatureDiagram from '../../components/brand/CompositeSignature
 # FAQ
 
 Frequently-asked questions about Confium. If your question isn't
-here, ask on [GitHub Discussions](https://github.com/confium/confium/discussions).
+here, open a [GitHub issue](https://github.com/confium/confium/issues).
 
 ## What Confium is
 
@@ -27,14 +27,14 @@ No. Conventional CAs issue certificates; Confium is the
 cryptographic framework that organizations use to build *their
 own* CA-like infrastructure with custom certificate formats,
 custom delegation rules, and multi-stakeholder governance. See
-[Sovereign PKI](./mode3-sovereign-pki.mdx).
+[Sovereign PKI](/docs/mode3-sovereign-pki/).
 
 ### Is Confium an HSM?
 
 No. HSMs store keys in tamper-resistant hardware. Confium
 integrates with HSMs via PKCS#11 — each signer can store its
 share in an HSM, combining HSM-grade physical security with
-Confium's threshold governance. See [comparison](./comparison.mdx).
+Confium's threshold governance. See [comparison](/docs/comparison/).
 
 ### Is Confium a crypto library like OpenSSL?
 
@@ -89,7 +89,7 @@ message.
 <CompositeSignatureDiagram class="w-full max-w-2xl mx-auto my-8" />
 
 See [composite signatures concept](/concepts/composite-signatures/)
-and [PQ migration docs](./pq-migration.mdx).
+and [PQ migration docs](/docs/pq-migration/).
 
 ## Performance
 
@@ -234,13 +234,13 @@ pipelines (keyless, OIDC-identity-based, with a Rekor
 transparency log). Confium is a general threshold cryptography
 framework. Use Sigstore for container / package signing in CI;
 use Confium for multi-stakeholder quorum, threshold key escrow,
-or institutional PKI. See [comparison](./comparison.mdx).
+or institutional PKI. See [comparison](/docs/comparison/).
 
 ### How does Confium compare to a cloud KMS?
 
 Cloud KMS (AWS, GCP, Azure) holds your keys for you. Single-cloud,
 single-provider trust model. Confium runs wherever you run it —
-no vendor lock-in. See [comparison](./comparison.mdx).
+no vendor lock-in. See [comparison](/docs/comparison/).
 
 ### How does Confium compare to commercial threshold solutions
 (Unbound, Sepior, etc.)?
@@ -249,7 +249,7 @@ Same core cryptography (threshold protocols), different
 deployment model. Confium is open-source BSD-2-Clause; commercial
 solutions are proprietary with subscription pricing. Confium
 supports standards-only adapters; commercial solutions have their
-own APIs. See [comparison](./comparison.mdx).
+own APIs. See [comparison](/docs/comparison/).
 
 ## Limits
 
@@ -300,7 +300,7 @@ See [the evaluators guide](/audiences/evaluators/) for BibTeX.
 
 ## See also
 
-- [Architecture](./architecture.mdx)
-- [Security model](./security-model.mdx)
-- [Comparison](./comparison.mdx)
-- [Troubleshooting](./troubleshooting.mdx)
+- [Architecture](/docs/architecture/)
+- [Security model](/docs/security-model/)
+- [Comparison](/docs/comparison/)
+- [Troubleshooting](/docs/troubleshooting/)

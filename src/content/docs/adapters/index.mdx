@@ -16,11 +16,11 @@ sessions. This section documents each adapter in depth.
 
 | Existing consumer | Use this adapter |
 | --- | --- |
-| OpenSSL 1.x with `ENGINE_pkcs11` | [PKCS#11](./pkcs11/) |
-| OpenSSL 3.0 native (modern nginx, curl) | [OpenSSL provider](./openssl/) |
-| Java application via JCA | [JCE provider](./jce/) |
-| TLS library with signature callback | [TLS signer](./tls/) |
-| Anything else speaking PKCS#11 | [PKCS#11](./pkcs11/) |
+| OpenSSL 1.x with `ENGINE_pkcs11` | [PKCS#11](/docs/adapters/pkcs11/) |
+| OpenSSL 3.0 native (modern nginx, curl) | [OpenSSL provider](/docs/adapters/openssl/) |
+| Java application via JCA | [JCE provider](/docs/adapters/jce/) |
+| TLS library with signature callback | [TLS signer](/docs/adapters/tls/) |
+| Anything else speaking PKCS#11 | [PKCS#11](/docs/adapters/pkcs11/) |
 
 ## The adapter pattern
 
@@ -37,7 +37,7 @@ Every adapter follows the same shape:
 
 ## See also
 
-- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
-- [Tooling overview](../tooling/)
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [Tooling overview](/docs/tooling/)
 - [Web TLS use case](/use-cases/web-tls/)
-- [Architecture](../architecture/)
+- [Architecture](/docs/architecture/)
