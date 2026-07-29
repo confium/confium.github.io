@@ -13,7 +13,10 @@
     "postbuild": "pagefind --site dist",
     "fetch-sources": "node scripts/fetch-sources.mjs",
     "check:links": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'",
-    "check:links:external": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'"
+    "check:links:external": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@astrojs/mdx": "7.0.4",
@@ -30,7 +33,9 @@
   "devDependencies": {
     "@fontsource/ibm-plex-mono": "5.2.7",
     "@fontsource/ibm-plex-sans": "5.2.8",
-    "pagefind": "1.5.2"
+    "@vitest/coverage-v8": "^2.1.9",
+    "pagefind": "1.5.2",
+    "vitest": "^2.1.9"
   },
   "engines": {
     "node": ">=22"
