@@ -1,0 +1,132 @@
+---
+title: "Auditor's guide to a Confium transparency log"
+description: "How an independent auditor verifies that a published artifact is in the log — no trust in the log operator required."
+date: 2026-07-29
+---
+
+A transparency log lets any third-party auditor independently verify
+that a published artifact (a certificate, a signature, a re-share
+event) was committed to the public log. The log operator cannot
+retroactively hide or modify entries without detection.
+
+Confium's transparency log implements the **Merkle-tree model from
+RFC 6962** with two distinct verification patterns:
+
+1. **Inclusion proof** — "this specific artifact is in the log."
+2. **Consistency proof** — "the log has only grown, never mutated."
+
+Both proofs are cryptographic: the auditor doesn't trust the operator,
+only the published root hash.
+
+## The three things the log publishes
+
+For every entry the log appends, it publishes:
+
+- The artifact's SHA-256 hash (the input to the leaf-hash function).
+- The sequence number (`0`, `1`, `2`, …).
+- The ISO 8601 timestamp the log server assigned to the entry.
+
+For every "tree head" (a published checkpoint), it publishes:
+
+- The current root hash (32 bytes).
+- The tree size at that checkpoint.
+- Optional: the consistency proof from the previous head.
+
+Auditors retrieve these via the log's HTTP API or by mirroring the log
+to a local store. The **root hash itself** can be anchored to Bitcoin
+via OpenTimestamps, giving it an irrefutable publication date.
+
+## Inclusion proof: proving a single artifact is in the log
+
+Given:
+
+- A published root hash + tree size at some checkpoint
+- A specific artifact's hash + the sequence number assigned to it
+- An inclusion proof (the list of sibling hashes from leaf to root)
+
+The auditor verifies:
+
+```python
+from confium import transparency
+
+# Published checkpoint
+root = b"\x12\x34..."  # 32 bytes from the log
+tree_size = 12345
+
+# Artifact the auditor wants to verify
+artifact_hash = sha256_of_the_certificate
+sequence = 6789  # from the log's published index
+
+# Inclusion proof (from the log's API)
+proof = transparency.InclusionProof.from_json(...)
+
+# Compute the leaf hash from the published fields
+leaf = transparency.compute_leaf_hash(sequence, timestamp_iso, artifact_hash)
+transparency.verify_inclusion_with_leaf(leaf, proof, root)
+```
+
+If `verify_inclusion_with_leaf` returns without raising, the artifact
+is provably in the log at the published checkpoint. The operator
+cannot retroactively deny it.
+
+## Consistency proof: proving the log hasn't been rewritten
+
+Given:
+
+- An older published root + tree size (from yesterday)
+- The current published root + tree size (today)
+- A consistency proof (the list of subtree hashes)
+
+The auditor verifies that the today-tree's first `old_size` entries
+hash to the same root as the yesterday-tree:
+
+```python
+old_root = b"..."  # yesterday's published root
+new_root = b"..."  # today's published root
+old_size = 12345
+new_size = 12678
+
+proof = tree.consistency_proof(old_size)  # from the log's API
+tree.verify_consistency(old_root, new_root, old_size, new_size, proof)
+```
+
+This proves the log is **append-only**: today's log is a strict
+extension of yesterday's. No entries were removed or modified.
+
+## Why two proofs?
+
+| Proof type | Catches what |
+|---|---|
+| **Inclusion** | Operator claiming an artifact was never logged when it was |
+| **Consistency** | Operator silently rewriting history between checkpoints |
+| **Both** | Operator splitting the log — showing different roots to different auditors (split-view attack) |
+
+The split-view attack requires **witness gossip** to fully detect: at
+least two auditors must compare their published roots to spot the
+discrepancy. Confium's coordinator supports witness gossip by default
+(hourly heartbeat between cooperating coordinators).
+
+## Anchoring to Bitcoin
+
+Even with both proofs, an attacker with a stolen root-publishing key
+can forge a "valid" log state. To prevent this, the log periodically
+anchors its root to the Bitcoin blockchain via OpenTimestamps. The
+anchor proves the root existed at a specific time — making
+post-hoc forgeries detectable.
+
+```python
+# After verifying the inclusion/consistency proof, also verify the
+# root's OTS stamp:
+from bitcoinrpc import ...  # auditor's Bitcoin node
+ots_stamp = b"..."  # from the log
+verify_ots_stamp(root, ots_stamp, bitcoin_block_hash)
+```
+
+A root that has an OTS stamp anchored in Bitcoin cannot have been
+back-dated: the operator committed to it at the timestamped block.
+
+## See also
+
+- [Bindings parity matrix](/software/python/docs/bindings/parity/)
+- [Concepts: transparency logs](/concepts/transparency-logs/)
+- [Security model](/docs/security-model/)
