@@ -1,0 +1,53 @@
+---
+/**
+ * SignOff — the homepage's quiet ending.
+ *
+ * Replaces the previous duplicate-gradient CTA. A confident product
+ * doesn't shout twice; the hero already made the case. This section
+ * just acknowledges sponsors and offers two concrete next steps.
+ */
+import { SPONSORS } from '@data/homepage';
+---
+
+<section class="border-b border-line">
+  <div class="mx-auto w-full max-w-5xl px-6 py-12 md:py-16">
+    <div class="grid sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
+      {SPONSORS.map((sponsor) => (
+        <a
+          href={sponsor.href}
+          class="card card-hover group p-5 flex flex-col items-center text-center"
+        >
+          <div class="h-16 flex items-center justify-center mb-3">
+            {sponsor.imageSrc ? (
+              <img
+                src={sponsor.imageSrc}
+                alt={sponsor.imageAlt ?? sponsor.name}
+                class="max-h-16 w-auto"
+                loading="lazy"
+              />
+            ) : (
+              <span class="font-sans text-2xl font-bold">{sponsor.wordmarkText ?? sponsor.name}</span>
+            )}
+          </div>
+          <p class="font-sans text-sm font-semibold">{sponsor.name}</p>
+          <p class="mt-1 text-xs text-faint">{sponsor.role}</p>
+        </a>
+      ))}
+    </div>
+
+    <div class="mt-10 pt-8 border-t border-line text-center">
+      <p class="font-mono text-xs text-faint tracking-wider">
+        BSD-2-Clause · Sponsored by NLnet NGI Zero PET + Mozilla MOSS · Built in the open
+      </p>
+      <div class="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <a href="/docs/getting-started/" class="btn btn-primary">
+          Get started
+          <span aria-hidden="true">→</span>
+        </a>
+        <a href="/docs/architecture/" class="btn btn-ghost">
+          Read the architecture
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
