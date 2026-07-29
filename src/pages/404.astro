@@ -1,31 +1,88 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+// Threshold visualization: 5 nodes, only 2 lit (insufficient for a
+// 3-of-5 quorum). The page is "missing" because the threshold
+// couldn't be reached. The visual IS the joke — don't bury it in
+// copy.
+const NODES = [
+  { id: 1, lit: true, color: '#1a7bec' },
+  { id: 2, lit: true, color: '#00dfb7' },
+  { id: 3, lit: false, color: null },
+  { id: 4, lit: false, color: null },
+  { id: 5, lit: false, color: null },
+] as const;
+
+const THRESHOLD = 3;
+const PARTICIPATING = 2;
 ---
 
-<BaseLayout title="404" description="Page not found.">
-  <section class="pt-32 pb-16">
-    <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
-      <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-4">
-        Threshold not reached
+<BaseLayout title="404 — Confium" description="Page not found.">
+  <section class="relative min-h-[80vh] flex items-center justify-center px-6 py-24 overflow-hidden">
+    <!-- Quiet graph-paper backdrop -->
+    <div class="absolute inset-0 page-hero-bg opacity-40" aria-hidden="true"></div>
+
+    <div class="relative max-w-xl w-full text-center">
+      <!-- Threshold glyph: 2-of-5 lit, 3 short of quorum -->
+      <div class="flex items-center justify-center gap-3 md:gap-4 mb-8" role="img" aria-label={`Only ${PARTICIPATING} of ${THRESHOLD} required parties found the page. Quorum not reached.`}>
+        {NODES.map((node) => (
+          <span
+            class:list={[
+              'w-10 h-10 md:w-12 md:h-12 rounded-full border-2 transition-all',
+              node.lit ? 'border-transparent shadow-card' : 'border-line bg-surface-dim',
+            ]}
+            style={node.lit ? `background: ${node.color};` : ''}
+          />
+        ))}
+      </div>
+
+      <p class="mono-label !text-accent mb-3">404 · Threshold not reached</p>
+
+      <h1 class="font-mono text-4xl md:text-5xl font-medium tracking-tight text-balance">
+        This page didn't make quorum.
+      </h1>
+
+      <p class="mt-5 text-lg leading-relaxed text-muted max-w-md mx-auto">
+        Only {PARTICIPATING} of the {THRESHOLD} required parties could find
+        it. The URL is broken, renamed, or never existed. Pick a path
+        that does exist:
       </p>
-      <h1 class="text-7xl font-bold tracking-tight">404</h1>
-      <p class="mt-4 text-lg text-muted-foreground">
-        Three of five parties could not find this page.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-3 justify-center">
+
+      <div class="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto">
         <a
           href="/"
-          class="inline-flex items-center px-5 py-2.5 rounded-md bg-brand-600 hover:bg-brand-700 text-white font-medium"
+          class="card card-hover group p-4 text-left"
         >
-          Back home
+          <p class="mono-label !text-accent">Home</p>
+          <p class="mt-1 text-sm font-semibold group-hover:text-accent transition-colors">
+            Start over →
+          </p>
         </a>
         <a
           href="/docs/"
-          class="inline-flex items-center px-5 py-2.5 rounded-md border border-line font-medium"
+          class="card card-hover group p-4 text-left"
         >
-          Browse docs
+          <p class="mono-label !text-accent2">Docs</p>
+          <p class="mt-1 text-sm font-semibold group-hover:text-accent2 transition-colors">
+            Browse docs →
+          </p>
+        </a>
+        <a
+          href="/audiences/"
+          class="card card-hover group p-4 text-left"
+        >
+          <p class="mono-label !text-gold-ink">For you</p>
+          <p class="mt-1 text-sm font-semibold group-hover:text-gold-ink transition-colors">
+            Find your path →
+          </p>
         </a>
       </div>
+
+      <p class="mt-10 text-xs font-mono text-faint">
+        If you got here from a link inside the site, please
+        <a href="https://github.com/confium/confium.github.io/issues/new" class="text-accent hover:underline">open an issue</a>
+        so we can fix it.
+      </p>
     </div>
   </section>
 </BaseLayout>
