@@ -1,0 +1,136 @@
+---
+title: Deployment
+description: "Run confiumd in production. Docker Compose for single-host evaluation, Helm chart for Kubernetes, Grafana dashboards for observability."
+audience: operator
+order: 15
+---
+
+import AdapterPatternDiagram from '../../components/brand/AdapterPatternDiagram.astro';
+
+# Deployment
+
+Confium ships deployment artifacts in
+[`deploy/`](https://github.com/confium/confium/tree/main/deploy)
+inside the main workspace. Three tiers:
+
+1. **Docker Compose** — single-host evaluation, brings up the
+   full stack (coordinator + signers + transparency log + witness)
+   with one command.
+2. **Helm chart** — production-grade Kubernetes deployment with
+   configurable replica counts, persistence, and healthchecks.
+3. **Grafana dashboards** — pre-built observability for the
+   coordinator, signers, and transparency log.
+
+Pick the tier that matches where you are in the deployment
+lifecycle.
+
+## Docker Compose — local evaluation
+
+The fastest path to a working Confium stack. Brings up a 3-of-5
+threshold deployment (3 signers hot, 2 offline for testing) on a
+single host.
+
+```sh
+git clone https://github.com/confium/confium
+cd confium/deploy/docker
+docker compose up
+```
+
+Services started:
+
+| Service | Count | Port | Role |
+| --- | --- | --- | --- |
+| `coordinator` | 1 | 7443 | JSON-RPC daemon — the entry point for consumers. |
+| `signer-N` | 3 (of 5) | 7500 | Threshold signing nodes. |
+| `transparency-log` | 1 | 7444 | Append-only Merkle log. |
+| `witness` | 1 | 7445 | Split-view detector via consistency proofs. |
+
+Verify:
+
+```sh
+curl --unix-socket /tmp/confium.sock \
+     -H 'content-type: application/json' \
+     -d '{"jsonrpc":"2.0","id":1,"method":"version","params":{}}' \
+     http://localhost/
+```
+
+## Helm chart — production Kubernetes
+
+The chart lives at `deploy/helm/confium/`. Production-grade with
+configurable replica counts, persistence, and healthchecks.
+
+```sh
+helm install confium ./deploy/helm/confium \
+     --set coordinator.replicas=2 \
+     --set signers.count=5 \
+     --set signers.threshold=3 \
+     --set transparency.persistence.size=50Gi
+```
+
+The chart exposes:
+
+- **Coordinator**: a `Deployment` with N replicas behind a
+  `Service`. Consumers talk to the service, not individual pods.
+- **Signers**: a `StatefulSet` (one pod per signer identity) with
+  persistent volumes for share storage.
+- **Transparency log**: a `StatefulSet` with a PVC for the
+  append-only log.
+- **Witness**: an optional `Deployment`.
+- **Healthchecks**: liveness + readiness probes on every service.
+- **Configmaps + secrets**: TOML config and signer identities
+  mounted from K8s secrets (never baked into the image).
+
+<AdapterPatternDiagram class="w-full max-w-2xl mx-auto my-8" />
+
+### Production checklist
+
+Before promoting a Confium deployment to production:
+
+- [ ] **Signer identities** distributed to the right operators via
+  your standard key-management infrastructure (HSM, KMS, sealed
+  secrets). Never check signer shares into git.
+- [ ] **Persistence** sized for the expected transparency-log
+  growth (the log is append-only — it only grows).
+- [ ] **Backup strategy** for the transparency-log PVC. A lost PVC
+  means a lost audit history.
+- [ ] **Witness** deployed to a different failure domain than the
+  coordinator. The witness's job is to detect split-view attacks
+  by comparing tree heads — putting it next to the coordinator
+  defeats the purpose.
+- [ ] **Monitoring** wired up (see Grafana dashboards below).
+- [ ] **Quorum policy** reviewed by the parties who must agree on
+  it. T-of-N is a governance decision, not a technical one.
+
+## Grafana dashboards
+
+Pre-built dashboards in `deploy/grafana/`. Import via the standard
+Grafana JSON import flow. Dashboards shipped:
+
+| Dashboard | Panels |
+| --- | --- |
+| **Coordinator** | Request rate, latency p50/p95/p99, active sessions, error rate by JSON-RPC method. |
+| **Signers** | Per-signer session participation, share validity, refresh cadence. |
+| **Transparency log** | Append rate, tree size, inclusion-proof latency, witness-consistency failures. |
+| **Audit** | Event stream rate, signed-event verification rate, failed verifications. |
+
+Dashboards assume Prometheus scraping the daemon's `/metrics`
+endpoint (enabled via `--metrics :9090` on `confiumd`).
+
+## Container images
+
+Pre-built images live at `ghcr.io/confium/confiumd:latest` (and
+tagged versions). The image:
+
+- Is built from the workspace's `Dockerfile` (multi-stage,
+  distroless final image).
+- Targets `linux/amd64` and `linux/arm64`.
+- Carries no signer shares — those are mounted at runtime.
+- Exposes `7443/tcp` (coordinator JSON-RPC) and `9090/tcp`
+  (Prometheus metrics).
+
+## See also
+
+- [Daemon](/software/daemon/) — the JSON-RPC API surface.
+- [Architecture](/docs/architecture/) — how the components
+  compose at runtime.
+- [`deploy/` in the repository](https://github.com/confium/confium/tree/main/deploy).

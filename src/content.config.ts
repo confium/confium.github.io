@@ -56,7 +56,7 @@ export const collections = {
   docs: defineCollection({
     loader: glob({ base: './src/content/docs', pattern: '**/*.mdx' }),
     schema: adocFrontmatter.extend({
-      audience: z.enum(['developer', 'executive', 'evaluator', 'researcher']).optional(),
+      audience: z.enum(['developer', 'executive', 'evaluator', 'researcher', 'operator', 'architect', 'compliance']).optional(),
       order: z.number().default(0),
     }),
   }),
