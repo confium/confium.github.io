@@ -1,0 +1,52 @@
+---
+/**
+ * PageIntro — the unified hero for content pages.
+ *
+ * Owns the eyebrow + Plex Mono title + one-sentence orientation
+ * that sits above every content page. Wraps the breadcrumbs and
+ * the "Who this is for" callout, so pages get a consistent
+ * orientation without each having to compose the bits themselves.
+ *
+ * The `intro` field is the page's answer to "what is this page
+ * about, in one sentence". Reading just the intro + title tells
+ * you if the page is for you.
+ */
+import type { BrandTone } from '@data/homepage';
+import { TONE_COLOR } from '@data/homepage';
+
+export interface Props {
+  eyebrow: string;
+  title: string;
+  /** One-sentence orientation. Names what the page covers. */
+  intro: string;
+  /** Identity tone for the eyebrow accent. Default 'blue'. */
+  tone?: BrandTone;
+  class?: string;
+}
+
+const { eyebrow, title, intro, tone = 'blue', class: className = '' } = Astro.props;
+const colorToken = TONE_COLOR[tone];
+---
+
+<header
+  class:list={[
+    'border-b border-line bg-surface-dim/40',
+    className,
+  ]}
+>
+  <div class="mx-auto w-full max-w-6xl px-6 py-10 md:py-14">
+    <div class="max-w-3xl">
+      <nav class="mb-4">
+        <slot name="breadcrumb" />
+      </nav>
+      <p class={`mono-label !text-${colorToken}`}>{eyebrow}</p>
+      <h1 class="display-mono-lg mt-3">{title}</h1>
+      <p class="mt-4 text-lg leading-relaxed text-muted">
+        {intro}
+      </p>
+      <div class="mt-6">
+        <slot name="who-for" />
+      </div>
+    </div>
+  </div>
+</header>

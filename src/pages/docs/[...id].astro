@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
+import type { BrandTone } from '@data/homepage';
 
 export async function getStaticPaths() {
   const docs = await getCollection('docs');
@@ -20,13 +21,21 @@ const sidebar = allDocs
     href: `/docs/${d.id}/`,
     current: d.id === doc.id,
   }));
+
+const audience = doc.data.audience ? [doc.data.audience] : undefined;
 ---
 
 <DocsLayout
   title={doc.data.title}
   description={doc.data.description}
+  intro={doc.data.intro}
+  eyebrow="Documentation"
+  tone="blue"
+  audience={audience}
   sidebar={sidebar}
   headings={headings}
+  sectionLabel="Docs"
+  sectionHref="/docs/"
 >
   <Content />
 </DocsLayout>

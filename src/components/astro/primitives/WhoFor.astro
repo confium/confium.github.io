@@ -1,0 +1,57 @@
+---
+/**
+ * WhoFor — the "👤 For: architects, evaluators" callout.
+ *
+ * Surfaces who the page is written for, so a visitor can
+ * self-select into or out of the page within seconds. Each name
+ * is a link to its audience page.
+ *
+ * Accepts either audience slugs (`developers`) or short aliases
+ * (`developer`) — the call resolves to the canonical slug via
+ * `resolveAudience()`.
+ */
+import { AUDIENCES, resolveAudience } from '@data/audiences';
+
+export interface Props {
+  /** Names — slugs or aliases. Unknown names are filtered out. */
+  for: readonly string[];
+  label?: string;
+  class?: string;
+}
+
+const { for: audienceNames, label = 'For', class: className = '' } = Astro.props;
+
+const items = audienceNames
+  .map(resolveAudience)
+  .filter((slug) => AUDIENCES.some((a) => a.slug === slug))
+  .map((slug) => ({
+    slug,
+    href: `/audiences/${slug}/`,
+    audience: AUDIENCES.find((a) => a.slug === slug),
+  }));
+---
+
+{items.length > 0 && (
+  <aside
+    class:list={[
+      'card p-4 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-sm',
+      className,
+    ]}
+    aria-label={label}
+  >
+    <span class="mono-label text-faint whitespace-nowrap">{label}</span>
+    {items.map((item, i) => (
+      <>
+        <a
+          href={item.href}
+          class="text-accent hover:text-accent-deep font-semibold transition-colors"
+        >
+          {item.audience?.name ?? slug}
+        </a>
+        {i < items.length - 1 && (
+          <span class="text-faint" aria-hidden="true">·</span>
+        )}
+      </>
+    ))}
+  </aside>
+)}

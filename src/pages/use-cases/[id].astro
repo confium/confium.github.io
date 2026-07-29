@@ -25,8 +25,14 @@ const sidebar = allItems
 <DocsLayout
   title={doc.data.title}
   description={doc.data.description}
+  intro={doc.data.intro}
+  eyebrow="Use case"
+  tone="gold"
+  audience={doc.data.audience}
   sidebar={sidebar}
   headings={headings}
+  sectionLabel="Use cases"
+  sectionHref="/use-cases/"
 >
   <Content />
 </DocsLayout>

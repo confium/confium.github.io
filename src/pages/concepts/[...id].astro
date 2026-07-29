@@ -25,8 +25,13 @@ const sidebar = allConcepts
 <DocsLayout
   title={doc.data.title}
   description={doc.data.description}
+  intro={doc.data.intro}
+  eyebrow="Concept"
+  tone="teal"
   sidebar={sidebar}
   headings={headings}
+  sectionLabel="Concepts"
+  sectionHref="/concepts/"
 >
   <Content />
 </DocsLayout>

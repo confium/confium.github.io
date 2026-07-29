@@ -1,0 +1,37 @@
+---
+/**
+ * Breadcrumb — the trail above the page title.
+ *
+ * Renders `Home > Docs > Architecture` with proper `aria-label` and
+ * a structured `<nav>` element. The last item is plain text (the
+ * current page). Items are visually separated by a chevron slug.
+ */
+interface Props {
+  trail: readonly { label: string; href?: string }[];
+  class?: string;
+}
+
+const { trail, class: className = '' } = Astro.props;
+---
+
+<nav
+  aria-label="Breadcrumb"
+  class:list={['text-sm text-muted', className]}
+>
+  <ol class="flex flex-wrap items-center gap-1.5">
+    {trail.map((item, i) => (
+      <li class="flex items-center gap-1.5">
+        {item.href && i < trail.length - 1 ? (
+          <a href={item.href} class="hover:text-foreground transition-colors">
+            {item.label}
+          </a>
+        ) : (
+          <span class="text-foreground" aria-current="page">{item.label}</span>
+        )}
+        {i < trail.length - 1 && (
+          <span aria-hidden="true" class="text-faint">/</span>
+        )}
+      </li>
+    ))}
+  </ol>
+</nav>

@@ -16,6 +16,13 @@ import { glob } from 'astro/loaders';
 const adocFrontmatter = z.object({
   title: z.string(),
   description: z.string().optional(),
+  /**
+   * One-sentence orientation shown in the page intro. Either
+   * define this explicitly or fall back to `description`. Pages
+   * should set this so visitors get a clear answer to "what is
+   * this page?" within the first scroll.
+   */
+  intro: z.string().optional(),
   date: z.coerce.date().optional(),
   author: z.string().optional(),
   tags: z.array(z.string()).default([]),
@@ -25,6 +32,7 @@ const adocFrontmatter = z.object({
 const mdFrontmatter = z.object({
   title: z.string(),
   description: z.string().optional(),
+  intro: z.string().optional(),
   mode: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal('cross')]).optional(),
   order: z.number().optional(),
 });
@@ -68,7 +76,9 @@ export const collections = {
 
   use_cases: defineCollection({
     loader: glob({ base: './src/content/use_cases', pattern: '**/*.mdx' }),
-    schema: mdFrontmatter,
+    schema: mdFrontmatter.extend({
+      audience: z.array(z.string()).default([]),
+    }),
   }),
 
   glossary: defineCollection({

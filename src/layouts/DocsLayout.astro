@@ -1,28 +1,94 @@
 ---
+/**
+ * DocsLayout — the chrome for /docs/, /concepts/, /use-cases/ pages.
+ *
+ * Owns the page intro (eyebrow + title + one-sentence orientation
+ * + breadcrumbs + who-for callout) and the 3-column prose grid
+ * (sidebar | prose | TOC). The intro answers "what is this page
+ * and is it for me?" within 30 seconds — without it, visitors
+ * landed on technical content with no context.
+ *
+ * The intro is built from `entry.data` fields:
+ *   - eyebrow: from `data.eyebrow` (or derived from collection name)
+ *   - title: from `data.title`
+ *   - intro: from `data.intro` (or `data.description` as fallback)
+ *   - audience: from `data.audience` (passed to WhoFor)
+ *
+ * PageIntro is the new hero; the old bare 3-column grid is gone.
+ */
 import BaseLayout from './BaseLayout.astro';
 import TocNav from '@components/astro/TocNav.astro';
 import Prose from '@components/astro/Prose.astro';
+import PageIntro from '@components/astro/primitives/PageIntro.astro';
+import Breadcrumb from '@components/astro/primitives/Breadcrumb.astro';
+import WhoFor from '@components/astro/primitives/WhoFor.astro';
+import type { BrandTone } from '@data/homepage';
 
-interface Props {
+export interface Props {
   title: string;
   description?: string;
+  /**
+   * One-sentence orientation. Optional — falls back to `description`
+   * when not provided. Pages should always set this explicitly.
+   */
+  intro?: string;
+  /** Eyebrow shown above the title. Defaults to the collection label. */
+  eyebrow?: string;
+  /** Audience names from the content schema (e.g. ['developers']). */
+  audience?: string[];
+  /** Identity tone for the eyebrow. Inherits from the page's section. */
+  tone?: BrandTone;
   sidebar?: { label: string; href: string; current?: boolean }[];
+  /** Source path for the "Edit on GitHub" link. */
   sourcePath?: string;
   headings?: { depth: number; slug: string; text: string }[];
+  /** Breadcrumb trail. Auto-derived if not provided. */
+  trail?: { label: string; href?: string }[];
+  /** Visible section label for the breadcrumb home. Defaults to the eyebrow. */
+  sectionLabel?: string;
+  /** Visible section href for the breadcrumb. Defaults to the eyebrow's URL. */
+  sectionHref?: string;
 }
 
 const {
   title,
   description,
+  intro,
+  eyebrow,
+  audience,
+  tone,
   sidebar = [],
   sourcePath,
   headings = [],
+  trail,
+  sectionLabel,
+  sectionHref,
 } = Astro.props;
 
 const filteredHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
+// Use explicit intro, fall back to description, fall back to empty.
+const introText = intro ?? description ?? '';
+// Breadcrumb: Home > Section > Page title. Caller can override.
+const crumbTrail = trail ?? [
+  { label: 'Home', href: '/' },
+  ...(sectionLabel
+    ? [{ label: sectionLabel, href: sectionHref }]
+    : []),
+  { label: title },
+];
 ---
 
 <BaseLayout title={title} description={description}>
+  <PageIntro
+    eyebrow={eyebrow ?? 'Documentation'}
+    title={title}
+    intro={introText}
+    tone={tone}
+  >
+    <Breadcrumb slot="breadcrumb" trail={crumbTrail} />
+    <WhoFor slot="who-for" for={audience ?? []} />
+  </PageIntro>
+
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
     <div class="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)_14rem] lg:gap-8">
       {sidebar.length > 0 && (
