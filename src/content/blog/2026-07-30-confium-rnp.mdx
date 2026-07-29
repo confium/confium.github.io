@@ -1,0 +1,78 @@
+---
+title: "Confium + RNP: complementary cryptography"
+description: "Confium handles threshold signing + transparency logs. RNP handles standard OpenPGP (RFC 9580). Together they form a complete crypto stack."
+date: 2026-07-30
+---
+
+Confium and [RNP](https://github.com/rnpgp/rnp) are sibling projects.
+They serve complementary roles in the cryptographic stack:
+
+## What each does
+
+| | Confium | RNP |
+|---|---|---|
+| **Focus** | Threshold cryptography + transparency logs | Standard OpenPGP (RFC 9580) |
+| **Key model** | Multi-party (no single party holds the full key) | Single-party (one private key) |
+| **Signatures** | Composite (hybrid classical + PQ) | Standard OpenPGP signatures |
+| **Transparency** | RFC 6962 Merkle tree + inclusion/consistency proofs | None |
+| **Deployment** | Three modes (peer-to-peer TC, PKI drop-in, Sovereign PKI) | Standard PGP keyring |
+
+## When to use which
+
+- **Confium** for multi-stakeholder signing, threshold quorums,
+  transparency logs, post-quantum migration, institutional PKI.
+- **RNP** for standard OpenPGP key generation, signing, verification,
+  encryption, armor encode/decode.
+- **Both** when your application uses standard OpenPGP for
+  person-to-person communication AND threshold signing for
+  institutional decisions.
+
+## Ruby integration
+
+The Confium Ruby gem includes `Confium::OpenPGP` — a soft-dependency
+wrapper that loads `ruby-rnp` lazily:
+
+```ruby
+require "confium"
+
+# Threshold signing (Confium)
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(artifact_type: :threshold_signature, artifact_hash: hash)
+
+# Standard OpenPGP (RNP via Confium::OpenPGP)
+Confium::OpenPGP.verify(pgp_signature, signed_data, pgp_pubkey)
+```
+
+Install both gems:
+```sh
+gem install confium ruby-rnp
+```
+
+## Python integration
+
+```python
+pip install confium py-rnp
+```
+
+The `py-rnp` package provides standard OpenPGP operations. Use it
+alongside `confium` for a complete Python crypto toolkit.
+
+## WASM (browser)
+
+Both projects ship npm packages:
+
+```sh
+npm install @confium/confium-wasm @rnpgp/rnp
+```
+
+- `@confium/confium-wasm` — transparency log verification, composite
+  signature verification, attribute predicate evaluation.
+- `@rnpgp/rnp` — full OpenPGP (RFC 9580) in the browser: key
+  management, sign, verify, encrypt, decrypt.
+
+## See also
+
+- [Confium bindings](/software/) — install + docs for each binding.
+- [RNP on GitHub](https://github.com/rnpgp/rnp) — the RNP C library.
+- [@rnpgp/rnp on npm](https://www.npmjs.com/package/@rnpgp/rnp) —
+  WASM OpenPGP package.
