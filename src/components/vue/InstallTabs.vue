@@ -17,6 +17,12 @@ const tabs: Tab[] = [
     hint: 'Ruby ≥ 3.1 + Rust stable for the native extension.',
   },
   {
+    id: 'python',
+    label: 'Python',
+    command: 'pip install confium',
+    hint: 'Python ≥ 3.9. Native wheel — no Rust toolchain required.',
+  },
+  {
     id: 'rust',
     label: 'Rust',
     command: 'cargo add confium-core',
