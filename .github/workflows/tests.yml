@@ -45,3 +45,38 @@ jobs:
       run: npx astro check
       env:
         CI: true
+
+  link_check:
+    # Builds the site then runs lychee against the built HTML.
+    # Verifies every internal link resolves and external links
+    # aren't 404. lychee.toml holds the exclude list (self URLs,
+    # bot-blocked sites) and accept codes.
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+        cache: npm
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Fetch software documentation sources
+      run: npm run fetch-sources
+
+    - name: Build with Astro
+      # prebuild clones the software docs sources into vendor/;
+      # postbuild runs Pagefind indexing. Output: './dist'.
+      run: npm run build
+      env:
+        CI: true
+
+    - name: Link Checker
+      uses: lycheeverse/lychee-action@v2
+      with:
+        # --root-dir resolves root-relative links against the local build.
+        # lychee.toml holds accept codes and exclusions.
+        args: --root-dir ${{ github.workspace }}/dist --config lychee.toml --no-progress 'dist/**/*.html'
+        fail: true
