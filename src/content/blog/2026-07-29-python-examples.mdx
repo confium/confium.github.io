@@ -1,0 +1,111 @@
+---
+title: "Python examples"
+description: "Working code for composite signing, transparency log anchoring, attribute predicates, and CMS envelopes in Python."
+date: 2026-07-29
+---
+
+Working Python snippets for the most common Confium operations. Full
+binding reference at [the Python binding guide](https://www.confium.org/bindings/python/).
+
+## Sign + verify a hybrid composite (Ed25519 + ECDSA-P256)
+
+```python
+import json
+from confium import composite
+
+# Two signers — one Ed25519, one ECDSA-P256 — produce components over
+# the same message. We assemble the hybrid composite from their JSON.
+msg = b"hybrid threshold signing example"
+ed_cs = composite.CompositeSignature.sign_ed25519(b"\x10" * 32, msg)
+ec_cs = composite.CompositeSignature.sign_p256(b"\x20" * 32, msg)
+
+hybrid = composite.CompositeSignature.from_json(json.dumps({
+    "components": [
+        json.loads(ed_cs.to_json())["components"][0],
+        json.loads(ec_cs.to_json())["components"][0],
+    ],
+}))
+
+result = hybrid.verify(msg)
+assert result.all_verified
+```
+
+## Anchor a composite signature in a transparency log
+
+```python
+import hashlib
+from confium import composite, transparency
+
+# Sign a message.
+seed = b"\x42" * 32
+msg = b"anchor this signature"
+cs = composite.CompositeSignature.sign_ed25519(seed, msg)
+
+# Hash the composite envelope to anchor.
+artifact_hash = hashlib.sha256(cs.to_json().encode()).digest()
+
+# Append to a Merkle tree and generate the inclusion proof.
+tree = transparency.MerkleTree()
+seq = tree.append("threshold_signature", artifact_hash)
+root = tree.root
+proof = tree.inclusion_proof(seq)
+tree.verify_inclusion(seq, proof, root)
+```
+
+## Attribute-based threshold predicate
+
+```python
+from confium import attributes
+
+pred = attributes.Predicate.parse(
+    'and(min_count("role:director", 3), min_distinct("region", 3))'
+)
+
+# Build signers from Python dicts.
+signers = [
+    attributes.SignerAttributes({"role:director": ["yes"], "region": ["europe"]}),
+    attributes.SignerAttributes({"role:director": ["yes"], "region": ["americas"]}),
+    attributes.SignerAttributes({"role:director": ["yes"], "region": ["asia-pacific"]}),
+]
+
+assert pred.evaluate(signers) is True
+```
+
+## CMS envelope (build + DER-encode)
+
+```python
+import hashlib
+from confium import composite, pki, transparency
+
+# Sign + wrap in CMS detached envelope.
+seed = b"\x42" * 32
+msg = b"cms detached example"
+cs = composite.CompositeSignature.sign_ed25519(seed, msg)
+
+# Pull the Ed25519 signature bytes out of the composite.
+import json
+sig = bytes(json.loads(cs.to_json())["components"][0]["signature"])
+
+# Minimal fake cert (must be ≥ 20 bytes for the SKI extraction).
+fake_cert = b"\x30\x82\x01\x00" + b"C" * 256
+
+sd = pki.SignedData.build_detached(sig, "1.3.101.112", [fake_cert])
+der = sd.to_der()  # RFC 5652 ContentInfo
+
+# Verify the DER starts with the outer SEQUENCE (0x30).
+assert der[0] == 0x30
+
+# Anchor the DER bytes in a transparency log.
+tree = transparency.MerkleTree()
+seq = tree.append("threshold_signature", hashlib.sha256(der).digest())
+tree.verify_inclusion(seq, tree.inclusion_proof(seq), tree.root)
+```
+
+## Install
+
+```sh
+pip install confium
+```
+
+See [the Python binding page](https://www.confium.org/software/python/)
+for the full install + build-from-source instructions.
