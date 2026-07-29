@@ -36,15 +36,15 @@ confium 0.3.0
 
 | Command | Status | Description |
 | --- | --- | --- |
-| [`confium version`](./version/) | ✅ functional | Print version information. |
-| [`confium install`](./install/) | ⚠️ stub (awaits `confium-net`) | Install a plugin from the registry. |
-| [`confium remove`](./remove/) | ✅ functional | Remove an installed plugin. |
-| [`confium update`](./update/) | ⚠️ stub (awaits `confium-net`) | Update a plugin to the latest version. |
-| [`confium list`](./list/) | ✅ functional | List installed plugins. |
-| [`confium info`](./info/) | ✅ functional | Show details for one plugin. |
-| [`confium search`](./search/) | ✅ functional | Search the registry for plugins. |
-| [`confium trust`](./trust/) | ✅ functional | Manage the trusted-publisher list. |
-| [`confium config`](./config/) | ✅ functional | Read and write local configuration. |
+| [`confium version`](/docs/cli/version/) | ✅ functional | Print version information. |
+| [`confium install`](/docs/cli/install/) | ⚠️ stub (awaits `confium-net`) | Install a plugin from the registry. |
+| [`confium remove`](/docs/cli/remove/) | ✅ functional | Remove an installed plugin. |
+| [`confium update`](/docs/cli/update/) | ⚠️ stub (awaits `confium-net`) | Update a plugin to the latest version. |
+| [`confium list`](/docs/cli/list/) | ✅ functional | List installed plugins. |
+| [`confium info`](/docs/cli/info/) | ✅ functional | Show details for one plugin. |
+| [`confium search`](/docs/cli/search/) | ✅ functional | Search the registry for plugins. |
+| [`confium trust`](/docs/cli/trust/) | ✅ functional | Manage the trusted-publisher list. |
+| [`confium config`](/docs/cli/config/) | ✅ functional | Read and write local configuration. |
 
 Two commands (`install`, `update`) are stubs that await the
 `confium-net` HTTP-fetching crate. They parse arguments and emit
@@ -64,7 +64,7 @@ The CLI talks to:
 - The **plugin registry** (HTTPS to `registry.confium.org`).
 
 For daemon-mode operations (signing sessions, transparency log
-interaction), use the separate [`confiumd`](./daemon/) binary.
+interaction), use the separate [`confiumd`](/docs/cli/daemon/) binary.
 
 ## Conventions
 
@@ -107,8 +107,8 @@ environment variable.
 
 ## See also
 
-- [`confiumd`](./daemon/) — the daemon binary.
-- [`confium-publish`](./publish/) — the plugin-author tool.
+- [`confiumd`](/docs/cli/daemon/) — the daemon binary.
+- [`confium-publish`](/docs/cli/publish/) — the plugin-author tool.
 - [Plugin author guide](https://github.com/confium/confium/tree/main/docs/plugin-author-guide.mdx)
   (Rust workspace docs).
 - [Developer guide](/audiences/developers/) — using the CLI in development.

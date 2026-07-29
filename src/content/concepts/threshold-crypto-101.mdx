@@ -59,7 +59,7 @@ consistent with T−1 points.
   deployments.
 - **Composable with attribute policies**: not just "any T of N
   parties" but "T of N parties from K distinct groups" — see
-  [attribute-based threshold](./attribute-based-threshold/).
+  [attribute-based threshold](/concepts/attribute-based-threshold/).
 
 ## Protocols above Shamir
 
@@ -120,7 +120,7 @@ in the Rust workspace docs.
 
 Once you have a valid threshold signature, you typically want a
 public, verifiable record that the signing happened. That's where
-the [transparency log](./transparency-logs/) comes in. The signature
+the [transparency log](/concepts/transparency-logs/) comes in. The signature
 event becomes a leaf in a Merkle tree like the one below:
 
 <MerkleTreeDiagram class="w-full max-w-2xl mx-auto my-8" />
@@ -131,6 +131,6 @@ log without revealing anything else about the log's contents.
 
 ## See also
 
-- [TLS analogy](./tls-analogy/)
-- [Attribute-based threshold](./attribute-based-threshold/)
+- [TLS analogy](/concepts/tls-analogy/)
+- [Attribute-based threshold](/concepts/attribute-based-threshold/)
 - [Architecture](/docs/architecture/)

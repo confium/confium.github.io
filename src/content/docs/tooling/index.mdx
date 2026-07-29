@@ -7,7 +7,7 @@ order: 25
 
 # Tooling
 
-Beyond the [`confium` CLI](../cli/), the workspace ships five binaries
+Beyond the [`confium` CLI](/docs/cli/), the workspace ships five binaries
 and four adapter libraries. Each is documented in its own page below.
 
 ## Binaries
@@ -16,17 +16,17 @@ and four adapter libraries. Each is documented in its own page below.
 | --- | --- | --- |
 | [`confiumd`](../cli/daemon/) | `confium-daemon` | Long-running JSON-RPC service for signing sessions, transparency log, PKI operations. |
 | [`confium-publish`](../cli/publish/) | `confium-publish` | Plugin author's publishing tool — wraps, signs, and stages plugins for the registry. |
-| [`confium-pkcs11-server`](./pkcs11-server/) | `confium-pkcs11-server` | PKCS#11 v3.0 server — exposes Confium as an HSM to existing PKCS#11 consumers. |
-| [`confium-test-harness`](./test-harness/) | `confium-test-harness` | NIST MPTS evaluation harness. |
+| [`confium-pkcs11-server`](/docs/tooling/pkcs11-server/) | `confium-pkcs11-server` | PKCS#11 v3.0 server — exposes Confium as an HSM to existing PKCS#11 consumers. |
+| [`confium-test-harness`](/docs/tooling/test-harness/) | `confium-test-harness` | NIST MPTS evaluation harness. |
 | `sim` | `confium-test-harness` | Multi-party threshold simulation runner. |
 
 ## Adapter libraries
 
 | Adapter | Crate | Consumers |
 | --- | --- | --- |
-| [OpenSSL provider](./openssl-provider/) | `confium-openssl-provider` | nginx, Apache, custom OpenSSL consumers. |
-| [JCE provider](./jce-provider/) | `confium-jce-provider` | Java applications via KeyStore / Cipher / Signature APIs. |
-| [TLS signer](./tls-signer/) | `confium-tls-signer` | TLS 1.3 signature callback for high-value domains. |
+| [OpenSSL provider](/docs/tooling/openssl-provider/) | `confium-openssl-provider` | nginx, Apache, custom OpenSSL consumers. |
+| [JCE provider](/docs/tooling/jce-provider/) | `confium-jce-provider` | Java applications via KeyStore / Cipher / Signature APIs. |
+| [TLS signer](/docs/tooling/tls-signer/) | `confium-tls-signer` | TLS 1.3 signature callback for high-value domains. |
 
 The adapter pattern is uniform: existing consumer code stays
 unchanged, but every cryptographic call dispatches into a Confium
@@ -41,12 +41,12 @@ threshold session behind the scenes.
 - **Java application**? Use `confium-jce-provider`.
 - **TLS terminator needing threshold signing**? Use `confium-tls-signer`.
 
-See [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/) for the broader
+See [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/) for the broader
 integration story.
 
 ## See also
 
-- [CLI reference](../cli/)
-- [Mode 2 — PKI Drop-in](../mode2-pki-drop-in/)
-- [Architecture](../architecture/)
+- [CLI reference](/docs/cli/)
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [Architecture](/docs/architecture/)
 - [Operator guide](/audiences/operators/)
