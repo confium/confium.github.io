@@ -1,0 +1,123 @@
+---
+title: OpenPGP integration
+description: Apps that need both standard OpenPGP (RFC 9580) for person-to-person crypto AND threshold signing for institutional decisions. The Confium Ruby gem hard-bundles rnp-rs — install once, get both.
+mode: cross
+order: 20
+---
+
+# OpenPGP integration
+
+Some applications need both worlds:
+
+- **Standard OpenPGP** for person-to-person communication
+  (encrypted email, signed git commits, keyserver-published
+  identities).
+- **Threshold signing** for institutional decisions
+  (multi-stakeholder certificates, governed code signing,
+  transparency-anchored audit records).
+
+Historically this meant two libraries, two installs, two sets
+of types — and on Windows, building OpenPGP from source.
+
+The Confium Ruby gem now hard-bundles `rnp-rs` (OpenPGP, RFC
+9580) into its native extension. One `gem install`, both APIs.
+
+## When this use case applies
+
+| You have | You need |
+| --- | --- |
+| A Thunderbird-style email encryption feature | OpenPGP armor, key parse, sign/verify (RNP) |
+| A certificate authority issuing governed certs | Threshold signing + transparency log (Confium) |
+| A code-signing service for individual maintainers AND for the org's release team | Both — individual PGP, threshold for releases |
+| An audit log published as OpenPGP-signed text | Both — threshold-anchor the entry, PGP-sign for distribution |
+
+## The Ruby single-install pattern
+
+```ruby
+require "confium"
+
+# === Standard OpenPGP (RNP, hard-bundled) ===
+# Wrap a public key for distribution
+armored = Confium::OpenPGP.armor(raw_pubkey_bytes, Confium::OpenPGP::PUBLIC_KEY)
+
+# === Threshold transparency log (Confium) ===
+# Anchor the OpenPGP-signed artifact in a Merkle tree
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(
+  artifact_type: :openpgp_signature,
+  artifact_hash: sha256_of_armored,
+)
+proof = tree.inclusion_proof(seq)
+root  = tree.root
+
+puts "OpenPGP signature anchored at sequence #{seq}, root #{root.hex}"
+```
+
+The two API surfaces don't share state. `Confium::OpenPGP.armor`
+doesn't know about the Merkle tree. `MerkleTree#append` doesn't
+know the artifact is an OpenPGP signature. They coexist cleanly.
+
+## Why hard-bundle rnp-rs
+
+Three operational wins:
+
+1. **Zero-dependency install.** `gem install confium` is the
+   only step. No `ruby-rnp` to add to the Gemfile, no system
+   `librnp` to discover at build time.
+2. **Windows support.** Building `rnp-rs` from source on
+   Windows has historically been the single biggest source of
+   install pain. Vendoring the source via the `rnp-src` crate
+   means Windows users get a working build without a MinGW /
+   MSVC OpenPGP library on the system.
+3. **Version alignment.** The Confium extension knows which
+   RNP version it was built against. Hard-bundling eliminates
+   "works on my machine" drift between the `confium` and
+   `ruby-rnp` installs.
+
+## What `Confium::OpenPGP` exposes today
+
+Intentionally narrow — the common case (armor / dearmor) plus
+basic RFC 9580 constants. Not a full OpenPGP surface.
+
+| Method | What it does |
+| --- | --- |
+| `Confium::OpenPGP.armor(bytes, type)` | Wrap raw bytes in ASCII armor of the given type (`MESSAGE`, `PUBLIC_KEY`, `SIGNATURE`, `SECRET_KEY`) |
+| `Confium::OpenPGP.dearmor(armored)` | Strip ASCII armor, return raw bytes |
+| `Confium::OpenPGP::MESSAGE`, `PUBLIC_KEY`, `SIGNATURE`, `SECRET_KEY` | Armor-type constants |
+
+For full OpenPGP — key generation, signing, verification,
+encryption, web-of-trust — install `ruby-rnp` alongside. The two
+gems coexist in the same process without symbol conflict.
+
+## Python and WASM: separate packages
+
+Python and WASM don't hard-bundle (different packaging models).
+Use the standalone packages:
+
+```sh
+# Python
+pip install confium py-rnp
+
+# WASM (browser / Node.js)
+npm install @confium/confium-wasm @rnpgp/rnp
+```
+
+Each package has its own scope:
+
+| Package | What it does |
+| --- | --- |
+| `confium` | Composite verify/sign, transparency, PKI parse + CMS build, attributes DSL |
+| `py-rnp` | Full RFC 9580 OpenPGP in Python |
+| `@confium/confium-wasm` | Browser-side verifier (composite, transparency, attributes) |
+| `@rnpgp/rnp` | Full RFC 9580 OpenPGP in the browser |
+
+## See also
+
+- [Confium and RNP concept](/concepts/confium-and-rnp/) — when
+  to use which, language-binding matrix, FAQ on whether
+  Confium is replacing RNP (no).
+- [Ruby binding](/software/ruby/) — install + full API surface.
+- [Composite signatures concept](/concepts/composite-signatures/)
+  — what makes a Confium signature different from a standard
+  OpenPGP signature.
+- [RNP project](https://github.com/rnpgp/rnp) — the sister project.
