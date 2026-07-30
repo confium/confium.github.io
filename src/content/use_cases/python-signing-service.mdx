@@ -1,0 +1,89 @@
+---
+title: Python signing service
+description: Embed composite signing directly in Python web apps. Django, Flask, FastAPI. No out-of-process daemon, no IPC. The new PyO3 binding ships sign + CMS build end-to-end.
+mode: 2
+order: 17
+---
+
+# Python signing service
+
+A Python web service that needs to sign artifacts at request
+time — issuing tokens, sealing audit records, countersigning
+user transactions — has historically had two bad options:
+
+1. Call out to an external signing service over the network
+   (latency, failure modes, another thing to operate).
+2. Shell out to a CLI (process overhead, no streaming, awkward
+   error handling).
+
+The Confium Python binding ships a third option: **sign in-process**,
+using the same engine the daemon uses, with no IPC and no
+out-of-process dependencies.
+
+## What changed in the workspace
+
+The PyO3 binding gained `CompositeSignature.sign_ed25519` and
+`sign_p256`, plus `SignedData.build_detached` for CMS envelopes.
+Previously the binding was verify-only — Python apps could check
+signatures but had to call out to Ruby or the JSON-RPC daemon to
+produce them. That gap is now closed.
+
+## Where it fits
+
+| Need | Use this |
+| --- | --- |
+| Sign API tokens in a Django auth service | `CompositeSignature.sign_ed25519` |
+| Seal audit records with CMS in a Flask app | `SignedData.build_detached` |
+| Countersign transactions in a FastAPI worker | `CompositeSignature.sign_p256` |
+| Verify in browser / on client | ship the WASM verifier; verify what Python signed |
+
+## Example: Django view signing an API token
+
+```python
+from django.http import JsonResponse
+import confium
+
+def issue_token(request):
+    user = request.user
+    payload = f"{user.id}:{int(time.time())}".encode()
+    sig = confium.CompositeSignature.sign_ed25519(
+        message=payload,
+        secret_key=user_signing_key,
+    )
+    return JsonResponse({
+        "token": sig.signature.hex(),
+        "alg": "composite-ed25519",
+    })
+```
+
+The signing key never leaves the Python process. No IPC, no socket,
+no daemon to keep alive.
+
+## What this is NOT
+
+- **Not threshold signing.** The Python binding signs with a
+  single in-process key. For T-of-N threshold signing (the actual
+  multi-party computation across separate signer processes), use
+  the Ruby binding or the JSON-RPC daemon — those orchestrate the
+  threshold protocol over the network.
+- **Not a replacement for HSM key storage.** The signing key in
+  the example above is whatever bytes you give it. For
+  production-grade key custody, store the key in an HSM via the
+  PKCS#11 adapter and let the daemon handle signing.
+
+## Why this matters
+
+Most Python signing needs are not threshold needs. They're
+"this web app needs to sign a token, fast, without an external
+dependency." The Python binding now does that natively, and the
+signature it produces is verifiable by every other Confium
+binding (Ruby, WASM, Rust) and by the JSON-RPC daemon. You don't
+get locked in.
+
+## See also
+
+- [Python binding](/software/python/) — full API surface.
+- [Code signing use case](/use-cases/code-signing/) — when to
+  move from in-process signing to threshold signing.
+- [PKCS#11 adapter](/docs/adapters/pkcs11/) — HSM-backed key
+  custody for the signing key.
