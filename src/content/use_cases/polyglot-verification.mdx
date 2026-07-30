@@ -1,0 +1,137 @@
+---
+title: Polyglot verification
+description: Verify composite signatures from any language via the JSON-RPC daemon. Python, Ruby, Go, Java, shell — anything that speaks HTTP over a Unix socket. The new composite_verify and attributes_evaluate methods make Confium a verification service for polyglot stacks.
+mode: cross
+order: 19
+---
+
+# Polyglot verification
+
+A modern stack rarely speaks one language. The signing service
+might be Ruby, the verifier in the API gateway might be Go, the
+auditing pipeline might be Python, and the on-call runbook might
+be a shell script. Demanding that every consumer link against a
+Confium binding is unrealistic.
+
+The Confium daemon solves this by exposing **verification as a
+JSON-RPC service**. Any language that can speak HTTP over a Unix
+socket (or TCP) can verify a composite signature, evaluate a
+threshold policy, or query a transparency log — without linking
+against any Confium code.
+
+## What changed in the workspace
+
+The daemon gained two **stateless, side-effect-free** methods
+that are safe to expose to untrusted callers:
+
+- `composite_verify` — verify an Ed25519 + ECDSA-P256 composite
+  signature against a public key + message.
+- `attributes_evaluate` — evaluate a threshold-policy predicate
+  against a signer-attribute set, without touching engine state.
+
+Both methods are pure: same inputs → same outputs, no mutation,
+no persisted state. That makes them safe to expose broadly —
+even to callers you don't fully trust.
+
+## Where it fits
+
+| Need | Use this |
+| --- | --- |
+| API gateway verifies a composite signature on every request | `composite_verify` over Unix socket |
+| Compliance pipeline checks a threshold policy before signing | `attributes_evaluate` |
+| Shell script audits a day's signatures | `composite_verify` via `curl --unix-socket` |
+| Go service verifies without a CGo Confium binding | `composite_verify` over TCP |
+| Java service verifies without JNA glue | `composite_verify` over TCP |
+
+## Example: verify from a shell script
+
+```sh
+curl --unix-socket /var/run/confium.sock \
+     -H 'content-type: application/json' \
+     -d '{
+           "jsonrpc": "2.0",
+           "id": 1,
+           "method": "composite_verify",
+           "params": {
+             "message": "'$(base64 -w0 message.bin)'",
+             "signature": "'$(base64 -w0 sig.bin)'",
+             "public_key": "'$(base64 -w0 pubkey.bin)'"
+           }
+         }' \
+     http://localhost/
+```
+
+Response:
+
+```json
+{"jsonrpc":"2.0","id":1,"result":{"valid":true,"components_checked":2}}
+```
+
+## Example: verify from Go
+
+```go
+// Composite verify via JSON-RPC over the daemon's Unix socket.
+// No CGo, no Confium binding — just net/http.
+type verifyReq struct {
+    JSONRPC string                 `json:"jsonrpc"`
+    ID      int                    `json:"id"`
+    Method  string                 `json:"method"`
+    Params  map[string]interface{} `json:"params"`
+}
+
+resp, err := client.Post("http://localhost/", "application/json",
+    jsonReader(verifyReq{
+        JSONRPC: "2.0", ID: 1, Method: "composite_verify",
+        Params: map[string]interface{}{
+            "message":   base64(message),
+            "signature": base64(sig),
+            "public_key": base64(pub),
+        },
+    }))
+```
+
+The Go service has zero Confium code in its binary. It just
+talks JSON-RPC over a Unix socket.
+
+## When to use the daemon vs a native binding
+
+| Use the daemon when | Use a native binding when |
+| --- | --- |
+| Multiple languages need to verify | One language, perf-critical |
+| You want to upgrade Confium without recompiling consumers | You want zero-latency in-process verify |
+| Untrusted callers (stateless methods are safe) | Trusted callers only |
+| Shell scripts / ops automation | Application hot path |
+
+The daemon and the bindings produce the **same answers** — they
+share the same engine code. Choose based on operational
+constraints, not cryptographic ones.
+
+## Deployment shape
+
+```
+┌─────────────────────────────────────────┐
+│  Consumers (any language)               │
+│  ┌──────┐ ┌──────┐ ┌──────┐ ┌────────┐  │
+│  │ Go   │ │ Ruby │ │ Shell│ │ Python │  │
+│  └──┬───┘ └──┬───┘ └──┬───┘ └───┬────┘  │
+│     │        │        │         │       │
+│     └────────┴────────┴─────────┘       │
+│              │ JSON-RPC                 │
+│              ▼                          │
+│     ┌────────────────────┐              │
+│     │ confiumd (daemon)  │              │
+│     │  /var/run/confium  │              │
+│     └────────────────────┘              │
+└─────────────────────────────────────────┘
+```
+
+The daemon is the only Confium process consumers talk to. It
+exposes a stable JSON-RPC API across upgrades.
+
+## See also
+
+- [Daemon](/software/daemon/) — full JSON-RPC surface.
+- [Composite signatures concept](/concepts/composite-signatures/)
+  — what the verification actually proves.
+- [Architecture](/docs/architecture/) — where the daemon sits
+  in the engine + coordinator + adapter stack.

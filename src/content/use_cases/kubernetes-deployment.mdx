@@ -1,0 +1,115 @@
+---
+title: Kubernetes deployment
+description: Run Confium in production on Kubernetes. Helm chart with coordinator, signers, transparency log, and witness. Grafana dashboards for observability. Production-grade with persistence and healthchecks.
+mode: cross
+order: 18
+---
+
+# Kubernetes deployment
+
+Confium ships a Helm chart and Docker Compose stack in
+[`deploy/`](https://github.com/confium/confium/tree/main/deploy).
+This page is for platform engineers running Confium in
+production on Kubernetes — the why, the how, and the
+production-readiness checklist.
+
+## Why run Confium on Kubernetes
+
+Threshold infrastructure is operationally awkward. A Confium
+deployment has at least four services (coordinator, signers,
+transparency log, witness), each with different persistence and
+networking requirements. Kubernetes gives you:
+
+- **Declarative topology** — the coordinator + signers +
+  witness are described in a Helm values file, not a runbook.
+- **Persistent volumes** — signer shares and the transparency
+  log survive pod restarts.
+- **Healthchecks** — liveness + readiness probes on every
+  service, so K8s restarts unhealthy pods automatically.
+- **Horizontal scaling** — coordinator replicas behind a
+  Service. Signers as a StatefulSet (one pod per identity).
+- **Configmaps + secrets** — TOML config and signer identities
+  mounted from K8s secrets, never baked into images.
+
+## Helm install
+
+```sh
+helm install confium ./deploy/helm/confium \
+     --set coordinator.replicas=2 \
+     --set signers.count=5 \
+     --set signers.threshold=3 \
+     --set transparency.persistence.size=50Gi \
+     --set witness.enabled=true
+```
+
+The chart installs:
+
+| Component | Workload | Persistence |
+| --- | --- | --- |
+| Coordinator | `Deployment` (N replicas) | None (stateless) |
+| Signers | `StatefulSet` (one pod per identity) | PVC per signer (encrypted share storage) |
+| Transparency log | `StatefulSet` | PVC (append-only log — sized for retention) |
+| Witness | `Deployment` (optional) | None |
+
+## Topology decisions
+
+Before installing, decide:
+
+1. **Signer count + threshold.** T-of-N is a governance
+   decision, not a technical one. Five signers with threshold
+   three means any three directors must agree. The Helm chart
+   wires the threshold into the daemon config; the governance
+   is your organization's call.
+2. **Signer failure domains.** Each signer is a `StatefulSet`
+   pod. Use `podAntiAffinity` to spread signers across nodes
+   (or availability zones) so a single node failure doesn't
+   take out too many signers at once.
+3. **Witness placement.** The witness detects split-view
+   attacks by comparing tree heads. Put it in a different
+   failure domain than the coordinator — otherwise it sees
+   the same view as the coordinator and adds no value.
+4. **Transparency log retention.** The log is append-only. Size
+   the PVC for the expected growth (entries per day × days of
+   retention). Back up the PVC — a lost PVC is a lost audit
+   history.
+
+## Observability
+
+The chart deploys Prometheus scrape configs for the daemon's
+`/metrics` endpoint (enabled via `--metrics :9090`).
+Pre-built Grafana dashboards in `deploy/grafana/` cover:
+
+- **Coordinator**: request rate, latency p50/p95/p99, active
+  sessions, error rate by JSON-RPC method.
+- **Signers**: per-signer session participation, share validity,
+  refresh cadence.
+- **Transparency log**: append rate, tree size, inclusion-proof
+  latency, witness-consistency failures.
+- **Audit**: signed-event stream rate, verification failures.
+
+Import the dashboards via the standard Grafana JSON import flow.
+
+## Production checklist
+
+Before promoting a Confium K8s deployment to production:
+
+- [ ] **Signer shares** distributed to the right operators via
+  your standard key-management infrastructure. Never check
+  shares into git or bake them into images.
+- [ ] **Transparency-log PVC** sized for retention + backups
+  configured.
+- [ ] **Witness** in a different failure domain than the
+  coordinator.
+- [ ] **Pod anti-affinity** on signers so a node failure
+  doesn't drop too many at once.
+- [ ] **Monitoring** wired up (Prometheus + Grafana).
+- [ ] **Quorum policy** reviewed by the parties who must agree
+  on it.
+
+## See also
+
+- [`deploy/` in the repository](https://github.com/confium/confium/tree/main/deploy) —
+  the Helm chart + Docker Compose + Grafana dashboards.
+- [Daemon](/software/daemon/) — the JSON-RPC API surface.
+- [Architecture](/docs/architecture/) — how the components
+  compose.
