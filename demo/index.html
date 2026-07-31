@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Confium — Interactive Verifier Demo</title>
+  <style>
+    :root {
+      --bg: #0F0E0C;
+      --fg: #FAFAF7;
+      --accent: #D97706;
+      --line: #2A2520;
+      --ok: #84CC16;
+      --err: #EF4444;
+    }
+    * { box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font: 15px/1.5 ui-monospace, SFMono-Regular, "IBM Plex Mono", monospace;
+      margin: 0;
+      padding: 2rem;
+      max-width: 800px;
+    }
+    h1 { color: var(--accent); font-size: 1.5rem; margin: 0 0 0.5rem; }
+    p.lede { color: #B8B0A0; margin: 0 0 2rem; }
+    textarea {
+      width: 100%;
+      height: 8rem;
+      background: #1A1714;
+      color: var(--fg);
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 0.5rem;
+      font: inherit;
+      resize: vertical;
+    }
+    textarea:focus { outline: 1px solid var(--accent); }
+    label { display: block; margin: 1rem 0 0.25rem; font-weight: bold; }
+    button {
+      background: var(--accent);
+      color: var(--bg);
+      border: none;
+      border-radius: 4px;
+      padding: 0.6rem 1.2rem;
+      font: inherit;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 1.5rem 0;
+    }
+    button:hover { background: #B66405; }
+    #result {
+      background: #1A1714;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 1rem;
+      min-height: 3rem;
+      white-space: pre-wrap;
+    }
+    #result.ok { border-color: var(--ok); color: var(--ok); }
+    #result.err { border-color: var(--err); color: var(--err); }
+    footer { margin-top: 3rem; color: #888; font-size: 0.85rem; }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>Confium Composite Verifier</h1>
+  <p class="lede">
+    Paste a composite signature, the message, and the verification
+    happens entirely in your browser via WebAssembly. No network calls.
+  </p>
+
+  <label for="sig">Composite signature JSON</label>
+  <textarea id="sig" placeholder='{
+  "components": [
+    {
+      "algorithm": "Ed25519",
+      "public_key": "<base64>",
+      "signature":  "<base64>"
+    }
+  ]
+}'></textarea>
+
+  <label for="msg">Message (UTF-8 text)</label>
+  <textarea id="msg" placeholder="the message that was signed"></textarea>
+
+  <button id="verify">Verify</button>
+
+  <label for="result">Result</label>
+  <div id="result">— paste a signature and click Verify —</div>
+
+  <footer>
+    Powered by <a href="https://www.confium.org/">Confium</a>
+    · <a href="https://github.com/confium/confium/tree/main/crates/confium-wasm">@confium/confium-wasm</a>
+    · runs entirely client-side · zero data leaves your browser
+  </footer>
+
+  <script type="module">
+    // Lazy-load the WASM package so the page renders fast.
+    const init = import('https://esm.sh/@confium/confium-wasm@0.3')
+      .then(({ default: init, CompositeSignature }) => init().then(() => CompositeSignature));
+
+    document.getElementById('verify').addEventListener('click', async () => {
+      const result = document.getElementById('result');
+      result.classList.remove('ok', 'err');
+      result.textContent = 'Verifying…';
+
+      try {
+        const sigJson = document.getElementById('sig').value.trim();
+        const message = document.getElementById('msg').value;
+        if (!sigJson || !message) {
+          throw new Error('Both signature JSON and message are required');
+        }
+        // Validate JSON shape before handing to WASM.
+        JSON.parse(sigJson);
+
+        const CompositeSignature = await init;
+        const sig = new CompositeSignature(sigJson);
+        const messageBytes = new TextEncoder().encode(message);
+        const result2 = sig.verify(messageBytes);
+
+        if (result2.all_verified) {
+          result.classList.add('ok');
+          result.textContent = `✓ VERIFIED — ${result2.component_count} component(s)`;
+          for (const [alg, ok] of result2.per_component_entries()) {
+            result.textContent += `\n  ${ok ? '✓' : '✗'} ${alg}`;
+          }
+        } else {
+          result.classList.add('err');
+          result.textContent = `✗ FAILED — ${result2.component_count} component(s)`;
+          for (const [alg, ok] of result2.per_component_entries()) {
+            result.textContent += `\n  ${ok ? '✓' : '✗'} ${alg}`;
+          }
+        }
+      } catch (e) {
+        result.classList.add('err');
+        result.textContent = `✗ ERROR: ${e.message || e}`;
+      }
+    });
+  </script>
+</body>
+</html>

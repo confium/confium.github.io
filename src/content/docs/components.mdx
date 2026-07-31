@@ -1,13 +1,13 @@
 ---
 title: Components
-description: The 46-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency, deployment, benchmarks.
+description: The 48-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency, deployment, benchmarks.
 audience: developer
 order: 6
 ---
 
 # Components
 
-The Confium Rust workspace contains **46 crates** organized by
+The Confium Rust workspace contains **48 crates** organized by
 concern. This page maps every crate to its category and role. For
 full API details, browse the
 [Confium repository](https://github.com/confium/confium) — the
@@ -134,12 +134,16 @@ trees, OTS anchoring, and ERS long-term archival in one crate.
 
 | Crate | Role |
 | --- | --- |
-| `confium-python` | PyO3 native extension: composite sign+verify, transparency, PKI parse + CMS build, attributes DSL. |
+| `confium-python` | PyO3 native extension: composite sign+verify, transparency, PKI parse + CMS build, attributes DSL, OTS, ERS, XMLDSig. |
+| `confium-node` | NAPI Node.js binding — server-side signing surface (composite sign + verify, transparency, PKI, threshold sessions). |
+| `confium-go` | Go binding (scaffold). API surface stable; C bridge in progress. |
 | `confium-wasm` | `wasm-bindgen` verifier package (`@confium/confium-wasm` on npm). Browser/Node.js verifier only by design. |
 
 The Ruby binding lives in a sibling repo
 ([`confium-ruby`](https://github.com/confium/confium-ruby)) and
 wraps the high-level `confium-*` crates via `magnus` + `rb_sys`.
+It hard-bundles `rnp-rs` for OpenPGP armor — see
+[Confium and RNP](/concepts/confium-and-rnp/).
 
 ## Performance / Evaluation
 
