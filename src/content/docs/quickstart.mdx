@@ -1,0 +1,242 @@
+---
+title: Quickstart
+description: "Five-minute quickstarts for Confium in every supported language. Pick yours, copy-paste, verify your first signature. No prior threshold-crypto knowledge required."
+audience: developer
+order: 10
+---
+
+# Quickstart
+
+Pick your language. Each quickstart takes you from `install`
+to a verified composite signature in under five minutes. No
+prior threshold-cryptography knowledge required.
+
+## Pick your language
+
+| Language | Best for | Quickstart |
+| --- | --- | --- |
+| **[Python](#python)** | Web apps, data pipelines, scripts | `pip install confium` |
+| **[Ruby](#ruby)** | Rails, Sinatra, ops automation | `gem install confium` |
+| **[Rust](#rust)** | Embedded use, max performance, the engine itself | `cargo add confium-core` |
+| **[WASM (browser)](#wasm-browser)** | In-browser verification — ship to clients | `npm install @confium/confium-wasm` |
+| **[JSON-RPC daemon](#json-rpc-daemon)** | Any language — Go, Java, shell, anything that speaks HTTP | `cargo install confium-daemon` |
+
+## Python
+
+### 1. Install
+
+```sh
+pip install confium
+```
+
+Pre-built wheels for CPython 3.9+ on Linux (amd64/arm64),
+macOS (amd64/arm64), Windows (amd64).
+
+### 2. Verify a composite signature
+
+```python
+import confium
+
+# A composite signature you received from a Confium signer
+message = b"hello, world"
+signature_bytes = bytes.fromhex("...")
+public_key_bytes = bytes.fromhex("...")
+
+result = confium.CompositeSignature.verify(
+    message=message,
+    signature=signature_bytes,
+    public_key=public_key_bytes,
+)
+print("valid:", result.valid)  # → True
+```
+
+### 3. Sign one yourself
+
+```python
+# Sign with an Ed25519 secret key
+secret = bytes.fromhex("...")  # your Ed25519 secret key
+sig = confium.CompositeSignature.sign_ed25519(
+    message=message,
+    secret_key=secret,
+)
+print(sig.signature.hex())
+```
+
+### 4. Next
+
+- [Python signing service use case](/use-cases/python-signing-service/)
+  — embed signing in a Django/Flask app.
+- [Python binding reference](/software/python/) — full API
+  surface.
+
+## Ruby
+
+### 1. Install
+
+```sh
+gem install confium
+```
+
+The native extension compiles at install time. Prerequisites:
+Ruby ≥ 3.1, Rust stable 1.85+, a C toolchain (`cc`, `make`).
+
+### 2. Verify a composite signature
+
+```ruby
+require "confium"
+
+message = "hello, world"
+signature_bytes = [sig_hex].pack("H*")
+public_key_bytes = [pubkey_hex].pack("H*")
+
+result = Confium::Composite.verify(
+  message: message,
+  signature: signature_bytes,
+  public_key: public_key_bytes,
+)
+puts "valid: #{result.valid?}"  # → true
+```
+
+### 3. Anchor the verification in a transparency log
+
+```ruby
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(
+  artifact_type: :composite_signature,
+  artifact_hash: Digest::SHA256.digest(signature_bytes),
+)
+puts "anchored at sequence #{seq}, root #{tree.root.unpack1('H*')}"
+```
+
+### 4. Next
+
+- [OpenPGP integration use case](/use-cases/openpgp-integration/)
+  — Ruby's hard-bundled OpenPGP (RNP).
+- [Ruby binding reference](/software/ruby/) — full API
+  surface.
+
+## Rust
+
+### 1. Add the dependency
+
+```sh
+cargo add confium-core
+cargo add confium-composite
+```
+
+### 2. Verify a composite signature
+
+```rust
+use confium_composite::{CompositeSignature, ed25519_verifier};
+
+let message = b"hello, world";
+let signature: &[u8] = /* composite signature bytes */;
+let public_key: &[u8] = /* public key bytes */;
+
+let result = CompositeSignature::verify(message, signature)
+    .map(|sig| sig.verify_with(message, &[ed25519_verifier(public_key)]))
+    .expect("parse + verify");
+
+println!("valid: {}", result.is_ok());
+```
+
+### 3. Next
+
+- [Components](/docs/components/) — the 46-crate workspace map.
+- [Architecture](/docs/architecture/) — how the engine fits
+  together.
+
+## WASM (browser)
+
+### 1. Install
+
+```sh
+npm install @confium/confium-wasm
+```
+
+### 2. Verify a composite signature in the browser
+
+```javascript
+import init, { CompositeSignature } from "@confium/confium-wasm";
+
+await init();  // load the WASM module
+
+const message = new TextEncoder().encode("hello, world");
+const signature = new Uint8Array(/* signature bytes */);
+const publicKey = new Uint8Array(/* pubkey bytes */);
+
+const result = CompositeSignature.verify(message, signature, publicKey);
+console.log("valid:", result.valid);  // → true
+```
+
+### 3. Tree-shake to just what you need
+
+```sh
+npm install @confium/confium-wasm-composite  # verify-composite only
+```
+
+The package has per-subsystem features (`verify-composite`,
+`verify-transparency`, `verify-attributes`, `verify-pki`).
+Ship only what your browser code calls.
+
+### 4. Next
+
+- [@confium/confium-wasm on npm](https://www.npmjs.com/package/@confium/confium-wasm).
+- WASM is **verifier-only by design**. Browsers verify;
+  servers sign.
+
+## JSON-RPC daemon
+
+For Go, Java, shell, or any language without a native Confium
+binding.
+
+### 1. Install + run
+
+```sh
+cargo install confium-daemon --locked
+confiumd --listen unix:///var/run/confium.sock
+```
+
+### 2. Verify a composite signature via curl
+
+```sh
+curl --unix-socket /var/run/confium.sock \
+     -H 'content-type: application/json' \
+     -d '{
+           "jsonrpc": "2.0",
+           "id": 1,
+           "method": "composite_verify",
+           "params": {
+             "message": "'$(base64 -w0 message.bin)'",
+             "signature": "'$(base64 -w0 sig.bin)'",
+             "public_key": "'$(base64 -w0 pubkey.bin)'"
+           }
+         }' \
+     http://localhost/
+```
+
+### 3. Next
+
+- [Polyglot verification use case](/use-cases/polyglot-verification/)
+  — when to use the daemon vs a native binding.
+- [Daemon reference](/software/daemon/) — full JSON-RPC
+  method table.
+
+## What to read next
+
+| If you want to | Read |
+| --- | --- |
+| Understand the threshold-crypto math | [Threshold crypto 101](/concepts/threshold-crypto-101/) |
+| See how Confium fits into existing PKI | [TLS analogy](/concepts/tls-analogy/) |
+| Pick a deployment shape | [Three deployment modes](/docs/three-modes/) |
+| See real-world deployments | [Use cases](/use-cases/) — 26 scenarios |
+| Run it in production | [Deployment](/docs/deployment/) — Docker, Helm, Grafana |
+
+## See also
+
+- [Getting started](/docs/getting-started/) — the original
+  install-focused page (kept for backward links).
+- [Components](/docs/components/) — every crate in the
+  workspace.
+- [Architecture](/docs/architecture/) — how it all fits
+  together.
