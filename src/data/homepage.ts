@@ -188,3 +188,8 @@ export const TONE_TINT: Readonly<Record<BrandTone, 'tint-blue' | 'tint-teal' | '
   teal: 'tint-teal',
   gold: 'tint-gold',
 };
+
+/**
+ * Inverted tonal order to alternate panels: blue, teal, gold, blue, ...
+ */
+export const TONE_CYCLE: readonly BrandTone[] = ['blue', 'teal', 'gold'];
