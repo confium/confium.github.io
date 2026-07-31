@@ -1,0 +1,160 @@
+---
+title: WASM API reference
+description: "The @confium/confium-wasm API surface — browser-side verifier for composite signatures, transparency logs, attribute predicates, and PKI. Verifier-only by design: browsers verify, servers sign."
+audience: developer
+order: 22
+---
+
+# WASM API reference
+
+`@confium/confium-wasm` is the browser / Node.js verifier
+package. It wraps the same Rust engine as the Ruby / Python /
+Node bindings but exposes **verification only** — signing and
+threshold sessions live on the server. This split is
+deliberate: browsers verify; servers sign.
+
+## Install
+
+```sh
+npm install @confium/confium-wasm
+```
+
+Or tree-shake to just the subsystems you need:
+
+```sh
+npm install @confium/confium-wasm-composite       # verify-composite only
+npm install @confium/confium-wasm-transparency    # verify-transparency only
+npm install @confium/confium-wasm-attributes      # verify-attributes only
+npm install @confium/confium-wasm-pki             # verify-pki only
+```
+
+## Composite signatures
+
+```typescript
+import init, { CompositeSignature } from "@confium/confium-wasm";
+
+await init();  // load the WASM module once
+
+const message = new TextEncoder().encode("hello");
+const signature = new Uint8Array(/* composite sig bytes */);
+const publicKey = new Uint8Array(/* public key bytes */);
+
+const result = CompositeSignature.verify(message, signature, publicKey);
+console.log(result.valid);  // → true
+console.log(result.componentsChecked);  // → 2 (Ed25519 + ECDSA-P256)
+```
+
+### Per-component verification
+
+If you want to verify only some components (e.g., accept a
+signature that's valid for Ed25519 even if the PQ component
+is unsupported in this browser build):
+
+```typescript
+const result = CompositeSignature.verifyWith(
+    message,
+    signature,
+    [
+        { algorithm: "Ed25519", publicKey: ed_pubkey },
+        // skip the ECDSA-P256 component
+    ],
+);
+```
+
+## Transparency log
+
+```typescript
+import { verifyInclusionWithHead, InclusionProof } from "@confium/confium-wasm";
+
+// Verify an artifact is in a published log checkpoint.
+const leafHash = new Uint8Array(/* SHA-256 of the leaf */);
+const proof = InclusionProof.fromJson(proofJson);
+const root = new Uint8Array(/* published root hash */);
+const treeSize = 12345;
+
+verifyInclusionWithHead(leafHash, proof, treeSize, root);  // throws on failure
+```
+
+### Consistency proof (RFC 6962 §2.1.3)
+
+```typescript
+import { verifyConsistency } from "@confium/confium-wasm";
+
+verifyConsistency(
+    oldRoot,       // Uint8Array(32) — yesterday's published root
+    newRoot,       // Uint8Array(32) — today's published root
+    oldSize,       // 12345
+    newSize,       // 12678
+    consistencyProof,
+);  // throws on failure — log wasn't append-only
+```
+
+## Attribute predicates
+
+```typescript
+import { Predicate } from "@confium/confium-wasm";
+
+const policy = Predicate.parse(
+    "region in (EU, US) and role == 'director' and count >= 3"
+);
+
+const signers = {
+    signers: [
+        { id: "d1", region: "EU", role: "director" },
+        { id: "d2", region: "EU", role: "director" },
+        { id: "d3", region: "US", role: "director" },
+    ],
+};
+
+const result = policy.evaluate(signers);
+console.log(result.satisfied);  // → true
+console.log(result.matched);    // → ["d1", "d2", "d3"]
+```
+
+## PKI — certificate parse + verify
+
+```typescript
+import { Certificate, SignedData } from "@confium/confium-wasm";
+
+const cert = Certificate.fromPem(pemString);
+console.log(cert.subject());
+console.log(cert.notBefore(), cert.notAfter());
+
+const envelope = SignedData.fromDer(derBytes);
+const result = envelope.verify({ trustRoots: [rootCert] });
+console.log(result.valid);
+```
+
+## What's NOT in the WASM package
+
+- **Signing** — composite sign, CMS build, threshold sessions.
+  These run on the server (Ruby, Python, Node, Rust). Browsers
+  receive signatures and verify them.
+- **Coordinator client** — the WASM package doesn't speak the
+  coordinator's QUIC protocol. It verifies artifacts produced
+  elsewhere.
+- **OpenPGP (RFC 9580)** — for OpenPGP in the browser, use
+  [`@rnpgp/rnp`](https://www.npmjs.com/package/@rnpgp/rnp).
+  See [Confium and RNP](/concepts/confium-and-rnp/) for the
+  sibling-project relationship.
+
+## Bundle size
+
+The full package is ~120 KB gzipped. The per-subsystem subset
+packages are smaller:
+
+| Subset | Gzipped size |
+| --- | --- |
+| `verify-composite` | ~25 KB |
+| `verify-transparency` | ~30 KB |
+| `verify-attributes` | ~15 KB |
+| `verify-pki` | ~45 KB |
+
+Ship only what your browser code calls.
+
+## See also
+
+- [Polyglot verification use case](/use-cases/polyglot-verification/)
+  — when to use the WASM verifier vs the JSON-RPC daemon.
+- [WASM binding source](https://github.com/confium/confium/tree/main/crates/confium-wasm).
+- [@confium/confium-wasm on npm](https://www.npmjs.com/package/@confium/confium-wasm).

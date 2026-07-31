@@ -1,0 +1,164 @@
+---
+title: Rust API reference
+description: "The Confium Rust API surface — confium-core, confium-composite, confium-transparency, confium-pki, confium-attributes. Types, traits, and entry points for embedded use."
+audience: developer
+order: 21
+---
+
+# Rust API reference
+
+Confium is Rust-native. The Rust API is the most complete and
+the source of truth for every other binding. This page covers
+the public entry points across the main interface crates.
+
+## Crate map
+
+| Crate | Role |
+| --- | --- |
+| `confium-core` | Engine entry points — plugin loader, registry, FFI |
+| `confium-composite` | Composite signature types + verifiers |
+| `confium-transparency` | Merkle tree, inclusion / consistency proofs, OTS, ERS |
+| `confium-pki` | X.509, CSR, CMS SignedData, XMLDSig, delegation |
+| `confium-attributes` | Threshold-policy predicate DSL + evaluation |
+| `confium-api` | Shared plugin-author types (`OpaqueHandle`, `OptionMap`, `PluginMetadata`) |
+| `confium-macros` | Proc-macros (`#[plugin_interface]`, `#[export]`) |
+
+For the full 48-crate list, see
+[Components](/docs/components/).
+
+## Composite signatures
+
+```rust
+use confium_composite::{
+    CompositeSignature, ComponentSignature,
+    build_ed25519_component, build_p256_component,
+    ed25519_verifier, p256_verifier,
+    ED25519, ECDSA_P256,
+};
+
+// Build a composite signature from individual component signatures.
+let ed_component = build_ed25519_component(&signing_key, message)?;
+let p256_component = build_p256_component(&p256_signing_key, message)?;
+let composite = CompositeSignature::new(vec![ed_component, p256_component]);
+
+// Serialize for storage / transport.
+let wire_bytes = composite.to_der()?;
+
+// Verify: deserialize, then verify each component with its callback.
+let parsed = CompositeSignature::from_der(&wire_bytes)?;
+let result = parsed.verify_with(message, &[
+    ed25519_verifier(&public_key),
+    p256_verifier(&p256_public_key),
+]);
+```
+
+## Transparency log
+
+```rust
+use confium_transparency::merkle::{MerkleTree, InclusionProof};
+
+let mut tree = MerkleTree::new();
+
+// Append entries — returns the sequence number.
+let seq = tree.append(b"artifact bytes")?;
+let root = tree.root();  // 32-byte SHA-256 root
+
+// Generate an inclusion proof for a specific entry.
+let proof: InclusionProof = tree.inclusion_proof(seq)?;
+
+// Verify (auditor side):
+proof.verify(leaf_hash, tree.size(), &root)?;
+```
+
+## Consistency proofs (RFC 6962 §2.1.3)
+
+```rust
+// On the log operator side:
+let old_size = 12345;
+let consistency = tree.consistency_proof(old_size)?;
+
+// On the auditor side:
+tree.verify_consistency(
+    old_root,       // published yesterday
+    new_root,       // published today
+    old_size,       // 12345
+    tree.size(),    // current size
+    &consistency,
+)?;
+```
+
+The 0.4.0 release rewrote `consistency_proof` +
+`verify_consistency` per RFC 6962 §2.1.3. The 0.3.x proof shape
+is incompatible — see the
+[changelog](https://github.com/confium/confium/blob/main/CHANGELOG.md).
+
+## PKI — certificate + CMS
+
+```rust
+use confium_pki::{Certificate, SignedData};
+
+let cert = Certificate::from_pem(pem_str)?;
+println!("subject: {:?}", cert.subject());
+println!("valid until: {}", cert.not_after());
+
+// Build a CMS SignedData envelope.
+let envelope = SignedData::builder()
+    .payload(document_bytes)
+    .certificate(cert.clone())
+    .signature(composite_sig_bytes)
+    .build_detached()?;
+
+let der = envelope.to_der()?;
+```
+
+## Attributes DSL
+
+```rust
+use confium_attributes::{Predicate, SignerAttributes};
+
+let policy = Predicate::parse(
+    "region in (EU, US) and role == 'director' and count >= 3"
+)?;
+
+let signers = SignerAttributes::from_json(signers_json)?;
+let result = policy.evaluate(&signers)?;
+println!("satisfied: {}", result.satisfied);
+println!("matched: {:?}", result.matched_signer_ids);
+```
+
+## Plugin authoring
+
+```rust
+use confium_api::plugin::hash::HashPlugin;
+use confium_macros::plugin_interface;
+
+pub struct MyHasher { /* ... */ }
+
+impl HashPlugin for MyHasher {
+    fn new(_opts: &OptionMap) -> Result<Self, PluginError> { /* ... */ }
+    fn update(&mut self, data: &[u8]) -> Result<(), PluginError> { /* ... */ }
+    fn finalize(&self) -> Result<Vec<u8>, PluginError> { /* ... */ }
+}
+
+#[plugin_interface(name = "hash", version = 0)]
+impl HashPlugin for MyHasher { /* trait impl above */ }
+
+#[confium_macros::export(
+    interfaces(hash = 0),
+    metadata(name = "my-hash", version = "0.1.0")
+)]
+pub struct MyHasher;
+```
+
+The macros emit the eight canonical `cfmp_hash_*` extern "C"
+entry points plus the lifecycle symbols. The plugin loads
+through the standard Confium loader.
+
+## See also
+
+- [Components](/docs/components/) — every crate in the
+  workspace.
+- [Plugin author guide](https://github.com/confium/confium/blob/main/docs/plugin-author-guide.mdx)
+  — the full plugin-authoring walkthrough.
+- [Confium repository](https://github.com/confium/confium) —
+  the rustdoc lives inline in each crate's source.

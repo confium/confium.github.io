@@ -1,0 +1,175 @@
+---
+title: Migrate from Sigstore
+description: "You use Sigstore (cosign + Rekor + Fulcio) for container / artifact signing. Here's what Confium adds, what to keep, and how to run both side-by-side during migration."
+audience: architect
+order: 2
+---
+
+# Migrate from Sigstore
+
+[Sigstore](https://www.sigstore.dev) is the standard for
+keyless, OIDC-backed signing of container images and
+artifacts. For individual developers and small teams, it's
+excellent. For organizations that need **multi-party control
+over release keys**, Sigstore alone isn't enough.
+
+Confium doesn't replace Sigstore — it complements it. You
+keep Rekor (the transparency log), you keep cosign's
+verification UX, and you add threshold signing behind the
+release key.
+
+## What each is good at
+
+| Need | Sigstore | Confium |
+| --- | --- | --- |
+| Sign an artifact as yourself (keyless via GitHub OIDC) | ✓ | n/a |
+| Verify an artifact's signature in a CI admission check | ✓ cosign verify | ✓ WASM verifier |
+| Public transparency log of what's been signed | ✓ Rekor | ✓ RFC 6962 |
+| Multi-maintainer control over the release key | ✗ | ✓ |
+| Async signing across time zones | ✗ | ✓ |
+| Standards-only adapters (PKCS#11, OpenSSL, JCE) | ✗ | ✓ |
+| Post-quantum migration via composite signatures | ✗ | ✓ |
+| FIPS 140 mode | ✗ | ✓ via plugin |
+
+## When to add Confium to a Sigstore workflow
+
+You're a fit for adding Confium if:
+
+- Your release key is high-value (base images, language
+  runtimes, critical infrastructure).
+- A single compromised maintainer laptop could ship a
+  malicious release.
+- Compliance (FedRAMP, FIPS 140, SOC 2) requires multi-party
+  control over release keys.
+- You want to migrate to post-quantum signatures without a
+  flag day.
+
+You don't need Confium if:
+
+- Your release process is single-maintainer by design (a
+  solo project, a personal container).
+- Keyless Sigstore with short-lived OIDC-bound keys is
+  enough — that's a different threat model (you're trusting
+  GitHub OIDC, not a static key).
+
+## The migration shape
+
+```
+┌────────────────────────────────────────────────┐
+│  SIGSTORE-ONLY (today)                          │
+│                                                │
+│  CI runner                                     │
+│    ↓ cosign sign --key (ephemeral OIDC)        │
+│  Artifact + cosign signature                   │
+│    ↓                                           │
+│  Rekor transparency log entry                  │
+└────────────────────────────────────────────────┘
+                     ↓ add Confium
+┌────────────────────────────────────────────────┐
+│  SIGSTORE + CONFIUM                             │
+│                                                │
+│  N release maintainers                         │
+│    ↓ each contributes a share via Confium      │
+│  Confium coordinator (T-of-N threshold)        │
+│    ↓ composite signature (Ed25519 + ML-DSA-65) │
+│  CI runner                                     │
+│    ↓ cosign sign --key <composite-pubkey>      │
+│  Artifact + cosign signature (now threshold)   │
+│    ↓                                           │
+│  Rekor transparency log entry                  │
+└────────────────────────────────────────────────┘
+```
+
+## Steps
+
+### 1. Keep Rekor and cosign's verification path
+
+Don't rip out what works. cosign verify, the Rekor entry, the
+OIDC binding — all stay. You're changing what gets signed,
+not how it's verified.
+
+### 2. Generate a composite Confium key
+
+Run a distributed key generation across your N release
+maintainers. Output:
+
+- A composite public key (Ed25519 + ECDSA-P256, optionally +
+  ML-DSA-65)
+- N shares (one per maintainer, on their own hardware)
+
+The public key is what cosign will sign with.
+
+### 3. Replace cosign's single-key signing with Confium-backed signing
+
+Where you previously had:
+
+```sh
+cosign sign --key cosign.key my-image
+```
+
+now run:
+
+```sh
+# Each maintainer signs the image digest with their share
+confium sign --coordinator tcp://coord:7443 \
+             --signer maintainer-$(whoami) \
+             $(image_digest)
+
+# Coordinator assembles the composite signature
+confium assemble --wait
+
+# cosign attaches the composite signature to the image
+cosign attach signature --key <composite-pubkey> my-image
+```
+
+The signature is now a composite Confium signature, not a
+single-key cosign signature. The cosign verify side checks it
+against the composite public key you publish.
+
+### 4. Publish the composite public key
+
+Distribute the composite public key the same way you
+distributed the single-key public key: in your
+`cosign.pub`, your SBOM, your release notes. cosign verify
+checks it as usual.
+
+### 5. Verify
+
+Existing `cosign verify` calls continue to work — they check
+the signature against the published public key. The signature
+happens to require T-of-N maintainers to produce, but the
+verifier doesn't need to know that.
+
+### 6. Optional: anchor in Confium's transparency log
+
+Rekor already records the signature. If you also want a
+Confium transparency-log entry (for split-view detection via
+witness gossip), the coordinator can append to both
+automatically.
+
+## What stays the same
+
+- **cosign verify** — your CI admission webhook doesn't change.
+- **Rekor entry** — every signing event is still publicly
+  logged.
+- **OIDC binding for non-release signing** — individual
+  maintainer commits can still use keyless Sigstore. The
+  threshold signing is for *release* keys only.
+
+## What changes
+
+- **The signing key** — single-key cosign key → composite
+  Confium key held across maintainers.
+- **The release process** — `cosign sign` → multi-maintainer
+  Confium session + cosign attach.
+- **The threat model** — single-maintainer compromise no longer
+  produces a valid signature.
+
+## See also
+
+- [Container image signing](/use-cases/container-image-signing/)
+  — the full Confium-without-Sigstore pattern.
+- [Composite signatures concept](/concepts/composite-signatures/)
+  — why a composite signature is a single envelope, not two
+  separate signatures.
+- [Sigstore](https://www.sigstore.dev) — the upstream project.

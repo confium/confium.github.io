@@ -1,0 +1,158 @@
+---
+title: Migrate from HSM-only
+description: "You have an HSM today. You want threshold signing without replacing the HSM. This guide walks the migration path — same HSM, same consumers, threshold signing behind it."
+audience: architect
+order: 1
+---
+
+import AdapterPatternDiagram from '../../../components/brand/AdapterPatternDiagram.astro';
+
+# Migrate from HSM-only
+
+Your HSM isn't going away. Most regulated environments require
+HSM-backed key storage. The question isn't "HSM or threshold" —
+it's "HSM with single-party signing, or HSM with threshold
+signing?"
+
+Confium's Mode 2 (PKI Drop-in) answers that. The HSM stays
+exactly where it is. The consumers (OpenSSL, Java, PKCS#11
+clients) keep working unchanged. Behind the scenes, every
+signing operation now requires a threshold quorum.
+
+## The migration shape
+
+```
+┌──────────────────────────────────────────────────┐
+│  BEFORE                                          │
+│                                                  │
+│  App → PKCS#11 → HSM (single key, single party)  │
+└──────────────────────────────────────────────────┘
+                       ↓
+┌──────────────────────────────────────────────────┐
+│  AFTER                                           │
+│                                                  │
+│  App → PKCS#11 → confium-pkcs11-server           │
+│                  ↓                                │
+│                  Confium coordinator              │
+│                  ↓                                │
+│                  N signers (T-of-N threshold)     │
+│                  ↓                                │
+│                  HSM (each signer's share)        │
+└──────────────────────────────────────────────────┘
+```
+
+The HSM still holds keys — but each signer holds a *share*, not
+the full key. T-of-N shares combine into a signature without
+ever reconstructing the secret.
+
+## Steps
+
+### 1. Audit your current signing paths
+
+List every consumer that calls your HSM:
+
+- OpenSSL consumers (`ENGINE_pkcs11`, provider config)
+- Java consumers (`SunPKCS11` provider)
+- nginx, Apache (TLS cert loading)
+- Custom apps using the PKCS#11 C API directly
+
+For each, note: what slot/token they use, how they get the
+PIN, what signing algorithm.
+
+### 2. Stand up a Confium coordinator + signers
+
+Follow the [deployment guide](/docs/deployment/). For an
+HSM-migration deployment, the typical shape is:
+
+- 1 coordinator (close to the consumers, low latency)
+- N signers (one per human / role / jurisdiction that must
+  participate)
+- 1 transparency log (anchor every signing event)
+- 1 witness (optional but recommended)
+
+### 3. Generate the threshold key
+
+Run a distributed key generation ceremony. The output:
+
+- A public key (published to your consumers via the existing
+  PKCS#11 token label)
+- N shares (one per signer, stored in each signer's HSM slot)
+
+The shares never leave their HSMs. The coordinator orchestrates
+signing sessions where each signer contributes a partial
+signature; the coordinator assembles the final signature.
+
+### 4. Wire the PKCS#11 adapter in front of consumers
+
+Install `confium-pkcs11-server` on the host(s) where your
+consumers run. Configure the slots to map to Confium signer
+identities:
+
+```toml
+# /etc/confium/pkcs11.toml
+[server]
+socket_path = "/var/run/confium/pkcs11.sock"
+coordinator = "tcp://coordinator.internal:7443"
+
+[slot.0]
+token_label = "tls-signing"   # match the label consumers expect
+signer_id = "tls-1"
+pin_env = "TLS_PIN"
+```
+
+Point your consumers at the Confium PKCS#11 module instead of
+the HSM directly:
+
+```diff
+- library = /usr/lib/softhsm/libsofthsm2.so
++ library = /usr/local/lib/confium-pkcs11.so
+```
+
+### 5. Verify nothing changed on the consumer side
+
+The consumers see the same PKCS#11 token label, the same PIN
+mechanism (operational secret, not cryptographic), the same
+signing algorithms. The signature they produce is a valid
+signature for the same public key — except now it required
+T-of-N signers to produce.
+
+### 6. Cut over
+
+Switch the consumers from the HSM directly to the Confium
+PKCS#11 adapter. Monitor the transparency log for the first
+signing events. Roll back if anything looks wrong (the
+consumers don't know the difference).
+
+## What you keep
+
+- **Your HSM.** Every signer's share lives in an HSM slot. The
+  HSM's tamper resistance, FIPS 140 mode, and audit trail all
+  still apply.
+- **Your consumers.** No code changes. The PKCS#11 contract is
+  preserved.
+- **Your PIN infrastructure.** The PIN per slot pattern is
+  preserved (now an operational secret forwarded to the
+  coordinator, not a key-wrapping PIN).
+- **Your compliance posture.** FIPS 140, common-criteria,
+  whatever your HSM is certified for — still applies.
+
+## What you gain
+
+- **No single point of compromise.** T-1 signers can be
+  compromised without producing a valid signature.
+- **Audit trail.** Every signing event is anchored in a
+  transparency log.
+- **Async signing.** Signers in different time zones can
+  participate in a session over hours or days.
+- **Post-quantum migration path.** Composite signatures wrap
+  the classical algorithm in an ML-DSA-65 envelope when you're
+  ready.
+
+## See also
+
+- [PKCS#11 adapter](/docs/adapters/pkcs11/) — the adapter
+  reference.
+- [Deployment](/docs/deployment/) — coordinator + signer +
+  transparency-log topology.
+- [Banking use case](/use-cases/banking-signing/) — the
+  canonical HSM-migration deployment.
