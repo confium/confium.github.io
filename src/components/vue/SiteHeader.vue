@@ -114,6 +114,7 @@ onUnmounted(() => {
             type="button"
             class="icon-btn md:hidden p-2 rounded-full transition-colors"
             :aria-expanded="isMobileOpen"
+            aria-label="Open menu"
             @click="isMobileOpen = !isMobileOpen"
           >
             <svg class="w-5 h-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
