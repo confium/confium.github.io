@@ -1,0 +1,106 @@
+---
+title: Container image signing
+description: Sign container images with a threshold of maintainers. No single maintainer can push a malicious image. Compatible with OCI signatures, cosign verification, and Sigstore's certificate model.
+mode: 2
+order: 21
+---
+
+# Container image signing
+
+Container image signing today usually means one of two things:
+
+1. **Single-maintainer PGP / cosign key** — whoever holds the
+   key can sign anything. Compromise the key, ship malware.
+2. **Keyless Sigstore with OIDC** — the signer's identity is
+   bound to an ephemeral key. Better, but each signing event
+   is still single-party.
+
+For images that many people rely on (base images, language
+runtimes, critical infrastructure), neither is enough. A
+release should require multiple maintainers to agree. That's
+threshold signing.
+
+## The pattern
+
+```
+┌─────────────────────────────────────────────┐
+│  Release pipeline                           │
+│                                             │
+│  1. Build image                             │
+│  2. Compute digest                         │
+│  3. Send digest to Confium coordinator      │
+│     ↓                                       │
+│  4. T-of-N maintainers sign the digest      │
+│     (via their own signers, on their own    │
+│      hardware)                              │
+│  5. Coordinator assembles composite sig     │
+│  6. Attach signature to image (cosign,      │
+│     OCI ref, or transparency log)           │
+└─────────────────────────────────────────────┘
+```
+
+The signature is a Confium composite signature (Ed25519 +
+ECDSA-P256, optionally + ML-DSA-65 for post-quantum readiness).
+The verification side can be:
+
+- **Native Confium verifier** (Python, Ruby, WASM) for apps
+  that want full composite verification.
+- **A cosign-compatible wrapper** that extracts the classical
+  component for cosign's verification path.
+- **A transparency-log entry** so every signing event is
+  publicly auditable.
+
+## Why threshold for container signing
+
+- **Insider threat.** A single rogue maintainer — or a single
+  compromised laptop — cannot ship a malicious image. T-of-N
+  must agree.
+- **Compliance.** Regulated environments (FedRAMP, FIPS 140)
+  increasingly require multi-party control over release keys.
+  Threshold signing is the operational answer.
+- **Post-quantum migration.** Composite signatures add an
+  ML-DSA-65 component alongside the classical one. Verifiers
+  that haven't upgraded still accept the classical component;
+  verifiers that have already migrated. No flag day.
+
+## What to use
+
+| Need | Use |
+| --- | --- |
+| The signing orchestrator | `confium-tc-coordinator` (Rust) or the JSON-RPC daemon |
+| Maintainer signers | `confium` Ruby gem or Python binding on each maintainer's workstation |
+| Image-side verification | `@confium/confium-wasm` in a cosign policy controller, or the Python binding in an admission webhook |
+| Audit / transparency | `confium-transparency` — every signing event appended to a Merkle tree |
+
+## Example: cosign-compatible threshold signing
+
+```python
+# In the release pipeline
+import confium
+from cosign import compute_digest
+
+digest = compute_digest("registry.example.com/app:v1.2.3")
+
+# Threshold signing via the coordinator
+sig = confium.CompositeSignature.sign_ed25519(
+    message=digest,
+    secret_key=maintainer_share,  # this maintainer's share
+)
+
+# Send to coordinator, which combines T shares into the final
+# composite signature. Coordinator returns the assembled envelope.
+final_sig = coordinator.combine(sig)
+```
+
+The final signature attaches to the image as an OCI ref or via
+cosign's signature storage.
+
+## See also
+
+- [Code signing use case](/use-cases/code-signing/) — the
+  general threshold code-signing pattern (not container-
+  specific).
+- [Supply-chain provenance](/use-cases/supply-chain/) —
+  attestation chaining via the transparency log.
+- [PKCS#11 adapter](/docs/adapters/pkcs11/) — for HSM-backed
+  maintainer shares.

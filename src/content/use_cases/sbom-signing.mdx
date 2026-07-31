@@ -1,0 +1,145 @@
+---
+title: Software Bill of Materials (SBOM) signing
+description: Sign SBOMs with a threshold of build-system components. No single build agent or CI runner can forge an SBOM. Verifiable by anyone in the software supply chain. Drop-in for existing CycloneDX and SPDX tooling.
+mode: 2
+order: 26
+---
+
+# Software Bill of Materials signing
+
+An SBOM (CycloneDX, SPDX, SWID) lists every component in a
+software artifact — direct and transitive dependencies, their
+versions, their licenses, their known vulnerabilities. The
+SBOM is how downstream consumers know what they're running.
+
+Today, SBOMs are typically produced by the build system and
+shipped unsigned or signed by a single CI key. That's a
+problem: if the CI key is compromised, an attacker can ship a
+malicious build with a "valid" SBOM claiming it has no known
+vulnerabilities.
+
+**Threshold SBOM signing** ties the SBOM's signature to
+multiple independent observations of the build:
+
+- The build orchestrator (CI runner)
+- The dependency resolver (lockfile / manifest tool)
+- The vulnerability scanner (Trivy, Grype, OSV)
+- The release engineer (a human or gated automation)
+
+T-of-N must sign the SBOM. No single compromised component
+can forge one.
+
+## The pattern
+
+```
+┌────────────────────────────────────────────┐
+│  Build pipeline                            │
+│                                            │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐ │
+│  │ CI       │  │ Dep      │  │ Vuln     │ │
+│  │ runner   │  │ resolver │  │ scanner  │ │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘ │
+│       │              │              │      │
+│       └──────────────┼──────────────┘      │
+│                      ↓                     │
+│         ┌────────────────────────┐         │
+│         │ Confium coordinator    │         │
+│         │ T-of-N threshold       │         │
+│         └───────────┬────────────┘         │
+│                     ↓                      │
+│         ┌────────────────────────┐         │
+│         │ Composite signature    │         │
+│         │ on the SBOM document   │         │
+│         └────────────────────────┘         │
+└────────────────────────────────────────────┘
+                  ↓
+        Verifier (downstream consumer,
+        security team, regulator) checks
+        the composite signature against
+        the project's published key.
+```
+
+Each signer observes a different facet of the build:
+
+- **CI runner**: "this is the actual artifact that came out
+  of the pipeline"
+- **Dependency resolver**: "these are the actual resolved
+  versions from the lockfile"
+- **Vulnerability scanner**: "as of the scan, here's the
+  known-vuln status"
+- **Release engineer**: "a human (or gated automation)
+  authorized this release"
+
+The composite signature proves all of them agreed.
+
+## What you get
+
+- **Tamper-evident SBOM.** Any change to the SBOM document
+  after signing is detectable.
+- **Multi-observation proof.** A consumer can verify the SBOM
+  reflects what the build system actually saw — not just what
+  one component claims.
+- **Audit trail.** Every SBOM signing event lands in a
+  transparency log. Consumers can prove an SBOM existed at a
+  specific time (OpenTimestamps anchor in Bitcoin optional).
+- **Compliance.** Executive Order 14028 (US federal supply
+  chain security) and the EU Cyber Resilience Act both
+  require SBOMs for critical software. Threshold signing
+  gives regulators evidence the SBOM is trustworthy, not
+  just present.
+
+## What to use
+
+| Component | Role |
+| --- | --- |
+| `confium-tc-coordinator` | Orchestrates the multi-component signing |
+| `confium-composite` | The composite signature type that wraps each component's signature |
+| `confium-transparency` | Anchors each SBOM in a Merkle log |
+| Python / Ruby / WASM verifier | Consumer-side SBOM verification |
+
+## Example: CycloneDX + Confium
+
+```python
+import json
+import confium
+
+# Build system produces a CycloneDX SBOM
+sbom = json.dumps({
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "components": [...],
+})
+
+# Each signer signs the SBOM independently
+ci_sig = confium.CompositeSignature.sign_ed25519(
+    message=sbom.encode(),
+    secret_key=ci_runner_share,
+)
+dep_sig = confium.CompositeSignature.sign_p256(
+    message=sbom.encode(),
+    secret_key=dep_resolver_share,
+)
+vuln_sig = confium.CompositeSignature.sign_ed25519(
+    message=sbom.encode(),
+    secret_key=vuln_scanner_share,
+)
+
+# Coordinator assembles the composite signature
+final = coordinator.assemble([ci_sig, dep_sig, vuln_sig])
+
+# Attach to the artifact
+artifact.attach_sbom(sbom, signature=final.to_der())
+```
+
+Consumers verify with the project's published multi-component
+public key.
+
+## See also
+
+- [Container image signing](/use-cases/container-image-signing/)
+  — the natural companion: sign the image, then sign its
+  SBOM.
+- [Supply-chain provenance](/use-cases/supply-chain/) —
+  attestation chaining via the transparency log.
+- [Code signing](/use-cases/code-signing/) — the general
+  threshold code-signing pattern.
