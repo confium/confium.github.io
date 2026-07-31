@@ -1,0 +1,137 @@
+---
+title: "Custody without a custodian: threshold encryption for succession"
+description: How to encrypt a master secret to a T-of-N quorum so no single party can decrypt alone — for inheritance, corporate escrow, and sealed archives.
+date: 2026-07-31
+author: Confium Project
+---
+
+# Custody without a custodian: threshold encryption for succession
+
+Cryptocurrency exchanges have made "multi-sig" a household term.
+But the underlying primitive — threshold signing — generalizes far
+beyond crypto. Anywhere you'd put a single key in a vault, threshold
+cryptography lets you split the key across N parties and require a
+T-of-N quorum to use it.
+
+This post covers **threshold encryption**, the underused cousin of
+threshold signing. Where threshold *signing* produces a signature
+over a message, threshold *encryption* lets you encrypt a payload to
+a public key whose corresponding secret key is split across N
+parties. Any T of them can cooperate to decrypt.
+
+## When to use threshold encryption
+
+- **Inheritance / succession**: encrypt your master password manager
+  key to a 3-of-5 quorum of heirs + lawyer + bank. After death, any
+  3 of them can recover the estate's digital assets.
+- **Corporate key escrow**: encrypt the CA's HSM-internal key to a
+  quorum of board members + auditor. Reconstruct only if the HSM is
+  destroyed.
+- **Sealed-bid auctions**: encrypt bids to a quorum that opens them
+  simultaneously after the auction closes.
+- **Compliance archive**: encrypt regulatory records to a T-of-N of
+  regulators so any single rogue regulator can't unilaterally read
+  them.
+
+The pattern: **the encryptor doesn't need the recipients' secret
+shares — only their joint public key**. Decryption requires
+cooperation.
+
+## The 30-second API tour
+
+Confium's Ruby binding ships an ElGamal-P256 KEM (Key Encapsulation
+Mechanism) that does exactly this:
+
+```ruby
+require "confium"
+
+# 1. Receiver generates a keypair, Shamir-splits the secret scalar
+#    into 5 shares, distributes shares to 5 custodians.
+kp = Confium::TC::FrostP256.generate_keypair
+shares = Confium::TC::FrostP256.split_secret(kp["private_key"], 3, 5)
+# shares[0..4] → Alice, Bob, Carol, Dan, Eve
+
+# 2. Sender encrypts to the receiver's public key. The sender never
+#    sees the secret or the shares.
+enc = Confium::TC::ElGamalP256.encapsulate(kp["public_key"])
+shared_secret = enc["shared_secret"]  # 32 bytes
+ciphertext = enc["ciphertext"]        # {c1: bytes, c2: bytes}
+
+# 3. Sender wraps the actual payload with an AEAD keyed by
+#    shared_secret (AES-256-GCM, for example). We skip that step
+#    here and treat shared_secret AS the payload for clarity.
+
+# 4. Recovery: any 3 of 5 custodians compute partial decryptions.
+partials = shares.first(3).map.with_index do |share, idx|
+  Confium::TC::ElGamalP256.partial_decrypt(idx + 1, share.y_bytes, ciphertext)
+end
+
+# 5. Combiner aggregates T partials to recover shared_secret.
+recovered = Confium::TC::ElGamalP256.aggregate_partials(partials, 3, ciphertext)
+recovered == shared_secret  # => true
+```
+
+The full runnable example is at
+[`examples/custody_escrow.rb`](https://github.com/confium/confium-ruby/blob/main/examples/custody_escrow.rb).
+
+## Why ElGamal-P256 specifically?
+
+Three reasons:
+
+1. **Same curve as the threshold signing surface**. If you're already
+   using Confium for threshold ECDSA-P256, you get threshold
+   encryption "for free" — same primitives, same Shamir, same audit
+   log.
+
+2. **No plaintext-in-ciphertext**. ElGamal here is KEM-only: the
+   ciphertext carries a shared secret, not plaintext. You wrap the
+   shared secret through an AEAD for the actual payload. This is the
+   modern pattern (RFC 5990, HPKE) — old-school textbook ElGamal
+   that encrypts plaintext directly has malleability issues.
+
+3. **Threshold decryption is safe across many ciphertexts**. Unlike
+   threshold-ECDSA (where reusing a nonce across signatures leaks
+   the secret), threshold-ElGamal has no nonce-reuse pitfalls.
+   Custodians can participate in countless decryption ceremonies
+   over the lifetime of the joint key without risk.
+
+## What about long-term archival?
+
+Threshold-encrypted data has a property single-key encrypted data
+doesn't: **the joint key doesn't age**. With a single key, the
+longer the data sits encrypted, the more time an attacker has to
+compromise the one key. With a threshold key, the attacker has to
+compromise T keys simultaneously — and the custodians can rotate
+their shares proactively without re-encrypting the data.
+
+For sealed-data archives (e.g. a 50-year-escrow of corporate
+secrets), this is the difference between "encrypted for now" and
+"encrypted for the lifetime of the data".
+
+## Compliance anchoring
+
+Every threshold decryption ceremony should produce an audit record.
+Confium's audit log fires events automatically:
+
+```ruby
+Confium::Audit.sink = Confium::Audit::FileSink.new("/var/log/custody.log")
+# ... decryption ceremony ...
+# Audit log records: timestamp, operation, custodian indices,
+# ciphertext hash, success/failure.
+```
+
+Anchor the audit log to a public transparency log (RFC 6962) and
+third parties can verify the complete history of decryption events
+without seeing the plaintext.
+
+## What's next
+
+- **Production deployment**: distributing shares across data centers,
+  running the coordinator, recovering from custodian loss.
+- **Proactive refresh**: rotating shares without re-encrypting data.
+- **Hybrid custody**: combining threshold encryption with
+  threshold signing for full "no single point of compromise"
+  workflows.
+
+Stay tuned. The full API reference is in the
+[Ruby gem docs](https://www.confium.org/bindings/ruby/).
