@@ -127,11 +127,11 @@ const partyClass = (signed: boolean) =>
           'w-11 h-11 rounded-full font-mono text-sm border transition-all',
           partyClass(p.signed),
         ]"
-        :title="`Party ${p.id + 1}${p.signed ? ' (signed)' : ''}`"
         :aria-pressed="p.signed"
+        :aria-label="`Party ${p.id + 1}${p.signed ? ' (signed)' : ''}`"
         @click="setParticipating(p.signed ? p.id : p.id + 1)"
       >
-        {{ p.id + 1 }}
+        <span aria-hidden="true">{{ p.id + 1 }}</span>
       </button>
     </div>
 
