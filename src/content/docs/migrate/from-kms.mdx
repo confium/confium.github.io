@@ -1,0 +1,192 @@
+---
+title: Migrate from KMS-only
+description: "You use a cloud KMS (AWS KMS, GCP KMS, Azure Key Vault) for signing keys. The KMS holds the key; your app calls the API. Here's how to add threshold control without losing the KMS benefits."
+audience: architect
+order: 3
+---
+
+# Migrate from KMS-only
+
+Cloud KMS is convenient: managed, durable, API-driven. But
+it has one structural weakness — **the KMS operator holds the
+key**. AWS can be compelled to decrypt or sign with your key.
+For most workloads that's an acceptable trade. For workloads
+where it isn't (regulated data, multi-jurisdiction operations,
+sovereign PKI), you need threshold control.
+
+Confium adds threshold control *without* dropping the KMS. The
+KMS still stores each signer's share. Confium orchestrates the
+threshold protocol across multiple KMS instances (potentially
+across multiple cloud providers).
+
+## The migration shape
+
+```
+┌──────────────────────────────────────────────────┐
+│  KMS-ONLY (today)                                 │
+│                                                   │
+│  App → AWS KMS API → single AWS-held key           │
+└──────────────────────────────────────────────────┘
+                       ↓
+┌──────────────────────────────────────────────────┐
+│  KMS + CONFIUM                                    │
+│                                                   │
+│  App → confium-pkcs11-server or JSON-RPC daemon    │
+│        ↓                                           │
+│        Confium coordinator                         │
+│        ↓                                           │
+│        N signers, each backed by a KMS instance     │
+│           (AWS / GCP / Azure / on-prem HSM mix)    │
+└──────────────────────────────────────────────────┘
+```
+
+Each signer's share lives in a KMS instance — potentially in
+different providers. The coordinator orchestrates the
+threshold session; the signers contribute partial signatures
+by calling their respective KMS APIs.
+
+## When this is the right move
+
+- **Multi-cloud sovereignty.** Your signing key spans AWS, GCP,
+  and Azure — no single provider can be compelled to produce a
+  signature alone.
+- **Jurisdictional separation.** Each signer's KMS lives in a
+  different legal jurisdiction. No single jurisdiction's legal
+  process can compromise the key.
+- **Hybrid cloud + on-prem.** Some signers in cloud KMS, some
+  in on-prem HSMs. Confium treats them uniformly.
+- **Compliance.** SOC 2, HIPAA, FedRAMP increasingly require
+  multi-party control over key custody.
+
+## Steps
+
+### 1. Inventory your current KMS usage
+
+For each signing operation:
+
+- Which KMS provider holds the key?
+- What's the key ARN / URI?
+- What algorithm?
+- What IAM role does the calling app use?
+
+### 2. Stand up a Confium coordinator + N signers
+
+Follow the [deployment guide](/docs/deployment/). Configure
+each signer to use a different KMS-backed share store:
+
+```toml
+# signer-1: AWS KMS
+[store]
+backend = "cloud"
+provider = "aws"
+key_id = "arn:aws:kms:us-east-1:111:key/abc-123"
+```
+
+```toml
+# signer-2: GCP KMS
+[store]
+backend = "cloud"
+provider = "gcp"
+key_id = "projects/my-project/locations/global/keyRings/confium/cryptoKeys/signer-2"
+```
+
+```toml
+# signer-3: on-prem HSM (PKCS#11)
+[store]
+backend = "pkcs11"
+library = "/usr/lib/softhsm/libsofthsm2.so"
+slot = 0
+```
+
+### 3. Generate the threshold key
+
+Each signer generates its share in its own KMS / HSM via the
+[confium-store-cloud](/docs/components/) backend. The shares
+never leave their respective stores. The coordinator sees
+only public commitments.
+
+### 4. Replace KMS API calls in your app
+
+Where you previously had:
+
+```python
+# Direct KMS call (single-party)
+client = boto3.client("kms")
+response = client.sign(
+    KeyId="arn:aws:kms:us-east-1:111:key/abc-123",
+    Message=message,
+    SigningAlgorithm="ECDSA_SHA_256",
+)
+signature = response["Signature"]
+```
+
+now use Confium:
+
+```python
+# Confium threshold signing (multi-party)
+import confium
+
+sig = confium.CompositeSignature.sign_ed25519(
+    message=message,
+    secret_key=confium_share,  # your local share (not the KMS key directly)
+)
+# Or, if you want the full threshold session:
+session = confium.TC.FrostP256.Session(
+    coordinator_url="tcp://coordinator:7443",
+    signer_id="app-server-1",
+    share=load_my_share(),
+)
+sig = session.sign(message)
+```
+
+### 5. Verify
+
+The signature is a composite signature against the published
+Confium public key. Any Confium verifier (Python, Ruby, WASM,
+JSON-RPC daemon) checks it.
+
+## Hybrid deployment: KMS + HSM
+
+A common pattern for regulated industries:
+
+- **2 signers in cloud KMS** (AWS us-east-1, GCP us-central1)
+  — for availability and cost-efficiency.
+- **1 signer in an on-prem HSM** — for sovereignty (the cloud
+  providers cannot produce a signature alone).
+- **Threshold 3-of-3** for the highest-assurance operations.
+
+Confium's `confium-store-cloud` + `confium-store-pkcs11`
+backends coexist in the same deployment. The coordinator
+treats them uniformly.
+
+## What you keep
+
+- **Your KMS instances.** They still store keys, still provide
+  durability, still have the cloud provider's IAM and audit
+  trail.
+- **Your cloud provider's compliance certifications.** AWS KMS
+  is FIPS 140-2 Level 3; GCP Cloud KMS similar. Confium doesn't
+  change that.
+- **Your existing IAM / RBAC.** Each signer authenticates to
+  its KMS via the same IAM role it always has.
+
+## What you gain
+
+- **No single cloud operator can produce a signature.** A
+  subpoena to AWS doesn't compromise a key that also requires
+  shares in GCP and on-prem HSM.
+- **Cross-cloud key custody.** Mix providers without lock-in.
+- **Async threshold sessions.** Signers in different clouds,
+  different regions, different time zones.
+- **Post-quantum migration path.** Composite signatures wrap
+  the cloud KMS's classical algorithm in an ML-DSA-65
+  envelope.
+
+## See also
+
+- [Confium store cloud](/docs/components/) — the AWS/GCP/Azure
+  KMS backend.
+- [Distributed custody use case](/use-cases/distributed-custody/)
+  — the cross-cloud pattern.
+- [Sovereign PKI use case](/use-cases/sovereign-pki/) — when
+  the threshold key governs an entire PKI.

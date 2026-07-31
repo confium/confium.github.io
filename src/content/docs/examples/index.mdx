@@ -1,0 +1,198 @@
+---
+title: Examples
+description: "Copy-paste code samples for the 10 most common Confium tasks. Each is self-contained, runs against a real coordinator, and links to the relevant docs page for the full story."
+audience: developer
+order: 20
+---
+
+# Examples
+
+Ten copy-paste tasks covering what most developers actually do
+with Confium. Each snippet is self-contained — install the
+binding, paste, run.
+
+## Sign and verify
+
+### Python — composite sign + verify
+
+```python
+import confium
+
+message = b"audit-log-entry-12345"
+secret = bytes.fromhex("your-ed25519-secret-key-hex")
+
+sig = confium.CompositeSignature.sign_ed25519(
+    message=message, secret_key=secret,
+)
+print("signature:", sig.signature.hex())
+
+result = confium.CompositeSignature.verify(
+    message=message,
+    signature=sig.signature,
+    public_key=bytes.fromhex("your-ed25519-public-key-hex"),
+)
+assert result.valid
+```
+
+### Ruby — sign and anchor in transparency log
+
+```ruby
+require "confium"
+
+message = "audit-log-entry-12345"
+sig = Confium::Composite.sign_ed25519(
+  message: message, secret_key: [secret_hex].pack("H*"),
+)
+
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(
+  artifact_type: :composite_signature,
+  artifact_hash: Digest::SHA256.digest(sig.signature),
+)
+puts "anchored at sequence #{seq}"
+```
+
+### Node.js — sign in a release pipeline
+
+```javascript
+const { CompositeSignature } = require("@confium/confium-node");
+
+const sig = CompositeSignature.sign_ed25519({
+  message: Buffer.from("release-artifact-bytes"),
+  secretKey: Buffer.from(process.env.SIGNING_KEY_HEX, "hex"),
+});
+console.log(sig.signature.toString("hex"));
+```
+
+## Verify
+
+### Browser (WASM) — verify a composite signature
+
+```javascript
+import init, { CompositeSignature } from "@confium/confium-wasm";
+
+await init();
+
+const result = CompositeSignature.verify(
+  new TextEncoder().encode("hello"),
+  new Uint8Array(sigBytes),
+  new Uint8Array(pubkeyBytes),
+);
+console.log(result.valid); // true
+```
+
+### Shell — verify via the JSON-RPC daemon
+
+```sh
+curl --unix-socket /var/run/confium.sock \
+     -H 'content-type: application/json' \
+     -d '{
+           "jsonrpc": "2.0", "id": 1,
+           "method": "composite_verify",
+           "params": {
+             "message": "'$(base64 -w0 message.bin)'",
+             "signature": "'$(base64 -w0 sig.bin)'",
+             "public_key": "'$(base64 -w0 pubkey.bin)'"
+           }
+         }' \
+     http://localhost/
+```
+
+### Go — verify without a native binding (via daemon)
+
+```go
+// Verify via JSON-RPC over Unix socket. Zero CGo.
+resp, _ := client.Post("http://localhost/", "application/json",
+    jsonReader(map[string]any{
+        "jsonrpc": "2.0", "id": 1, "method": "composite_verify",
+        "params": map[string]any{
+            "message":   base64(message),
+            "signature": base64(sig),
+            "public_key": base64(pub),
+        },
+    }))
+```
+
+## Threshold sessions
+
+### Ruby — start a 3-of-5 CMP20 signing session
+
+```ruby
+require "confium"
+
+session = Confium::TC::Cmp20::Session.new(
+  coordinator_url: "tcp://coordinator.internal:7443",
+  signer_id: "director-1",
+  share: load_my_share(),  # from HSM or sealed storage
+)
+
+sig = session.sign("treaty-document-bytes")
+puts "threshold signature assembled: #{sig.to_hex}"
+```
+
+### Python — evaluate a threshold policy before signing
+
+```python
+from confium import attributes as cfa
+
+policy = cfa.Predicate.parse(
+    "region in (EU, US) and role == 'director' and count >= 3"
+)
+signers = cfa.SignerAttributes.from_json({
+    "signers": [
+        {"id": "d1", "region": "EU", "role": "director"},
+        {"id": "d2", "region": "EU", "role": "director"},
+        {"id": "d3", "region": "US", "role": "director"},
+    ]
+})
+result = policy.evaluate(signers)
+print("policy satisfied:", result.satisfied)
+```
+
+## PKI + CMS
+
+### Python — build a CMS SignedData envelope
+
+```python
+from confium import pki as cfpki
+
+cert = cfpki.Certificate.from_pem(open("signer.pem").read())
+envelope = cfpki.SignedData.build_detached(
+    payload=open("document.pdf", "rb").read(),
+    certificate=cert,
+    signature=composite_signature_bytes,
+)
+open("document.pdf.p7s", "wb").write(envelope.to_der())
+```
+
+### Ruby — verify a CMS envelope
+
+```ruby
+envelope = Confium::PKI::SignedData.from_der(
+  File.binread("document.pdf.p7s")
+)
+result = envelope.verify_with_builtin(
+  trust_roots: [root_cert],
+)
+puts "valid: #{result.valid?}"
+```
+
+## OpenPGP (Ruby, hard-bundled)
+
+```ruby
+require "confium"
+
+# ASCII-armored OpenPGP public key
+armored = Confium::OpenPGP.armor(
+  raw_pubkey_bytes,
+  Confium::OpenPGP::PUBLIC_KEY,
+)
+```
+
+## See also
+
+- [Quickstart](/docs/quickstart/) — five-minute install + first
+  signature for every language.
+- [Use cases](/use-cases/) — full scenarios, not snippets.
+- [Migration guides](/docs/migrate/) — coming from HSM, Sigstore,
+  or KMS-only.
