@@ -1,0 +1,113 @@
+---
+title: DNSSEC threshold signing
+description: Sign DNS zone updates with a threshold of operators. No single operator can hijack a zone. Drop-in for existing DNSSEC validators via the PKCS#11 adapter.
+mode: 2
+order: 23
+---
+
+# DNSSEC threshold signing
+
+DNSSEC signs DNS records so resolvers can verify they haven't
+been tampered with. The zone-signing key (ZSK) and key-signing
+key (KSK) are typically held by a single DNS operator. Compromise
+the operator, forge any record in the zone.
+
+For critical zones (TLDs, enterprise root zones, infrastructure
+domains), single-operator trust is a structural weakness.
+**Threshold DNSSEC signing** spreads the KSK across N operators;
+T-of-N must participate to sign a keyset.
+
+## The pattern
+
+```
+┌─────────────────────────────────────────────┐
+│  Zone signing pipeline                      │
+│                                             │
+│  Existing DNS server (BIND, Knot, PowerDNS) │
+│     ↓ (PKCS#11 calls)                       │
+│  Confium PKCS#11 adapter                    │
+│     ↓                                       │
+│  Confium coordinator (T-of-N threshold)     │
+│     ↓                                       │
+│  N operator signers (each holds a share)    │
+└─────────────────────────────────────────────┘
+```
+
+The DNS server speaks PKCS#11 — it doesn't know the signing
+key is threshold-protected. Confium's PKCS#11 adapter
+intercepts the signing call, dispatches it to the coordinator,
+which orchestrates the threshold protocol across N operator
+signers.
+
+## Why threshold for DNSSEC
+
+- **TLD security.** A country-code TLD is critical national
+  infrastructure. Threshold signing means a single compromised
+  registrar cannot redirect the entire ccTLD.
+- **Multi-stakeholder zones.** Infrastructure zones
+  (root-servers.net, in-addr.arpa) are operated by
+  consortia. Threshold signing encodes the consortium
+  governance into the key.
+- **Emergency key rollover.** If one operator's share is
+  compromised, the remaining T-1 operators can re-share
+  without freezing the zone.
+- **Audit trail.** Every signing event lands in a
+  transparency log. The zone's history is publicly
+  verifiable.
+
+## What to use
+
+| Component | Role |
+| --- | --- |
+| DNS server | Your existing BIND, Knot, PowerDNS, NSD — unchanged |
+| `confium-pkcs11-server` | The adapter that intercepts PKCS#11 calls |
+| `confium-tc-coordinator` | Orchestrates the T-of-N signing sessions |
+| Operator signers | One per operator, on operator-controlled hardware (HSM, OpenPGP card, TPM) |
+| `confium-transparency` | Optional but recommended — append every signing event to a Merkle log |
+
+## Configuration sketch
+
+```toml
+# /etc/confium/pkcs11.toml — on the DNS server
+[server]
+socket_path = "/var/run/confium/pkcs11.sock"
+coordinator = "tcp://coordinator.dnsops.internal:7443"
+
+[slot.0]
+token_label = "zone-signing"
+signer_id = "zsk-1"
+pin_env = "DNS_ZSK_PIN"
+
+[slot.1]
+token_label = "key-signing"
+signer_id = "ksk-1"
+pin_env = "DNS_KSK_PIN"
+```
+
+```toml
+# /etc/confium/coordinator.toml — on the coordinator
+[quorum]
+threshold = 3
+total = 5
+policy = "role == 'dns_operator' and count >= 3"
+
+[[signers]]
+id = "operator-1"
+endpoint = "tls://signer-1.dnsops.internal:7500"
+role = "dns_operator"
+
+# ... 4 more signers
+```
+
+The DNS server loads `confium-pkcs11.so` via its standard
+PKCS#11 mechanism. Everything else is transparent.
+
+## See also
+
+- [PKCS#11 adapter](/docs/adapters/pkcs11/) — how the adapter
+  exposes Confium as a virtual HSM.
+- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/) — the
+  general "drop Confium in front of existing PKCS#11
+  consumers" pattern.
+- [Web TLS use case](/use-cases/web-tls/) — the analogous
+  threshold pattern for TLS certificate signing.

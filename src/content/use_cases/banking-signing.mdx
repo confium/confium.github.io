@@ -1,0 +1,94 @@
+---
+title: Banking and SWIFT message signing
+description: Sign SWIFT MT/MX messages and payment instructions with a threshold of officers. No single officer can authorize a payment alone. Drop-in for existing SWIFT Alliance and payment hub infrastructure.
+mode: 2
+order: 24
+---
+
+# Banking and SWIFT message signing
+
+Payment authorization in banking has always been a threshold
+problem. The "four-eyes principle" — two officers must sign
+every wire above a threshold amount — predates computers. Most
+banking IT systems implement it as a database flag: `authorized_by_user_2 = true`. That's not cryptography; it's a
+promise.
+
+Confium turns the four-eyes principle into a cryptographic
+guarantee. The payment instruction is the message. T-of-N
+officers must participate in a threshold signing session.
+**The signature cannot exist without the quorum.**
+
+## Where this fits
+
+| Message type | Threshold rule |
+| --- | --- |
+| SWIFT MT103 (customer payment) | 2 officers for amounts < $1M; 3 officers above |
+| SWIFT MX / ISO 20022 pacs.008 | Same, with role constraints (front-office + compliance + operations) |
+| Fedwire / TARGET2 instructions | 2-of-3 from the operations team |
+| Internal letter-of-credit issuance | 3-of-5 from the credit committee |
+| FX deal confirmation | 2 traders + 1 risk officer |
+
+The threshold and the role constraints live in Confium's
+attribute-based DSL:
+
+```
+amount < 1000000 and role == 'officer' and count >= 2
+or amount >= 1000000
+   and role == 'officer' and count >= 1
+   and role == 'compliance' and count >= 1
+   and role == 'operations' and count >= 1
+```
+
+## What the bank gets
+
+- **Cryptographic proof of authorization.** Every payment has
+  a composite signature proving the threshold was met.
+  Auditors, regulators, and counterparties can verify
+  independently.
+- **No single point of compromise.** A compromised officer
+  laptop cannot authorize a payment alone. The attacker needs
+  T officers' shares.
+- **Non-repudiation.** Officers cannot later deny authorizing
+  a payment — their share is in the signature.
+- **Transparency-log anchoring.** Every authorization event
+  appends to a Merkle log. Internal audit and external
+  regulators can verify the complete payment history.
+- **Standards compliance.** Composite signatures wrap classical
+  algorithms the bank's HSMs already support, plus an optional
+  ML-DSA-65 component for post-quantum readiness.
+
+## Integration: SWIFT Alliance and payment hubs
+
+Most banks run SWIFT Alliance (or an equivalent payment hub)
+on top of an HSM via PKCS#11. Confium drops in as an
+alternative PKCS#11 backend:
+
+```
+SWIFT Alliance → PKCS#11 → confium-pkcs11-server → coordinator → officers
+```
+
+No changes to the SWIFT Alliance side. The HSM's signing
+operations become threshold operations transparently.
+
+For ISO 20022 XML messages, the signature can also be wrapped
+as an XMLDSig — Confium's PKI crate covers canonicalization.
+
+## Regulatory alignment
+
+| Framework | How Confium maps |
+| --- | --- |
+| **SOX 404** (internal controls over financial reporting) | Threshold signing is the control. Audit log is the evidence. |
+| **PCI DSS** (card payment security) | Multi-party control over payment key custody. |
+| **PSD2** (EU payment services directive) | Strong customer authentication; the bank-side half of 2FA. |
+| **Basel III operational risk** | Reduced loss-given-fraud because single-officer compromise cannot move funds. |
+| **DORA** (EU digital operational resilience) | Threshold signing is a documented control for key-management resilience. |
+
+## See also
+
+- [Financial settlement use case](/use-cases/financial-settlement/)
+  — the general threshold pattern for capital-markets
+  infrastructure.
+- [PKCS#11 adapter](/docs/adapters/pkcs11/) — how Confium
+  drops in as an HSM backend.
+- [Attributes DSL concept](/concepts/attribute-based-threshold/)
+  — encoding four-eyes and quorum rules.

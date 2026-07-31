@@ -1,0 +1,135 @@
+---
+title: Confidential computing attestation
+description: Sign attestation documents for confidential computing (TEE) workloads with a threshold of attestation authorities. No single hardware vendor or cloud provider can forge an attestation. Verifiable by any relying party.
+mode: 3
+order: 25
+---
+
+# Confidential computing attestation
+
+Confidential computing (Intel SGX, AMD SEV-SNP, ARM CCA,
+Azure Confidential VMs, AWS Nitro Enclaves) runs workloads
+inside hardware-protected enclaves. The hardware produces an
+**attestation document** proving the enclave ran the right
+code on genuine hardware.
+
+Today, relying parties verify attestations by trusting the
+hardware vendor's signing key directly. That creates two
+problems:
+
+1. **Single-vendor trust.** If you trust Intel's key, you
+   trust every system Intel has ever signed for — including
+   systems Intel may be compelled to attest under legal
+   process.
+2. **No multi-stakeholder governance.** A regulated workload
+   (healthcare data inside an enclave, government computation)
+   may require attestation from multiple authorities: the
+   hardware vendor, the cloud operator, and an independent
+   auditor.
+
+Confium's threshold attestation wraps the vendor's attestation
+in a composite signature that requires T-of-N authorities to
+sign off. **No single authority — including the hardware
+vendor — can forge an attestation alone.**
+
+## The pattern
+
+```
+┌──────────────────────────────────────────────┐
+│  Enclave (TEE)                               │
+│  Runs the sensitive workload.                │
+│  Produces hardware attestation document.     │
+└──────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────┐
+│  Attestation authorities (Confium signers)   │
+│                                              │
+│  1. Hardware vendor (Intel / AMD / ARM)      │
+│  2. Cloud operator (Azure / AWS / GCP)       │
+│  3. Independent auditor (your org's crypto    │
+│     officer, or a third-party auditor)       │
+│                                              │
+│  T-of-3 must sign the attestation.           │
+└──────────────────────────────────────────────┘
+                    ↓
+┌──────────────────────────────────────────────┐
+│  Composite attestation (Confium signature)   │
+│                                              │
+│  Wrapped attestation document + threshold    │
+│  proof + transparency-log entry.             │
+└──────────────────────────────────────────────┘
+                    ↓
+                Relying party verifies.
+```
+
+## When threshold attestation applies
+
+| Workload | Why threshold |
+| --- | --- |
+| Healthcare data processing in a TEE | HIPAA: don't trust the cloud operator alone |
+| Cross-border data residency computation | Regulator in each jurisdiction signs off |
+| Government / defense computation in commercial cloud | Multiple clearance authorities |
+| Financial matching engines in enclaves | Exchange + regulator + independent observer |
+| ML model training on sensitive data | Model owner + data owner + compute provider |
+
+## What to use
+
+| Component | Role |
+| --- | --- |
+| `confium-composite` | Wrap the raw attestation in a composite signature |
+| `confium-attributes` | Encode the role constraints (vendor + operator + auditor) |
+| `confium-transparency` | Append every attestation to a Merkle log |
+| `confium-tc-coordinator` | Orchestrate the multi-authority signing session |
+| `@confium/confium-wasm` | Browser-side attestation verification for end users |
+
+## Verification flow
+
+```python
+from confium import composite, transparency
+
+# Relying party receives a composite attestation
+attestation = composite.CompositeSignature.from_json(payload)
+
+# Verify the composite signature against the published
+# multi-authority public key
+result = attestation.verify(
+    message=raw_attestation_document,
+    public_key=multi_authority_pubkey,  # published by the consortium
+)
+assert result.valid
+
+# Verify the threshold was met (3-of-3 in this example)
+assert result.signers == {"vendor", "operator", "auditor"}
+
+# Verify the attestation is in the transparency log
+transparency.verify_inclusion_with_head(
+    leaf_hash=sha256(payload),
+    proof=inclusion_proof,
+    root=published_root,
+)
+```
+
+The relying party has now verified:
+1. The attestation is cryptographically genuine.
+2. All three authorities participated.
+3. The attestation is publicly logged.
+
+## Why this matters
+
+Confidential computing promises "your data is safe even from
+the cloud operator." But the trust model still has a single
+point — the attestation signing key. Threshold attestation
+removes that single point by requiring multiple authorities to
+agree. The hardware still attests to the enclave's integrity;
+the threshold layer attests to the *governance* around the
+hardware.
+
+## See also
+
+- [Composite signatures concept](/concepts/composite-signatures/)
+  — how a composite signature wraps multiple algorithms and
+  signers.
+- [IoT attestation use case](/use-cases/iot-attestation/) —
+  the analogous pattern for constrained devices.
+- [Government identity use case](/use-cases/government-identity/)
+  — multi-authority signing for sovereign workloads.
