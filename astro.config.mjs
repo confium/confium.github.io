@@ -19,6 +19,15 @@ export default defineConfig({
   integrations: [vue(), sitemap(), mdx()],
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        '@': new URL('./src', import.meta.url).pathname,
+        '@components': new URL('./src/components', import.meta.url).pathname,
+        '@layouts': new URL('./src/layouts', import.meta.url).pathname,
+        '@lib': new URL('./src/lib', import.meta.url).pathname,
+        '@data': new URL('./src/data', import.meta.url).pathname,
+      },
+    },
   },
   markdown: {
     shikiConfig: {
