@@ -6,6 +6,7 @@ import '@fontsource/ibm-plex-sans/600.css';
 import '@fontsource/ibm-plex-sans/700.css';
 import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
+import { ClientRouter } from 'astro:transitions';
 import SiteHeader from '@components/vue/SiteHeader.vue';
 import SiteSearch from '@components/vue/SiteSearch.vue';
 import SiteFooter from '@components/astro/SiteFooter.astro';
@@ -17,6 +18,12 @@ interface Props {
   bodyClass?: string;
   /** Header floats with white text/icons over a dark/bright hero band (home page). */
   headerOverlay?: boolean;
+  /** Structured-data type. Drives the JSON-LD block. */
+  schemaType?: 'WebSite' | 'Article' | 'TechArticle' | 'SoftwareApplication' | 'FAQPage';
+  /** For Article / TechArticle: the published date. */
+  publishedTime?: string;
+  /** For FAQPage: the question/answer pairs. */
+  faqEntries?: { question: string; answer: string }[];
 }
 
 const {
@@ -25,11 +32,55 @@ const {
   ogImage = '/assets/og-image.png',
   bodyClass = '',
   headerOverlay = false,
+  schemaType = 'WebSite',
+  publishedTime,
+  faqEntries = [],
 } = Astro.props;
 
 const siteName = 'Confium';
 const fullTitle = title === siteName ? title : `${title} · ${siteName}`;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+
+// Build the JSON-LD structured data block.
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': schemaType,
+  name: fullTitle,
+  description,
+  url: canonical.toString(),
+  isPartOf: {
+    '@type': 'WebSite',
+    name: siteName,
+    url: Astro.site?.toString(),
+  },
+};
+
+if (schemaType === 'Article' || schemaType === 'TechArticle') {
+  jsonLd.datePublished = publishedTime;
+  jsonLd.author = {
+    '@type': 'Organization',
+    name: 'Confium contributors',
+    url: 'https://github.com/confium',
+  };
+  jsonLd.publisher = jsonLd.author;
+}
+if (schemaType === 'TechArticle') {
+  jsonLd.about = 'Threshold cryptography · PKI · post-quantum migration';
+  jsonLd.proficiencyLevel = 'Expert';
+}
+if (schemaType === 'SoftwareApplication') {
+  jsonLd.applicationCategory = 'SecurityApplication';
+  jsonLd.operatingSystem = 'Linux, macOS, Windows';
+  jsonLd.license = 'BSD-2-Clause';
+  jsonLd.offer = { '@type': 'Offer', price: '0', priceCurrency: 'USD' };
+}
+if (schemaType === 'FAQPage' && faqEntries.length > 0) {
+  jsonLd.mainEntity = faqEntries.map((e) => ({
+    '@type': 'Question',
+    name: e.question,
+    acceptedAnswer: { '@type': 'Answer', text: e.answer },
+  }));
+}
 ---
 
 <!doctype html>
@@ -55,6 +106,10 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL(ogImage, Astro.site)} />
+
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+    <ClientRouter />
 
     <script is:inline>
       // Theme detection — runs before paint to avoid flash.
@@ -129,6 +184,14 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
         background: var(--bg);
         color: var(--fg);
         font-family: var(--font-sans);
+      }
+      /* View transition: cross-fade between pages, respect reduced motion. */
+      @media (prefers-reduced-motion: no-preference) {
+        ::view-transition-old(root),
+        ::view-transition-new(root) {
+          animation-duration: 180ms;
+          animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+        }
       }
     </style>
   </body>
