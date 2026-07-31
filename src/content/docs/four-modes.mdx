@@ -1,0 +1,57 @@
+---
+title: "Four deployment modes"
+description: "Confium supports four deployment modes — Peer-to-Peer TC, PKI Drop-in, Sovereign PKI, and Keyless Threshold."
+order: 5
+---
+
+# Four deployment modes
+
+Confium's threshold cryptography can be deployed four different ways.
+Each mode targets a different operational model.
+
+## Mode 1 — Peer-to-Peer TC
+
+Nodes do threshold cryptography directly, no PKI required. The
+threshold keyset is persistent and managed by the node operators.
+
+**Best for**: real-time signing networks, blockchain anchors, MPC
+networks where nodes already trust each other.
+
+## Mode 2 — PKI Drop-in
+
+Replace single-party keys with threshold keys in existing PKI
+without changing anything else. The joint public key is embedded in
+a standard X.509 cert; existing verifiers don't know threshold
+signing is happening.
+
+**Best for**: enterprise CAs, document signing, TLS certificate
+issuance.
+
+## Mode 3 — Sovereign PKI
+
+Custom certificate formats for institutions that can't use existing
+PKI. CNML (Certificate of Conformity for Measuring Instruments) is
+the flagship deployment.
+
+**Best for**: government archives, accreditation bodies, treaty
+organizations, BIPM calibration chains.
+
+## Mode 4 — Keyless Threshold
+
+Ephemeral per-ceremony threshold quorums, OIDC-verified signers,
+Fulcio-style short-lived certs, transparency-log anchoring. No
+persistent keys.
+
+**Best for**: CI/CD pipelines, package publishing, anywhere that
+identity-based trust beats key-based trust.
+
+See the [Mode 4 docs](/docs/mode4-keyless-threshold/) for details.
+
+## How to choose
+
+| Question | Mode 1 | Mode 2 | Mode 3 | Mode 4 |
+|---|---|---|---|---|
+| Need existing PKI compatibility? | No | Yes (standard) | Yes (custom) | No |
+| Can afford share management? | Yes | Yes | Yes | **No → Mode 4** |
+| Identity is the trust anchor? | No | No | No | **Yes → Mode 4** |
+| Long-term archival needed? | Maybe | Maybe | Maybe | **No → Modes 1–3** |

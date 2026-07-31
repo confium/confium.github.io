@@ -1,13 +1,13 @@
 ---
 title: Components
-description: The 48-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency, deployment, benchmarks.
+description: The 52-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency log infrastructure, deployment, benchmarks, Mode 4 keyless.
 audience: developer
 order: 6
 ---
 
 # Components
 
-The Confium Rust workspace contains **48 crates** organized by
+The Confium Rust workspace contains **52 crates** organized by
 concern. This page maps every crate to its category and role. For
 full API details, browse the
 [Confium repository](https://github.com/confium/confium) — the
@@ -123,6 +123,27 @@ trees, OTS anchoring, and ERS long-term archival in one crate.
 | Crate | Role |
 | --- | --- |
 | `confium-transparency` | Append-only Merkle tree (RFC 6962 inclusion + consistency proofs) + OTS anchoring + ERS archival (shipped, real). |
+
+## Transparency log infrastructure
+
+The reference RFC 6962 log server, the pure-edge variant on
+Cloudflare, and the third-party monitor that detects forks.
+
+| Crate | Role |
+| --- | --- |
+| `confium-log-server` | Public transparency log server for Confium (the `log.confium.org` reference implementation). RFC 6962 add / get-entries / inclusion-proof / consistency-proof / latest-root endpoints. |
+| `confium-log-edge` | Pure-edge variant of the log server — Cloudflare Workers + D1 + Durable Objects + Workers KV. No origin server, no RDS, no regions. ~$220/month at 100M entries/year. |
+| `confium-log-monitor` | Third-party monitor for Confium transparency logs — continuously verifies consistency proofs and detects fork attempts. Deploy in independent failure domains. |
+
+## Mode 4 — Keyless Threshold
+
+OIDC-verified ephemeral threshold signing (Sigstore-style keyless
+combined with Confium threshold). See
+[Mode 4 docs](/docs/mode4-keyless-threshold/).
+
+| Crate | Role |
+| --- | --- |
+| `confium-oidc` | OIDC token verifier for any standards-compliant issuer (GitHub Actions, Google, Okta, Azure AD, Auth0). Powers Mode 4's identity-bound ephemeral ceremonies. |
 
 ## Cross-cutting patterns
 

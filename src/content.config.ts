@@ -25,7 +25,7 @@ const adocFrontmatter = z.object({
 const mdFrontmatter = z.object({
   title: z.string(),
   description: z.string().optional(),
-  mode: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal('cross')]).optional(),
+  mode: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal('cross')]).optional(),
   order: z.number().optional(),
 });
 

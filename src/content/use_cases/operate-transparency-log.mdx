@@ -1,0 +1,167 @@
+---
+title: Operate a transparency log
+description: "Run your own RFC 6962 transparency log for institutional PKI, supply-chain provenance, or regulated audit. The confium-log-server reference implementation, plus the pure-edge variant on Cloudflare Workers. Third-party monitors detect forks."
+mode: cross
+order: 29
+---
+
+# Operate a transparency log
+
+A transparency log is the backbone of split-view attack
+detection. Confium's transparency log implementation is
+RFC 6962 (Certificate Transparency) — but the artifacts you
+anchor don't have to be certificates. They can be anything:
+signing events, certificate issuances, share rotations, audit
+records.
+
+For Mode 3 (Sovereign PKI) deployments and any setting where
+you're the trust anchor, **operating your own transparency
+log** is the difference between "we promise we logged it" and
+"here's the cryptographic proof."
+
+## When you need your own log
+
+| Setting | Why operate your own |
+| --- | --- |
+| Institutional PKI (Mode 3) | The institutional root anchors in a log you control |
+| Regulated audit (financial, healthcare) | Auditors need independent verification, not vendor lock-in |
+| Supply-chain provenance | Every step in a manufacturing chain appends publicly |
+| Multi-jurisdiction governance | Each jurisdiction can run a witness that monitors for forks |
+| Internal signing infrastructure | Every signing event is auditable by your SOC team |
+
+You don't need your own log if you're using `log.confium.org`
+(the public Confium-operated log). That's fine for open-source
+releases, public artifacts, and anything where a third party
+operating the log is acceptable.
+
+## The reference implementation: `confium-log-server`
+
+`confium-log-server` is the reference RFC 6962 transparency
+log server. It's what powers `log.confium.org`. It exposes:
+
+- `add` — append an entry, return the sequence number
+- `get-entries` — fetch a range of entries
+- `get-proof-by-hash` — inclusion proof for a specific entry
+- `get-consistency-proof` — consistency proof between two tree
+  sizes
+- `get-latest-root` — current tree head + size + timestamp
+
+Built on a pluggable storage backend (LMDB by default, RocksDB
+for larger deployments). Stateful — the log is append-only,
+so storage grows monotonically.
+
+## The pure-edge variant: `confium-log-edge`
+
+`confium-log-edge` is the same RFC 6962 log, deployed on
+Cloudflare Workers + D1 + Durable Objects + Workers KV. **No
+origin server, no RDS, no regions to manage.**
+
+Why pure edge works for transparency logs:
+
+Transparency logs are **audit systems, not real-time systems**.
+A certificate isn't trusted the instant it's issued; it's
+trusted after consumers have had time to see it in the log
+(default: 1 hour activation delay). That delay tolerates the
+eventual-consistency model of edge storage.
+
+Cost at scale: ~$220/month at 100M entries/year. Orders of
+magnitude cheaper than running your own multi-region RDS
+deployment with the same availability.
+
+## The third-party monitor: `confium-log-monitor`
+
+`confium-log-monitor` is the witness component. It continuously
+polls one or more log servers, records tree heads, and verifies
+consistency proofs between consecutive heads. If a log ever
+fails a consistency check — meaning the operator is rewriting
+history, or showing different heads to different monitors — the
+monitor alerts.
+
+A single monitor is necessary but not sufficient. Split-view
+attacks require **multiple monitors in different failure
+domains** to detect. The reference deployment pattern:
+
+- 1 monitor inside the operator's network (catches operational
+  bugs)
+- 1 monitor at a cloud provider (catches operator-network
+  compromise)
+- 1 monitor at an independent third party (catches collusion
+  between operator and cloud)
+
+## Deployment topology
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Signing infrastructure                              │
+│    ↓ add (every signing event)                       │
+│  Your log server (confium-log-server OR -edge)       │
+│    ↓ publishes tree heads                            │
+│  Public log API                                      │
+└─────────────────────────────────────────────────────┘
+                       ↓
+┌─────────────────────────────────────────────────────┐
+│  Monitors (independent)                              │
+│    ↓ poll tree heads                                 │
+│    ↓ verify consistency                              │
+│  Monitor A (operator's network)                      │
+│  Monitor B (cloud provider)                          │
+│  Monitor C (independent third party)                 │
+│    ↓ gossip tree heads                               │
+│    ↓ alert on divergence                             │
+└─────────────────────────────────────────────────────┘
+```
+
+If any monitor sees a tree head the others don't recognize,
+the split-view attack is detected.
+
+## Quickstart: confium-log-server
+
+```sh
+cargo install confium-log-server --locked
+confium-log-server \
+  --listen 0.0.0.0:7444 \
+  --storage /var/lib/confium/log \
+  --backend lmdb
+```
+
+Verify:
+
+```sh
+curl http://localhost:7444/latest-root
+# {"tree_size":12345,"root":"<base64>","timestamp":"2026-07-31T..."}
+```
+
+## Quickstart: confium-log-edge (Cloudflare)
+
+```sh
+cd crates/confium-log-edge
+wrangler deploy
+# Deployed to log.your-domain.workers.dev
+```
+
+The edge variant uses D1 (SQLite) for entry storage, Durable
+Objects for tree-head coordination, and Workers KV for caching.
+No server to operate.
+
+## Quickstart: confium-log-monitor
+
+```sh
+cargo install confium-log-monitor --locked
+confium-log-monitor \
+  --log-url https://log.your-domain.workers.dev \
+  --alert-webhook https://hooks.slack.com/... \
+  --poll-interval 60s
+```
+
+The monitor writes observed tree heads to disk, verifies
+consistency proofs, and alerts if any check fails. Deploy
+multiple monitors in different failure domains.
+
+## See also
+
+- [Transparency logs concept](/concepts/transparency-logs/) —
+  the underlying Merkle-tree model.
+- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/) — the
+  deployment mode that needs its own log.
+- [Auditor's guide](/blog/2026-07-29-auditor-flow/) — how an
+  independent auditor verifies log entries.
