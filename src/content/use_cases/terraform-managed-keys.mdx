@@ -1,0 +1,175 @@
+---
+title: Terraform-managed threshold keys
+description: "Provision Confium threshold keys, signing ceremonies, transparency logs, and shares via Terraform. Infrastructure-as-code for cryptographic key management. The confium Terraform provider."
+mode: cross
+order: 31
+---
+
+# Terraform-managed threshold keys
+
+Terraform is the standard for declarative infrastructure.
+Cryptographic key management has historically been
+imperative — run a CLI command, copy the key, hope you
+remembered to back it up. The Confium Terraform provider
+brings **infra-as-code to key custody**.
+
+## The four resources
+
+| Resource | What it manages |
+| --- | --- |
+| `confium_threshold_key` | Generate + manage a threshold keyset (the public key + N shares) |
+| `confium_signing_ceremony` | Trigger a signing ceremony against an existing threshold key |
+| `confium_transparency_log` | Manage a `log.confium.org`-style endpoint (URL + auth) |
+| `confium_share` | Manage individual share blobs (assign to specific signers / HSMs) |
+
+## When Terraform is the right tool
+
+| Setting | Why Terraform |
+| --- | --- |
+| Multi-environment key management (dev / staging / prod) | Each environment's keys are versioned in its own state |
+| Cloud + on-prem hybrid | `confium_share` resources distribute shares across AWS KMS, on-prem HSM, etc. |
+| Audit / compliance | Every key change goes through Terraform plan / apply with review |
+| Cross-team coordination | Platform team owns the Terraform; security team reviews the plan |
+
+You don't need Terraform if:
+
+- You have a small, static keyset (use the CLI once).
+- Your signing infrastructure changes rarely.
+- You're not already using Terraform for adjacent resources.
+
+## Example: provision a 3-of-5 threshold key
+
+```hcl
+terraform {
+  required_providers {
+    confium = {
+      source  = "confium/confium"
+      version = "~> 0.1"
+    }
+  }
+}
+
+provider "confium" {
+  coordinator_url = "tcp://coordinator.confium.internal:7443"
+}
+
+# Generate a 3-of-5 threshold keyset
+resource "confium_threshold_key" "release_signing" {
+  scheme    = "cmp20"
+  threshold = 3
+  party_count = 5
+
+  algorithm = "ecdsa-p256"
+}
+
+# Distribute the 5 shares across signers
+resource "confium_share" "signer_1" {
+  key_id     = confium_threshold_key.release_signing.id
+  signer_id  = "release-eng-1"
+  store_backend = "hsm"   # on-prem HSM
+  store_ref  = "pkcs11:slot=0"
+}
+
+resource "confium_share" "signer_2" {
+  key_id     = confium_threshold_key.release_signing.id
+  signer_id  = "release-eng-2"
+  store_backend = "cloud"
+  store_ref  = "aws-kms:arn:aws:kms:us-east-1:111:key/abc"
+}
+
+# ... signers 3-5 similarly
+
+output "release_signing_public_key" {
+  value     = confium_threshold_key.release_signing.public_key
+  sensitive = false   # public key is safe to surface
+}
+
+output "release_signing_key_id" {
+  value = confium_threshold_key.release_signing.id
+}
+```
+
+Running `terraform apply`:
+
+1. Provisions the threshold key via the coordinator (DKG across
+   the configured signers).
+2. Distributes the 5 shares to their configured backends
+   (HSM, AWS KMS, etc.).
+3. Records the public key + key id in Terraform state.
+
+Running `terraform destroy` triggers share revocation via
+`confium-tc-reshare` — the key is rotated out and the old
+shares invalidated. (This is the most dangerous Terraform
+operation in the workflow — review carefully.)
+
+## Trigger a signing ceremony via Terraform
+
+For releases that are part of your infrastructure lifecycle
+(container images baked into AMIs, signed TLS certs that
+gate deployments):
+
+```hcl
+resource "confium_signing_ceremony" "release_v123" {
+  key_id    = confium_threshold_key.release_signing.id
+  message   = filebase64("${path.module}/release-v123.tar.gz")
+
+  threshold = 3
+  timeout_seconds = 600
+}
+
+output "release_signature" {
+  value     = confium_signing_ceremony.release_v123.signature
+  sensitive = true
+}
+```
+
+`terraform apply` blocks until the ceremony completes (or
+times out). The signature is captured in state.
+
+For most release pipelines, you'll want the K8s operator or a
+CI-driven ceremony instead — Terraform's blocking apply isn't
+ideal for fast release loops. But for slow, high-stakes
+signing (root CA rotation, treaty signing, key refresh),
+Terraform gives you plan / review / apply discipline.
+
+## Manage transparency-log endpoints
+
+```hcl
+resource "confium_transparency_log" "production" {
+  url       = "https://log.confium.org"
+  auth_type = "oidc"
+  audience  = "log.confium.org"
+}
+
+# Reference it from any signing ceremony:
+resource "confium_signing_ceremony" "release_v123" {
+  # ...
+  transparency_log_id = confium_transparency_log.production.id
+}
+```
+
+Changing the log endpoint (e.g., promoting from staging to
+production) is a Terraform plan + apply, not a config-file
+edit and redeploy.
+
+## What Terraform manages (and what it doesn't)
+
+| Managed | Not managed |
+| --- | --- |
+| Threshold key generation + share distribution | Coordinator process lifecycle (use the Helm chart or Docker) |
+| Share-to-signer-to-backend assignment | Signer process lifecycle (use K8s / systemd / Docker) |
+| Signing ceremony lifecycle (trigger, wait, capture sig) | Real-time signing for hot paths (use the daemon or bindings) |
+| Transparency-log endpoint config | The log server itself (deploy separately) |
+
+Terraform owns the **declarative key-management surface**.
+Runtime infra is owned by the deployment stack (Helm, Docker,
+etc.).
+
+## See also
+
+- [Kubernetes operator](/use-cases/kubernetes-operator/) — the
+  K8s-native alternative for ceremony lifecycle.
+- [Kubernetes deployment](/use-cases/kubernetes-deployment/) —
+  coordinator + signers + transparency-log topology.
+- [Distributed custody](/use-cases/distributed-custody/) — the
+  multi-backend share-distribution pattern.

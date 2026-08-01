@@ -1,0 +1,140 @@
+---
+title: Public verification endpoint
+description: "Run an HTTP verification service that anyone can hit to verify Confium signatures and transparency proofs. Drop-in alternative to the JSON-RPC daemon for web-facing verifiers. Powering browser-side verification, third-party audit, public accountability."
+mode: cross
+order: 32
+---
+
+# Public verification endpoint
+
+The JSON-RPC daemon (`confiumd`) is great for internal callers
+that already speak the protocol. For **public verification** —
+anyone on the internet can check a signature against the
+published key — you want a simple HTTP API.
+
+`confium-verify-server` is that service. Three endpoints, no
+authentication by default, no state, no secrets.
+
+## The endpoints
+
+| Method + path | Body | Returns |
+| --- | --- | --- |
+| `POST /verify/composite` | `{ message, signature, public_key }` (base64) | `{ valid: bool, components_checked: u32 }` |
+| `POST /verify/inclusion` | `{ leaf_hash, proof, tree_size, root }` | `204 No Content` on success, `422` on failure |
+| `GET /healthz` | — | `200 OK` |
+
+That's it. No sessions, no auth, no rate limiting built in
+(put it behind Cloudflare / a CDN / an API gateway for
+production).
+
+## When to run a verify-server
+
+| Setting | Why |
+| --- | --- |
+| Open-source project with public signing keys | Anyone can verify releases without installing Confium |
+| Regulatory transparency | Auditors verify without trusting the operator |
+| Browser-side verification with CORS | The WASM verifier is great, but a hosted verify endpoint lets pure-HTML pages verify too |
+| Third-party audit pipeline | CI / cron jobs hit the endpoint to check log entries |
+
+You don't need a verify-server if:
+
+- You verify in-process (use the Ruby / Python / Node / WASM
+  bindings).
+- Your verifiers are all internal (use the JSON-RPC daemon
+  over a Unix socket).
+
+## Run it
+
+```sh
+cargo install confium-verify-server --locked
+confium-verify-server --addr 0.0.0.0 --port 8082
+```
+
+Verify:
+
+```sh
+curl http://localhost:8082/healthz
+# OK
+
+curl -X POST http://localhost:8082/verify/composite \
+     -H 'content-type: application/json' \
+     -d '{
+           "message": "'$(base64 -w0 message.bin)'",
+           "signature": "'$(base64 -w0 sig.bin)'",
+           "public_key": "'$(base64 -w0 pubkey.bin)'"
+         }'
+# {"valid":true,"components_checked":2}
+```
+
+## Deployment shape
+
+```
+┌─────────────────────────────────────────┐
+│  Internet                                │
+│    ↓ HTTPS                               │
+│  Cloudflare / CDN (rate limit + DDoS)    │
+│    ↓                                     │
+│  confium-verify-server (N replicas)      │
+│    stateless — scale horizontally        │
+└─────────────────────────────────────────┘
+```
+
+The service is stateless. Scale horizontally behind a load
+balancer. No shared database, no coordinator connection, no
+signing capability — verify-only by design.
+
+## Why a separate server (not just the daemon)?
+
+| Concern | JSON-RPC daemon | Verify-server |
+| --- | --- | --- |
+| Protocol | JSON-RPC 2.0 over Unix socket / TCP | REST over HTTP |
+| Auth model | Trusted internal callers | Public, anonymous |
+| Methods | 29+ (signing, eval, PKI, plugins, etc.) | 2 (composite_verify, inclusion_verify) |
+| CORS | None | Permissive (any origin) |
+| Surface area | Large (every JSON-RPC method) | Tiny (2 endpoints) |
+| Risk if compromised | Signing key access | None — verifier only |
+
+The verify-server exists because the blast radius of exposing
+the daemon publicly is too large. A misconfigured daemon
+could leak signing keys; a misconfigured verify-server leaks
+nothing (there's nothing to leak).
+
+## Browser-side verification via fetch
+
+For static HTML pages (release notes, documentation sites)
+that want to embed "verify this release" without shipping
+the WASM bundle:
+
+```html
+<button onclick="verifyRelease()">Verify signature</button>
+<p id="result"></p>
+
+<script>
+async function verifyRelease() {
+  const r = await fetch('https://verify.confium.org/verify/composite', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      message: btoa('hello'),
+      signature: sigBase64,
+      public_key: pubBase64,
+    }),
+  });
+  const result = await r.json();
+  document.getElementById('result').textContent =
+    result.valid ? '✓ verified' : '✗ invalid';
+}
+</script>
+```
+
+The user sees verification happen without installing
+anything.
+
+## See also
+
+- [Polyglot verification](/use-cases/polyglot-verification/) —
+  the JSON-RPC daemon pattern for internal callers.
+- [Operate a transparency log](/use-cases/operate-transparency-log/)
+  — the log server this verifies against.
+- [WASM API reference](/docs/wasm-api/) — when in-browser WASM
+  verification is preferable to a hosted endpoint.

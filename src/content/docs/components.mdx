@@ -1,13 +1,13 @@
 ---
 title: Components
-description: The 52-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency log infrastructure, deployment, benchmarks, Mode 4 keyless.
+description: The 57-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency log infrastructure, deployment, benchmarks, Mode 4 keyless, operators, IaC, verification services, fuzzing.
 audience: developer
 order: 6
 ---
 
 # Components
 
-The Confium Rust workspace contains **52 crates** organized by
+The Confium Rust workspace contains **57 crates** organized by
 concern. This page maps every crate to its category and role. For
 full API details, browse the
 [Confium repository](https://github.com/confium/confium) — the
@@ -172,6 +172,16 @@ It hard-bundles `rnp-rs` for OpenPGP armor — see
 | --- | --- |
 | `confium-benchmarks` | Criterion benchmark suite for composite verify + transparency operations. Run locally or in CI to track perf regressions. |
 | `confium-test-harness` | NIST MPTS evaluation bench — the official MPTS test-vector runner. |
+| `confium-fuzz` | Fuzzing targets for security-critical surfaces. Run via `cargo fuzz` in CI to catch parser + protocol edge cases. |
+
+## Operations / IaC / Services
+
+| Crate | Role |
+| --- | --- |
+| `confium-operator` | Kubernetes operator — declarative threshold signing via `ConfiumSigningCeremony` CRDs. GitOps-friendly. |
+| `confium-terraform-provider` | Terraform provider (Go). Resources: `confium_threshold_key`, `confium_signing_ceremony`, `confium_transparency_log`, `confium_share`. |
+| `confium-signerd` | Distributed threshold signing daemon — one per signer, connects to coordinator, responds to signing requests. |
+| `confium-verify-server` | HTTP verification service (REST). Stateless, anonymous, public-facing. Drop-in alternative to the JSON-RPC daemon for web verifiers. |
 
 ## Research frontier
 
