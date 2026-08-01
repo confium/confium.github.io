@@ -1,0 +1,161 @@
+---
+title: Kubernetes operator for threshold signing
+description: "Declarative threshold signing via Kubernetes CRDs. Define a ConfiumSigningCeremony resource, let the controller orchestrate the ceremony, read the signature back from a Secret. GitOps for signing."
+mode: cross
+order: 30
+---
+
+# Kubernetes operator for threshold signing
+
+The Confium Kubernetes operator (`confium-operator`) brings
+**declarative threshold signing to K8s**. Instead of running
+CLI commands or RPC calls to start a signing ceremony, you
+create a `ConfiumSigningCeremony` custom resource. The
+operator's controller picks it up, orchestrates the threshold
+session across the signers, and writes the result to a Secret.
+
+## When this is the right pattern
+
+| Setting | Why the operator fits |
+| --- | --- |
+| GitOps release pipelines (Argo CD, Flux) | Signing ceremonies are versioned in git alongside the release manifest |
+| Multi-team K8s platforms | Teams get RBAC-controlled access to signing via namespaced CRDs |
+| Compliance / audit | Every ceremony is a tracked K8s object with a status + lifecycle |
+| Service-mesh integrations | Sidecar signer pods attached to your application workloads |
+
+You don't need the operator if:
+
+- You sign from CI (use the Node.js binding or JSON-RPC daemon
+  directly).
+- You have one or two signing operations per release (the
+  overhead of CRD lifecycle isn't worth it).
+- You're not on Kubernetes.
+
+## The ceremony lifecycle
+
+```yaml
+apiVersion: confium.org/v1
+kind: ConfiumSigningCeremony
+metadata:
+  name: release-v1-2-3
+  namespace: releases
+spec:
+  scheme: cmp20          # or gg18
+  threshold: 3
+  partyCount: 5
+  messageRef:
+    configMap: release-v1-2-3-payload
+    key: artifact.bin
+  outputRef:
+    secret: release-v1-2-3-signature
+```
+
+Once applied, the controller:
+
+1. **Pending** — ceremony created, waiting for the threshold
+   signers (pods in the namespace) to register their
+   participation.
+2. **Active** — T-of-N signers connected; threshold protocol
+   in progress.
+3. **Completed** — composite signature assembled. Written to
+   the output Secret as `signature` (base64 DER) + `certificate`
+   (Fulcio-issued, Mode 4 only) + `transparency-entry`
+   (inclusion proof).
+
+Status reflects the current phase:
+
+```yaml
+status:
+  phase: completed
+  startedAt: "2026-08-01T10:32:14Z"
+  completedAt: "2026-08-01T10:32:47Z"
+  signatureSecret: release-v1-2-3-signature
+```
+
+If the threshold isn't met within the ceremony's timeout,
+status moves to `failed` with an error message identifying
+which signers didn't respond.
+
+## Where signers come from
+
+The operator doesn't manage signer pods directly — that's the
+job of the existing `StatefulSet` pattern from the Helm chart.
+The operator watches for `ConfiumSigningCeremony` resources and
+expects signers (each running `confium-signerd` as a sidecar
+or daemon) to register against the ceremony's session id.
+
+Typical deployment:
+
+```
+┌───────────────────────────────────────────┐
+│  Namespace: releases                       │
+│                                            │
+│  ConfiumSigningCeremony (CRD)              │
+│         ↓                                  │
+│  Controller (confium-operator pod)         │
+│         ↓ dispatch                         │
+│  Signer pods (each runs confium-signerd)   │
+│   ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ... │
+│   │sig-1 │ │sig-2 │ │sig-3 │ │sig-4 │     │
+│   └──┬───┘ └──┬───┘ └──┬───┘ └──┬───┘     │
+│      └────────┴────────┴────────┘         │
+│               ↓                           │
+│      Confium coordinator                  │
+│               ↓                           │
+│      Output Secret                        │
+└───────────────────────────────────────────┘
+```
+
+## GitOps integration
+
+Because ceremonies are CRDs, they're declarative — which means
+they're perfect for GitOps. Argo CD / Flux can:
+
+- Sync the `ConfiumSigningCeremony` from git on every release
+  tag.
+- Detect drift if someone manually patches a ceremony in
+  cluster.
+- Roll back automatically (re-apply the previous ceremony) if
+  the threshold fails.
+
+```yaml
+# release-manifest.yaml — checked into your release repo
+apiVersion: confium.org/v1
+kind: ConfiumSigningCeremony
+metadata:
+  name: release-${TAG}
+spec:
+  scheme: cmp20
+  threshold: 3
+  partyCount: 5
+  messageRef:
+    configMap: release-${TAG}-payload
+    key: artifact.bin
+  outputRef:
+    secret: release-${TAG}-signature
+```
+
+```sh
+# Argo CD / Flux picks this up, the operator handles the rest.
+```
+
+## What's exposed
+
+| CRD | Purpose |
+| --- | --- |
+| `ConfiumSigningCeremony` | A single signing session. Spec: scheme, threshold, party count, message ref, output ref. Status: phase, timestamps, signature secret, error. |
+
+The operator today manages ceremonies only. Threshold-key
+management, share rotation, and signer identity are handled
+by the Helm chart + `confium-signerd` separately. The
+`ConfiumSigningCeremony` is the user-facing API; the rest
+is platform-team plumbing.
+
+## See also
+
+- [Kubernetes deployment](/use-cases/kubernetes-deployment/) —
+  the underlying Helm chart that the operator depends on.
+- [Daemon](/software/daemon/) — the JSON-RPC surface that
+  `confium-signerd` talks to.
+- [Terraform-managed keys](/use-cases/terraform-managed-keys/)
+  — the IaC complement to the K8s operator.
