@@ -412,3 +412,102 @@ body {
   color: var(--shiki-dark) !important;
   background-color: var(--shiki-dark-bg) !important;
 }
+
+/* ----------------------------------------------------------- code copy button */
+
+pre[data-copyable] {
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid rgb(255 255 255 / 0.16);
+  border-radius: 0.4rem;
+  background: rgb(255 255 255 / 0.06);
+  color: rgb(232 234 242 / 0.65);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  padding: 0.2rem 0.55rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, opacity 0.15s;
+  opacity: 0;
+}
+pre[data-copyable]:hover .copy-btn,
+.copy-btn:focus-visible {
+  opacity: 1;
+}
+.copy-btn:hover {
+  color: #fff;
+  border-color: rgb(255 255 255 / 0.45);
+}
+.copy-btn.copied {
+  color: var(--color-teal);
+  border-color: var(--color-teal);
+  opacity: 1;
+}
+
+/* ----------------------------------------------------------- print styles */
+
+@media print {
+  .site-header,
+  .site-footer,
+  .search-btn,
+  .icon-btn,
+  .copy-btn,
+  .toc-nav,
+  aside,
+  nav[aria-label="Breadcrumb"],
+  .reveal {
+    display: none !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .prose {
+    max-width: 100% !important;
+  }
+
+  .prose pre,
+  .prose code {
+    background: #f4f4f4 !important;
+    color: #1a1a1a !important;
+    border: 1px solid #ccc !important;
+    white-space: pre-wrap;
+    word-break: break-word;
+    page-break-inside: avoid;
+  }
+
+  .prose h2,
+  .prose h3 {
+    page-break-after: avoid;
+  }
+
+  a {
+    text-decoration: underline;
+    color: #1a7bec;
+  }
+
+  a::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  .card,
+  .hero-gradient,
+  .page-hero-bg {
+    background: white !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+}
