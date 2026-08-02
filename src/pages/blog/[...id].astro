@@ -116,5 +116,34 @@ const articleSchema = {
         </div>
       </div>
     )}
+
+    {(() => {
+      const scored = allPosts
+        .filter((p) => p.id !== post.id)
+        .map((p) => ({
+          post: p,
+          overlap: (p.data.tags ?? []).filter((t: string) => (post.data.tags ?? []).includes(t)).length,
+        }))
+        .sort((a, b) => b.overlap - a.overlap || (b.post.data.date?.getTime() ?? 0) - (a.post.data.date?.getTime() ?? 0));
+      // Prefer tag-matched posts; fall back to most-recent if none overlap.
+      const tagMatches = scored.filter((r) => r.overlap > 0);
+      const related = (tagMatches.length > 0 ? tagMatches : scored).slice(0, 3);
+      if (related.length === 0) return null;
+      const heading = tagMatches.length > 0 ? 'Related posts' : 'More from the blog';
+      return (
+        <section class="mt-16 pt-8 border-t border-line not-prose">
+          <p class="mono-label mb-4">{heading}</p>
+          <div class="grid sm:grid-cols-3 gap-4">
+            {related.map(({ post: rp }) => (
+              <a href={`/blog/${rp.id}/`} class="card card-hover group block p-5">
+                <p class="text-xs font-mono text-faint">{rp.data.category}</p>
+                <h3 class="mt-1 font-sans text-base font-bold group-hover:text-accent transition-colors">{rp.data.title}</h3>
+                <p class="mt-1 text-xs text-muted line-clamp-2">{rp.data.description}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      );
+    })()}
   </article>
 </DocsLayout>

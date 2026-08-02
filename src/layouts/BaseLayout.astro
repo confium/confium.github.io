@@ -178,6 +178,53 @@ if (schemaType === 'FAQPage' && faqEntries.length > 0) {
       })();
     </script>
 
+    <script is:inline>
+      // Progressive enhancement: copy button on every code block.
+      // Matches the RNP sister site's implementation.
+      (function () {
+        const enhanceCopy = () => {
+          document
+            .querySelectorAll('.prose pre:not([data-copyable])')
+            .forEach((pre) => {
+              pre.setAttribute('data-copyable', '');
+              const btn = document.createElement('button');
+              btn.type = 'button';
+              btn.className = 'copy-btn';
+              btn.textContent = 'Copy';
+              btn.setAttribute('aria-label', 'Copy code to clipboard');
+              btn.addEventListener('click', async () => {
+                const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? '';
+                try {
+                  await navigator.clipboard.writeText(code);
+                } catch {
+                  const ta = document.createElement('textarea');
+                  ta.value = code;
+                  ta.style.position = 'fixed';
+                  ta.style.opacity = '0';
+                  document.body.appendChild(ta);
+                  ta.select();
+                  document.execCommand('copy');
+                  ta.remove();
+                }
+                btn.textContent = 'Copied';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                  btn.textContent = 'Copy';
+                  btn.classList.remove('copied');
+                }, 1500);
+              });
+              pre.appendChild(btn);
+            });
+        };
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', enhanceCopy, { once: true });
+        } else {
+          enhanceCopy();
+        }
+        document.addEventListener('astro:after-swap', enhanceCopy);
+      })();
+    </script>
+
     <style>
       body {
         background: var(--bg);
