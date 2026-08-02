@@ -1,7 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
-import PageHero from '../../components/astro/PageHero.astro';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('blog')).sort((a, b) => {
@@ -27,6 +26,36 @@ const sidebar = allPosts.map((p) => ({
 const dateStr = post.data.date
   ? post.data.date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
   : '';
+
+// Reading time: rough estimate from word count. ~225 wpm for technical prose.
+const body = post.body;
+const words = body.split(/\s+/).filter(Boolean).length;
+const readingMinutes = Math.max(1, Math.round(words / 225));
+
+// JSON-LD Article schema for Google rich results.
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.data.title,
+  description: post.data.description,
+  datePublished: post.data.date?.toISOString(),
+  dateModified: post.data.date?.toISOString(),
+  author: {
+    '@type': 'Organization',
+    name: 'Confium contributors',
+    url: 'https://github.com/confium',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Confium',
+    url: 'https://www.confium.org',
+  },
+  mainEntityOfPage: {
+    '@type': 'WebPage',
+    '@id': new URL(`/blog/${post.id}/`, Astro.site).toString(),
+  },
+  keywords: (post.data.tags ?? []).join(', '),
+};
 ---
 
 <DocsLayout
@@ -35,9 +64,19 @@ const dateStr = post.data.date
   sidebar={sidebar}
   headings={headings}
 >
+  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+
   <article>
-    <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-3">
-      {post.data.category} · {dateStr}
+    <p class="text-xs font-mono uppercase tracking-wider text-brand-600 dark:text-brand-400 mb-3 flex items-center gap-2 flex-wrap">
+      <span>{post.data.category}</span>
+      {dateStr && (
+        <>
+          <span aria-hidden="true">·</span>
+          <time datetime={post.data.date?.toISOString()}>{dateStr}</time>
+        </>
+      )}
+      <span aria-hidden="true">·</span>
+      <span>{readingMinutes} min read</span>
     </p>
     <h1 class="text-4xl font-bold tracking-tight mb-3">{post.data.title}</h1>
     {post.data.author && (
@@ -49,8 +88,24 @@ const dateStr = post.data.date
       <Content />
     </div>
 
+    <footer class="mt-12 pt-6 border-t border-line text-xs text-muted flex flex-wrap items-center gap-x-3 gap-y-1">
+      <a
+        href={`https://github.com/confium/confium.github.io/edit/main/src/content/blog/${post.id}.mdx`}
+        class="text-accent hover:text-accent-deep font-medium inline-flex items-center gap-1"
+        rel="noopener noreferrer"
+        target="_blank"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <path d="M11.013 1.427a1.75 1.75 0 0 1 2.474 0l1.086 1.086a1.75 1.75 0 0 1 0 2.474l-8.61 8.61c-.21.21-.47.364-.756.445l-3.251.93a.75.75 0 0 1-.927-.928l.929-3.25c.081-.286.235-.547.445-.758l8.61-8.61Zm.176 4.823L9.75 4.81l-6.286 6.287a.253.253 0 0 0-.064.108l-.558 1.953 1.953-.558a.253.253 0 0 0 .108-.064Zm1.238-3.763a.25.25 0 0 0-.354 0L10.811 3.75l1.439 1.44 1.263-1.263a.25.25 0 0 0 0-.354Z" />
+        </svg>
+        Edit on GitHub
+      </a>
+      <span aria-hidden="true" class="text-faint">·</span>
+      <span class="font-mono text-faint">src/content/blog/{post.id}.mdx</span>
+    </footer>
+
     {post.data.tags && post.data.tags.length > 0 && (
-      <div class="mt-12 pt-6 border-t border-line">
+      <div class="mt-8">
         <p class="text-xs font-mono uppercase tracking-wider text-muted-foreground mb-2">Tags</p>
         <div class="flex flex-wrap gap-2">
           {post.data.tags.map((tag: string) => (
