@@ -84,8 +84,10 @@
   --color-background: var(--bg);
   --color-surface: var(--surface);
   --color-surface-dim: var(--surface-dim);
+  --color-card: var(--surface);
   --color-foreground: var(--fg);
   --color-muted: var(--fg-soft);
+  --color-muted-foreground: var(--fg-soft);
   --color-faint: var(--fg-faint);
   --color-line: var(--line);
   --color-accent: var(--accent);
