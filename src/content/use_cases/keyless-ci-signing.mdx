@@ -1,0 +1,37 @@
+---
+title: "Keyless CI signing"
+description: "Threshold-sign releases in CI without managing long-lived signing keys. Each signer authenticates via OIDC; ephemeral threshold ceremony produces the release signature."
+mode: "cross"
+order: 100
+---
+
+# Keyless CI signing (Mode 4)
+
+Multiple maintainers use their OIDC identity (GitHub, Google, Okta)
+to jointly sign each release. No long-lived signing keys to lose,
+leak, or rotate.
+
+## How it works
+
+1. Each maintainer authenticates via OIDC at signing time.
+2. Coordinator runs ephemeral DKG → joint ephemeral public key.
+3. Fulcio CA issues short-lived cert binding OIDC identities.
+4. T-of-N maintainers threshold-sign the release.
+5. Cert + signature anchored to log.confium.org.
+6. All ephemeral keys destroyed.
+
+The verifier's trust decision: "this release was signed by a
+3-of-5 quorum of known maintainers, recorded in the transparency
+log."
+
+## Quickstart
+
+```ruby
+kg = Confium::TC::Cmp20.keygen(3, 3)  # ephemeral 3-of-3
+sig = Confium::TC::Cmp20.sign(kg["shares"], 3, release_artifact)
+# Fulcio cert + transparency log anchor produced alongside.
+# All ephemeral keys destroyed after ceremony.
+```
+
+See the full runnable example at
+[`examples/keyless_ci_signing.rb`](https://github.com/confium/confium-ruby/blob/main/examples/keyless_ci_signing.rb).

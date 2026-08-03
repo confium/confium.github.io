@@ -1,0 +1,37 @@
+---
+title: "Root CA key ceremony"
+description: "The canonical threshold-signing use case: a CA root key generated via threshold DKG, never reconstructed, refreshed annually via Herzberg proactive refresh."
+mode: 3
+order: 160
+---
+
+# Root CA key ceremony
+
+The most critical application of threshold cryptography: protecting
+the CA root key. Every CA compromise in history involved a single
+key being stolen. Threshold signing eliminates this attack vector.
+
+## Lifecycle
+
+1. **Key ceremony**: 3-of-5 participants run threshold DKG. The root
+   key exists only as a Shamir-shared secret — never reconstructed.
+2. **Operational signing**: 3-of-5 quorum signs intermediate CA
+   certs, CRLs, and OCSP responses.
+3. **Annual proactive refresh**: Herzberg refresh rotates shares
+   without changing the root key. Previously compromised shares
+   become useless.
+4. **Transparency log**: every signing event anchored for audit.
+
+## Quickstart
+
+```ruby
+# Phase 1: key ceremony
+kg = Confium::TC::Cmp20.keygen(3, 5)
+
+# Phase 2: operational signing
+sig = Confium::TC::Cmp20.sign(kg["shares"].first(3), 3, cert_body)
+
+# Phase 3: annual refresh (see confium-tc-cmp20::refresh)
+```
+
+See [`examples/root_ca_ceremony.rb`](https://github.com/confium/confium-ruby/blob/main/examples/root_ca_ceremony.rb).

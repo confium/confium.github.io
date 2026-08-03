@@ -1,0 +1,49 @@
+---
+title: "Mode 4 — Keyless Threshold"
+description: "Ephemeral per-ceremony threshold quorums with OIDC-verified signers, Fulcio-style short-lived certs, and transparency-log anchoring. Threshold signing without persistent keys."
+order: 40
+---
+
+import ModeVenn from '../../components/astro/primitives/ModeVenn.astro'
+
+# Mode 4 — Keyless Threshold
+
+Combines Confium's threshold signing with the Sigstore keyless pattern.
+No persistent keys, no share management, no key rotation. Every
+signing ceremony generates a fresh ephemeral threshold keyset.
+
+## How it works
+
+1. Each signer authenticates via OIDC (GitHub Actions, Google, Okta).
+2. Coordinator runs ephemeral DKG across N ephemeral public keys.
+3. Fulcio-style CA issues a short-lived cert binding OIDC identities
+   to the joint ephemeral key.
+4. T-of-N signers threshold-sign the artifact.
+5. Cert + signature anchored to the transparency log.
+6. All ephemeral keys destroyed.
+
+## What the verifier sees
+
+The verifier gets:
+- A standard ECDSA-P256 signature (verifies in any RFC 3279 verifier).
+- A Fulcio-issued short-lived X.509 cert containing the OIDC identities.
+- A transparency log inclusion proof.
+
+The trust decision: "this release was signed by a T-of-N quorum of
+these specific OIDC-verified maintainers at this specific time."
+
+## Comparison with Modes 1–3
+
+| Property | Modes 1–3 | Mode 4 |
+|---|---|---|
+| Persistent keys | Yes | **No** |
+| Share management | Required | **None** |
+| Identity-bound | No | **Yes (OIDC)** |
+| Long-term archival | Possible | **No** (cert expires) |
+| Operational cost | Medium–High | **Low** |
+
+## When to use Mode 4
+
+- CI/CD release pipelines
+- Package publishing (npm, PyPI, RubyGems)
+- Anywhere "signed by these N people" beats "signed by key 0xABC"

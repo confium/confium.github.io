@@ -1,14 +1,14 @@
 ---
-title: Three deployment modes
-description: Mode 1 (Peer-to-Peer TC), Mode 2 (PKI Drop-in), Mode 3 (Sovereign PKI). One engine, three integration shapes.
+title: Deployment modes
+description: "Mode 1 (Peer-to-Peer TC), Mode 2 (PKI Drop-in), Mode 3 (Sovereign PKI), Mode 4 (Keyless Threshold). One engine, four integration shapes."
 audience: developer
 order: 2
 ---
 
-# Three deployment modes
+# Deployment modes
 
-Confium is layered across three deployment modes. The same engine
-and the same primitives serve all three — what differs is where the
+Confium is layered across four deployment modes. The same engine
+and the same primitives serve all four — what differs is where the
 integration boundary sits and what shape the trust relationship
 takes.
 
@@ -19,8 +19,9 @@ takes.
 | 1 | **Peer-to-Peer TC** | Nodes exchange threshold messages directly | You control both sides of the channel and want minimal moving parts |
 | 2 | **PKI Drop-in** | Existing PKCS#11 / OpenSSL / JCE consumer + Confium server | You have an existing PKI consumer that needs to migrate to threshold keys |
 | 3 | **Sovereign PKI** | Custom certificate formats, custom workflows, multi-stakeholder governance | You are an institution where no single party can be trusted |
+| 4 | **Keyless Threshold** | OIDC-verified ephemeral threshold ceremonies, Fulcio-style certs | You want threshold guarantees in CI/CD without persistent key management |
 
-## Why three modes
+## Why multiple modes
 
 Threshold cryptography is a *primitive*. How you deploy it depends on
 what you're plugging it into.
@@ -34,8 +35,11 @@ what you're plugging it into.
 - If you're an institution that needs custom certificate formats,
   delegation rules, archival cadence, or quorum composition — the
   kind of thing a conventional CA can't represent — you want Mode 3.
+- If you want threshold signing in a CI/CD pipeline without
+  operating persistent key custody, you want keyless: OIDC-verified
+  ephemeral ceremonies that produce standard signatures. (Mode 4)
 
-The three modes are not mutually exclusive. A single deployment may
+The modes are not mutually exclusive. A single deployment may
 use Mode 2 internally (to migrate an existing code signer) and
 Mode 3 externally (to issue certificates that downstream verifiers
 trust).
@@ -51,15 +55,18 @@ Regardless of mode, every deployment shares:
 - The **attribute DSL** for quorum policies.
 
 What changes is the *adapter* on top: peer-to-peer network code, a
-PKCS#11 server, or a Sovereign PKI profile.
+PKCS#11 server, a Sovereign PKI profile, or an OIDC-verified
+keyless ceremony.
 
 ## Going deeper
 
 - [Mode 1 — Peer-to-Peer TC](/docs/mode1-peer-tc/)
 - [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
 - [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [Mode 4 — Keyless Threshold](/docs/mode4-keyless-threshold/)
 
 ## See also
 
 - [Architecture](/docs/architecture/)
 - [Components](/docs/components/)
+- [Four deployment modes overview](/docs/four-modes/)

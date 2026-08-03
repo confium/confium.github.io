@@ -1,0 +1,41 @@
+---
+title: "Blockchain anchoring"
+description: "Anchor arbitrary data hashes to Bitcoin (via OTS), Ethereum (via smart contract), and the Confium transparency log simultaneously."
+mode: "cross"
+order: 130
+---
+
+# Blockchain anchoring
+
+Prove data existed at a specific point in time without trusting any
+single party. The same hash is anchored to three independent
+blockchains — breaking all three is computationally infeasible.
+
+## Three anchors
+
+1. **Bitcoin via OTS** — OpenTimestamps calendars submit the hash to
+   Bitcoin via OP_RETURN. Independent proof-of-work anchor.
+2. **Ethereum via smart contract** — a permissionless contract stores
+   (hash, timestamp, block_number) tuples.
+3. **Confium transparency log** — Merkle tree with inclusion proofs.
+   Free, instant.
+
+## Cross-chain verification
+
+Anyone with the data hash can verify its existence at the anchoring
+time via three independent anchors. Breaking all three requires a
+51% attack on Bitcoin ($10M+/hour) + 51% attack on Ethereum
+($1M+/hour) + forking log.confium.org (detected by witnesses).
+
+## Quickstart
+
+```ruby
+# Threshold-sign the hash, then anchor to all three.
+sig = Confium::TC::Cmp20.sign(shares, threshold, data_hash)
+tree = Confium::Transparency::MerkleTree.new
+seq = tree.append(data_hash)
+# OTS + Ethereum anchors submitted asynchronously.
+```
+
+See the full runnable example at
+[`examples/blockchain_anchoring.rb`](https://github.com/confium/confium-ruby/blob/main/examples/blockchain_anchoring.rb).

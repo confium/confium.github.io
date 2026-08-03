@@ -1,0 +1,31 @@
+---
+title: "SSH certificate signing"
+description: "Threshold-signed SSH user and host certificates. Drop-in replacement for ssh-keygen -s with multi-stakeholder CA."
+mode: 2
+order: 120
+---
+
+# SSH certificate signing
+
+Threshold-sign SSH certificates via a multi-stakeholder CA. No single
+party can issue SSH credentials alone — the threshold protocol
+enforces the quorum at signing time.
+
+## How it works
+
+The SSH CA's signing key is threshold-shared across N operators
+(e.g. security lead, IT director, compliance officer). Any T-of-N
+must cooperate to issue a user or host certificate. The resulting
+cert verifies in any SSH client against the CA's joint public key —
+no special client-side handling needed.
+
+## Quickstart
+
+```ruby
+# 3-of-5 SSH CA quorum signs Alice's certificate.
+sig = Confium::TC::Cmp20.sign(three_shares, 3, cert_body_json)
+# Cert verifies under the CA's joint public key in any SSH client.
+```
+
+See the full runnable example at
+[`examples/ssh_signing.rb`](https://github.com/confium/confium-ruby/blob/main/examples/ssh_signing.rb).

@@ -1,0 +1,157 @@
+---
+title: "Transparency logs: the missing piece in trust infrastructure"
+description: How Merkle transparency logs turn one-off signatures into a verifiable history — and why every signing system should anchor to one.
+date: 2026-07-31
+author: Confium Project
+---
+
+# Transparency logs: the missing piece in trust infrastructure
+
+In 2013, the Chrome team shipped Certificate Transparency (CT) — a
+Merkle-tree-based public log of every TLS certificate ever issued.
+The result was a sea change in CA accountability: malicious or
+mistaken certificate issuances became publicly visible within
+hours, and browsers could refuse to trust certs not in the log.
+
+CT is one of the most successful applied-cryptography deployments
+of the last decade. And yet, almost no other signing system uses
+the same pattern. Code signing, document signing, identity
+attestation — all are still done with one-off signatures that
+produce no auditable history.
+
+**This is a missed opportunity.** The transparency log pattern
+generalizes. Every signing system should anchor its signatures to
+a public, append-only, Merkle-tree-backed log. This post walks
+through why, and how to do it with Confium.
+
+## What a transparency log gives you
+
+A transparency log is an append-only data structure where every
+entry is committed to a Merkle tree. The tree root is published
+periodically (e.g. signed and posted on a website). For any entry,
+you can build an **inclusion proof** that cryptographically
+demonstrates the entry is in the tree at a specific position.
+
+This gives you three properties one-off signatures can't:
+
+### 1. Non-repudiation of history
+
+A signing system anchored to a transparency log can't retroactively
+hide signatures. If a signature was ever produced, it's in the log
+— and the log's append-only property means it can't be removed
+without breaking the published tree roots.
+
+### 2. Detection of silent fraud
+
+If an attacker compromises a signing key and produces a malicious
+signature, the log will eventually contain it. Monitors watching
+the log can detect the unauthorized signature even if the
+attacker never announces it.
+
+### 3. Verifiable completeness
+
+Third parties can verify they're seeing the *complete* set of
+signatures ever produced under a key, not just a curated subset.
+This matters for compliance — auditors can verify nothing was
+hidden.
+
+## The 10-minute API tour
+
+Confium ships an RFC 6962 transparency log implementation:
+
+```ruby
+require "confium"
+
+tree = Confium::Transparency::MerkleTree.new
+
+# 1. Sign something (using the threshold signing surface, or any
+#    other signer).
+kg = Confium::TC::Cmp20.keygen(2, 3)
+sig = Confium::TC::Cmp20.sign(kg["shares"].first(2), 2, "important payload")
+
+# 2. Anchor the signature to the log.
+seq = tree.append(
+  artifact_type: :threshold_signing,
+  artifact_hash: Digest::SHA256.digest(sig),
+)
+puts "Anchored at sequence #{seq}"
+
+# 3. Publish the tree head (root hash + size) somewhere verifiable.
+puts "Tree root: #{tree.root.unpack1('H*')}"
+puts "Tree size: #{tree.size}"
+
+# 4. Build an inclusion proof for any sequence.
+proof = tree.inclusion_proof(seq)
+
+# 5. Anyone with the tree head + proof can verify the entry is in
+#    the log — without trusting the log operator.
+tree.verify_inclusion(entry: leaf_hash, proof: proof, root: published_root)
+```
+
+## Anchoring to Bitcoin (OTS)
+
+For high-stakes use cases, a local transparency log isn't enough —
+the log operator could rewrite history. The fix is to anchor the
+tree root to a public, independently-verifiable blockchain.
+
+**OpenTimestamps (OTS)** does this for Bitcoin. Confium ships an
+OTS client that takes a tree root and submits it to multiple
+calendar servers, which aggregate submissions and write them into
+the Bitcoin chain:
+
+```ruby
+client = Confium::Transparency::OTS::Client.new
+proof = client.stamp(tree.root)
+# proof.bitcoin_height => 800000 (the block that contains the anchor)
+```
+
+Once anchored, anyone with the OTS proof can verify (independently
+of Confium) that the tree root existed at a specific point in
+Bitcoin history. The log operator can no longer rewrite history —
+Bitcoin's proof-of-work is the ultimate external anchor.
+
+## What to anchor
+
+In practice, anchor these things to a transparency log:
+
+1. **Every signature produced** (the signature bytes, or its SHA-256).
+2. **Every key ceremony** (keygen, share rotation, share destruction).
+3. **Every policy change** (threshold change, signer addition/removal).
+4. **Every audit event** (timestamp + actor + operation).
+
+The log entries themselves are small (32-byte hashes typically),
+so a single tree can hold millions of entries cheaply. The Bitcoin
+anchor costs a few cents per aggregated batch.
+
+## The compliance angle
+
+SOC 2, NIST SP 800-53, and similar frameworks require "audit
+trails". A log file in `/var/log/audit.log` is technically an audit
+trail; a Merkle transparency log anchored to Bitcoin is a
+*cryptographically verifiable* audit trail. For high-assurance
+applications (government, finance, healthcare), the difference
+matters — and Confium ships the surface to make it easy.
+
+## Try it
+
+```sh
+# Local transparency log via CLI:
+echo "deadbeef..." | confium log append --log /tmp/log.jsonl --artifact-hash $(sha256sum artifact.bin)
+confium log head --log /tmp/log.jsonl
+confium log prove --log /tmp/log.jsonl --sequence 0
+```
+
+Full example at
+[`examples/transparency_anchor.rb`](https://github.com/confium/confium-ruby/blob/main/examples/transparency_anchor.rb).
+
+## What's next
+
+- **Public Confium transparency log**: a free, hosted, Bitcoin-anchored
+  log for any Confium user. (Coming soon.)
+- **Witness gossip**: third-party witnesses countersign tree heads
+  so even Confium itself can't rewrite history without detection.
+- **Cross-organization logs**: multiple orgs share one log to
+  cross-audit each other.
+
+The transparency log pattern is the missing piece in trust
+infrastructure. Every signing system should anchor to one.

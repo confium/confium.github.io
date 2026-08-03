@@ -1,0 +1,29 @@
+---
+title: "Git commit and tag signing"
+description: "Threshold-sign git commits and tags. Drop-in replacement for git commit -S with multi-maintainer threshold signing."
+mode: 2
+order: 110
+---
+
+# Git commit and tag signing
+
+Multiple maintainers jointly sign git commits and tags on protected
+branches. No single maintainer can ship a backdoor.
+
+## How it works
+
+The threshold quorum signs the canonical commit object (the same
+text git signs with `git commit -S`). The signature wraps in
+git's gpgsig format.
+
+## Quickstart
+
+```ruby
+# 2-of-3 maintainer quorum signs the commit.
+sig = Confium::TC::Cmp20.sign(two_shares, 2, commit_object_text)
+# sig is a standard 64-byte ECDSA-P256 signature.
+# Wrap in git's gpgsig format and attach to the commit.
+```
+
+See the full runnable example at
+[`examples/git_signing.rb`](https://github.com/confium/confium-ruby/blob/main/examples/git_signing.rb).

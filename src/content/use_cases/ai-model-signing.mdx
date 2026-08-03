@@ -1,0 +1,32 @@
+---
+title: "AI/ML model signing"
+description: "Threshold-sign ML model weights for AI safety, supply-chain integrity, and regulatory compliance (EU AI Act)."
+mode: "cross"
+order: 150
+---
+
+# AI/ML model signing
+
+Threshold-sign ML model manifests to prevent unauthorized model
+swaps in production. Attracts the responsible-AI community — no
+other threshold framework covers this use case.
+
+## How it works
+
+1. Model governance quorum (ML engineer, security reviewer, AI
+   safety lead) authenticates via OIDC or share-based threshold.
+2. Model weights are hashed (SHA-256 of safetensors/pickle/ONNX).
+3. Threshold quorum signs the manifest (model name, version,
+   weights hash, safety eval results).
+4. Inference server verifies the manifest before loading.
+5. Signing ceremony anchored to transparency log for AI provenance.
+
+## Quickstart
+
+```ruby
+kg = Confium::TC::Cmp20.keygen(3, 5)  # 3-of-5 governance quorum
+sig = Confium::TC::Cmp20.sign(kg["shares"].first(3), 3, model_manifest)
+# Inference server verifies sig under joint public key before loading.
+```
+
+See [`examples/ai_model_signing.rb`](https://github.com/confium/confium-ruby/blob/main/examples/ai_model_signing.rb).

@@ -13,22 +13,22 @@ import { PROOF_POINTS, DEPLOYMENTS, STEPS } from '../data/homepage';
 
 const blogPosts = [
   {
-    href: '/blog/2026-07-28-introducing-confium/',
-    title: 'Introducing Confium',
-    excerpt: 'Why we built a threshold-native trust infrastructure framework, and what ships today.',
-    category: 'Announcement',
+    href: '/blog/2026-07-31-threshold-code-signing/',
+    title: 'Threshold code signing without sharing the key',
+    excerpt: 'How to add multi-stakeholder threshold signing to your release pipeline — no HSM, no single point of failure.',
+    category: 'Code signing',
   },
   {
-    href: '/blog/2026-07-28-sovereign-pki-launch/',
-    title: 'Sovereign PKI launch',
-    excerpt: 'Mode 3 deep dive — institutional trust without a single point of failure.',
-    category: 'Deep dive',
+    href: '/blog/2026-07-31-custody-without-a-custodian/',
+    title: 'Custody without a custodian',
+    excerpt: 'Threshold encryption for succession, inheritance, and institutional key escrow.',
+    category: 'Custody',
   },
   {
-    href: '/blog/2026-07-28-pq-migration-walkthrough/',
-    title: 'PQ migration walkthrough',
-    excerpt: 'How composite signatures turn migration into a software upgrade.',
-    category: 'Walkthrough',
+    href: '/blog/2026-07-31-transparency-logs-missing-piece/',
+    title: 'Transparency logs: the missing piece in trust infrastructure',
+    excerpt: 'How Merkle transparency logs turn one-off signatures into a verifiable history.',
+    category: 'Transparency',
   },
 ];
 ---
@@ -41,6 +41,43 @@ const blogPosts = [
   <Hero />
 
   <ThreeModes />
+
+  <Section
+    tone="blue"
+    eyebrow="Mode 4 — Keyless Threshold"
+    title="Threshold signing without key management"
+    lead="Ephemeral per-ceremony threshold quorums with OIDC-verified signers. No persistent keys, no share rotation, no HSM. Combines Confium threshold signing with the Sigstore keyless pattern."
+  >
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Card title="No key management" description="Ephemeral keys per ceremony. Nothing to lose, leak, or rotate." />
+      <Card title="OIDC-verified signers" description="Each signer authenticates via GitHub, Google, or Okta. Identity is the trust anchor." />
+      <Card title="Transparency-logged" description="Every ceremony anchored to log.confium.org. Full audit trail." />
+    </div>
+    <div class="mt-6">
+      <CtaLink
+        href="/docs/mode-4-keyless-threshold/"
+        label="Read the Mode 4 design doc"
+      />
+    </div>
+  </Section>
+
+  <Section
+    eyebrow="log.confium.org"
+    title="Public transparency log"
+    lead="Every Confium signature, certificate, and signing ceremony can be anchored to a free, hosted, Bitcoin-anchored Merkle transparency log. Append-only, independently verifiable, cert-aware."
+  >
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <Card title="Four tiers" description="SQLite dev → PostgreSQL prod → multi-region → pure edge (Cloudflare Workers + D1)." />
+      <Card title="Cert-aware API" description="All Confium-issued certs (CNML, code-signing, SSH, document, TLS) get first-class treatment." />
+      <Card title="$220/month at scale" description="Pure-edge tier is 10–50× cheaper than multi-region PostgreSQL." />
+    </div>
+    <div class="mt-6">
+      <CtaLink
+        href="/docs/log-confium-org/"
+        label="Read the log.confium.org docs"
+      />
+    </div>
+  </Section>
 
   <Section
     eyebrow="How it works"
@@ -75,7 +112,7 @@ const blogPosts = [
     id="install"
     eyebrow="Get started"
     title="Install in your language"
-    lead="Three bindings ship today. The Rust workspace is the source of truth; the Ruby gem and WASM verifier package wrap the same engine for different ecosystems. Each gets you to a working Confium consumer in under five minutes."
+    lead="Seven bindings ship today: Ruby, Python, Node.js, WASM (browser + WASI), Go, and the Rust core. Each wraps the same engine. Pick your language, install, and start signing or verifying in under five minutes."
   >
     <div class="grid lg:grid-cols-[1.3fr_1fr] gap-8 items-start">
       <Reveal>

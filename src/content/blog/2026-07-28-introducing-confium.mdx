@@ -1,6 +1,6 @@
 ---
 title: "Introducing Confium"
-description: "Confium is an open-source framework for multi-stakeholder threshold cryptography. Three deployment modes, post-quantum-ready, transparent by design."
+description: "Confium is an open-source framework for multi-stakeholder threshold cryptography. Four deployment modes, post-quantum-ready, transparent by design."
 date: 2026-07-28
 author: Confium Project
 tags: [announcement, framework]
@@ -30,7 +30,7 @@ parameters.
 ## What ships today
 
 The Confium Rust workspace contains 43 crates organized into
-three deployment modes:
+four deployment modes:
 
 - **Mode 1 — Peer-to-Peer TC**. Nodes do threshold cryptography
   directly. Hours to value. For MPC, distributed custody, BFT
@@ -43,7 +43,7 @@ three deployment modes:
   over formats, delegation rules, archival cadence, quorum
   composition.
 
-All three modes share the same engine, the same threshold
+All four modes share the same engine, the same threshold
 protocols (FROST, CMP20, GG18, threshold ElGamal), the same
 transparency log, the same coordinator. What differs is the
 integration surface.
@@ -100,7 +100,7 @@ not direct the technical direction.
 ## What to read next
 
 - [Architecture](/docs/architecture/) — understand the engine.
-- [Three modes](/docs/three-modes/) — pick a deployment shape.
+- [Deployment modes](/docs/three-modes/) — pick a deployment shape.
 - [Threshold crypto 101](/concepts/threshold-crypto-101/) — if
   you're new to threshold cryptography.
 - [Sovereign PKI launch post](/blog/2026-07-28-sovereign-pki-launch/) — the

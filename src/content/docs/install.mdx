@@ -1,0 +1,102 @@
+---
+title: "Installation"
+description: "Ten ways to install Confium — Ruby gem, Python wheel, Node package, WASM, Homebrew, Nix, Cargo, Docker, Go, and source."
+order: 1
+---
+
+# Installation
+
+## Language packages
+
+### Ruby
+
+```sh
+gem install confium
+```
+
+### Python
+
+```sh
+pip install confium
+```
+
+### Node.js (server-side signing)
+
+```sh
+npm install @confium/confium-node
+```
+
+### WASM (browser verifier)
+
+```sh
+npm install @confium/confium-wasm
+```
+
+### WASM (edge signer — WASI target)
+
+```sh
+npm install @confium/confium-wasm
+# Build with: cargo build --target wasm32-wasip1 --features sign
+```
+
+## System packages
+
+### Homebrew (macOS)
+
+```sh
+brew install confium/tap/confium
+```
+
+### Nix
+
+```sh
+nix profile install github:confium/confium#confium
+```
+
+### Cargo (Rust)
+
+```sh
+cargo install confium-cli
+```
+
+## Containers
+
+### Docker
+
+```sh
+docker pull confium/signer:latest
+docker run -p 4567:4567 confium/signer:latest verifier
+```
+
+## From source
+
+```sh
+git clone https://github.com/confium/confium.git
+cd confium
+cargo build --release
+```
+
+The `confium` binary lands at `target/release/confium`.
+
+## Go (scaffold)
+
+```sh
+go get github.com/confium/confium-go
+```
+
+## Verifying the install
+
+```sh
+confium version
+confium tc keygen --scheme cmp20 --threshold 2 --party-count 3
+```
+
+## Troubleshooting
+
+**`ERROR: Failed to build gem native extension`** — ensure Rust is
+installed (`rustup show`). Requires Rust 1.85+ (edition 2024).
+
+**`linking with cc failed`** — install Xcode CLT or build-essential.
+
+**`cargo: command not found`** — install Rust via
+[rustup](https://rustup.rs/).

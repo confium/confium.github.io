@@ -1,0 +1,67 @@
+---
+title: "log.confium.org — public transparency log"
+description: "A free, hosted, Bitcoin-anchored Merkle transparency log for every Confium signature, certificate, and signing ceremony."
+order: 50
+---
+
+# log.confium.org — public transparency log
+
+Every Confium signature, certificate, and signing ceremony can be
+anchored to a public Merkle transparency log (RFC 6962 / RFC 9162).
+The log is append-only, independently verifiable, and Bitcoin-anchored
+via OpenTimestamps.
+
+## What it provides
+
+- **Non-repudiation**: once an entry is in the log, it can't be
+  removed without breaking every published tree head.
+- **Completeness**: third parties can verify they're seeing the
+  *complete* set of signatures ever produced, not a curated subset.
+- **Detection of silent fraud**: unauthorized signatures become
+  visible to monitors within hours.
+
+## Architecture
+
+log.confium.org ships in four tiers:
+
+| Tier | Storage | Cost/month | When |
+|---|---|---|---|
+| Tier 1 | SQLite (single-node) | $5 | Dev / testing |
+| Tier 2 | PostgreSQL + CDN | $200 | Small production |
+| Tier 3 | Multi-region PostgreSQL | $2,000–10,000 | Large production |
+| **Tier 4** | **Pure edge (Cloudflare Workers + D1)** | **$220** | **Production at scale** |
+
+Tier 4 (pure edge) is viable because transparency logs are audit
+systems, not real-time systems. An activation delay (1 hour default)
+gives eventual consistency time to converge — the same pattern
+Certificate Transparency uses.
+
+## Cert-aware API
+
+Every Confium-issued cert gets first-class treatment:
+
+- **POST /v1/certificates** — append a DER cert; metadata auto-extracted.
+- **GET /v1/certificates/`{fingerprint}`** — lookup by SHA-256.
+- **GET /v1/issuers/`{dn}`/certificates** — list by issuer DN.
+
+Cert types auto-classified: CNML, code-signing, email, document,
+timestamping, TLS, and generic X.509.
+
+## Monitoring
+
+Independent third-party monitors detect:
+- Fork attempts (different tree heads for same size).
+- Bad proofs (inclusion / consistency verification failures).
+- Tree size regression (database reset or fork).
+
+Run your own monitor: `cargo run -p confium-log-monitor`.
+
+## Run your own
+
+```sh
+# Single-node (dev):
+cargo run -p confium-log-server -- --db log.db --listen 0.0.0.0:8080
+
+# Pure edge (production):
+cd crates/confium-log-edge && npx wrangler deploy
+```

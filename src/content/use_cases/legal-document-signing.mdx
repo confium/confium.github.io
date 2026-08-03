@@ -1,0 +1,36 @@
+---
+title: "Legal document signing (eIDAS)"
+description: "Threshold-signed qualified electronic signatures per EU Regulation 910/2014. Satisfies eIDAS Art. 26 requirements with multi-stakeholder quorum."
+mode: 3
+order: 140
+---
+
+# Legal document signing (eIDAS)
+
+Threshold-signed qualified electronic signatures for contracts,
+board resolutions, and regulatory filings. Satisfies EU eIDAS
+Regulation 910/2014 Art. 26 (advanced electronic signature)
+requirements when backed by a qualified trust service provider.
+
+## eIDAS Art. 26 compliance
+
+- **(a) Uniquely linked to signatory** → OIDC identity in Fulcio cert
+- **(b) Capable of identifying signatory** → signer DNs in CMS
+- **(c) Under signatory's sole control** → threshold ceremony
+- **(d) Linked to data, tamper-detectable** → ECDSA + SHA-256
+
+## Long-term archival
+
+Signatures are wrapped in ERS (RFC 4998) envelopes for 30-year
+retention. Renewed every 5-10 years as crypto primitives age.
+
+## Quickstart
+
+```ruby
+# 3-of-5 qualified signing quorum.
+sig = Confium::TC::Cmp20.sign(three_shares, 3, legal_document)
+# Wrapped in PAdES-BES CMS envelope with eIDAS metadata.
+```
+
+See the full runnable example at
+[`examples/legal_document_signing.rb`](https://github.com/confium/confium-ruby/blob/main/examples/legal_document_signing.rb).

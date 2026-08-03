@@ -1,0 +1,111 @@
+---
+title: "Capabilities"
+description: "Every shipped feature in Confium — threshold signing, transparency log, keyless mode, security primitives, language bindings, infrastructure, and deployment tiers."
+order: 0
+---
+
+# Capabilities
+
+Everything Confium ships today. Each feature is backed by runnable
+code, spec'd, and documented.
+
+## Threshold signing
+
+| Feature | Details |
+|---|---|
+| **CMP20** (P-256) | Non-interactive DKG, 3-round signing, identifiable abort |
+| **GG18** (P-256) | Classic 4-round signing, interop with existing deployments |
+| **FROST-P256** | Shamir split/recover + single-party ECDSA-P256 sign |
+| **FROST-ed25519** | RFC 8032 Ed25519 threshold signing |
+| **ElGamal-P256** | Threshold encryption KEM (encapsulate / partial_decrypt / aggregate) |
+| **Batch signing** | Sign N messages with one DKG — binding-overhead amortized |
+| **Proactive refresh** | Herzberg annual share rotation without changing joint key |
+| **Deterministic keygen** | Feature-gated seed-based keygen for reproducible test fixtures |
+
+## Transparency log
+
+| Feature | Details |
+|---|---|
+| **Merkle tree** | RFC 6962 / RFC 9162 append-only log |
+| **Inclusion proofs** | Cryptographic proof that an entry is in the log |
+| **Consistency proofs** | Proof that the log hasn't been rewritten |
+| **OTS anchoring** | Bitcoin-anchored timestamps via OpenTimestamps |
+| **ERS archival** | RFC 4998 Evidence Record Syntax for long-term retention |
+| **Witness gossip** | Third-party witnesses countersign tree heads |
+| **Monitor tool** | Independent verifier detecting fork attempts |
+| **Cert-aware API** | All Confium-issued certs (CNML, code, SSH, document, TLS) |
+
+## Mode 4 — Keyless Threshold
+
+| Feature | Details |
+|---|---|
+| **OIDC verification** | GitHub Actions, Google, GitLab, Okta, Azure AD, custom |
+| **Ephemeral ceremonies** | Per-ceremony DKG — no persistent keys |
+| **Fulcio-style certs** | Short-lived cert binding OIDC identities to joint key |
+| **Rekor-style anchoring** | Every ceremony anchored to log.confium.org |
+
+## Security primitives
+
+| Feature | Details |
+|---|---|
+| **Zeroize-on-drop** | Secret scalars cleared on Drop across all TC crates |
+| **Wycheproof harness** | Google's adversarial test vectors (feature-gated) |
+| **Audit auto-fire** | Every signing op fires audit events to configured sink |
+| **DSL depth limit** | Attribute DSL rejects predicates deeper than 32 levels |
+| **Input size caps** | 1 MiB max input size on every binding boundary |
+| **Typed errors** | Full hierarchy: ThresholdError, VerificationError, etc. |
+
+## Language bindings
+
+| Binding | Install | Surface |
+|---|---|---|
+| **Ruby** | `gem install confium` | Full: sign + verify + TC + PKI + transparency + audit |
+| **Python** | `pip install confium` | Full: sign + verify + TC + PKI + transparency |
+| **Node.js** | `npm install @confium/confium-node` | Server-side signing (napi-rs) |
+| **WASM (browser)** | `npm install @confium/confium-wasm` | Verifier-only (browsers verify, servers sign) |
+| **WASM (WASI)** | `npm install @confium/confium-wasm` + `--features sign` | Edge signing (Cloudflare Workers, Fastly, Deno) |
+| **Go** | `go get github.com/confium/confium-go` | Scaffold (cgo bridge) |
+| **Rust** | `cargo add confium-core` | Full API — the source of truth |
+
+## Infrastructure
+
+| Feature | Details |
+|---|---|
+| **CLI** | `confium tc keygen`, `confium tc sign`, `confium log append`, etc. |
+| **Log server** | `confium-log-server` — single binary, embedded SQLite/PostgreSQL |
+| **Monitor** | `confium-log-monitor` — third-party fork detection |
+| **Docker** | Multi-stage Dockerfile + docker-compose |
+| **GitHub Action** | `uses: confium/threshold-sign@v1` |
+| **Homebrew** | `brew install confium/tap/confium` |
+| **Nix** | `nix profile install github:confium/confium#confium` |
+| **Share persistence** | `Confium::TC::ShareFile` / `confium.ShareFile` (Ruby + Python) |
+
+## Log deployment tiers
+
+| Tier | Storage | Cost/month | When |
+|---|---|---|---|
+| Tier 1 | SQLite | $5 | Dev |
+| Tier 2 | PostgreSQL + CDN | $200 | Small production |
+| Tier 3 | Multi-region PostgreSQL | $2k–10k | Large production |
+| Tier 4 | Pure edge (Cloudflare Workers + D1) | $220 | Production at scale |
+
+## Use cases (18 runnable examples)
+
+1. Code signing
+2. Document signing
+3. Custody / key escrow
+4. Container image signing
+5. Git commit signing
+6. SSH certificate signing
+7. RFC 3161 timestamping
+8. SBOM signing
+9. Verifiable Credentials
+10. Keyless CI signing (Mode 4)
+11. TLS certificate issuance
+12. Email S/MIME signing
+13. Blockchain anchoring
+14. Legal document signing (eIDAS)
+15. Medical records signing (HIPAA)
+16. **AI/ML model signing** (new)
+17. **DNSSEC zone signing** (new)
+18. **Root CA key ceremony** (new)
