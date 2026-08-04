@@ -1,0 +1,8 @@
+# Confium — open-source threshold cryptography framework
+# https://www.confium.org
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.confium.org/sitemap-index.xml
