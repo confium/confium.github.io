@@ -54,7 +54,6 @@ async function copy() {
         ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300'
         : 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/40',
     ]"
-    :aria-label="`${label} command`"
     @click="copy"
   >
     <span v-if="copied" aria-hidden="true">✓</span>

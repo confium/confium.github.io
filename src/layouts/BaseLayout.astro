@@ -199,7 +199,6 @@ if (schemaType === 'FAQPage' && faqEntries.length > 0) {
               btn.type = 'button';
               btn.className = 'copy-btn';
               btn.textContent = 'Copy';
-              btn.setAttribute('aria-label', 'Copy code to clipboard');
               btn.addEventListener('click', async () => {
                 const code = pre.querySelector('code')?.textContent ?? pre.textContent ?? '';
                 try {

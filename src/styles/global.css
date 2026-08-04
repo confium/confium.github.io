@@ -42,7 +42,7 @@
   --surface-dim: #eef4fa;
   --fg: #23273a;
   --fg-soft: #4f5469;
-  --fg-faint: #5f6680;
+  --fg-faint: #525877;
   --line: #dfe8f2;
   --accent: #1a7bec;
   --accent-deep: #0f5fc4;
@@ -65,7 +65,7 @@
   --surface-dim: #0f1326;
   --fg: #e8eaf2;
   --fg-soft: #a2a8c2;
-  --fg-faint: #60678a;
+  --fg-faint: #8a92b8;
   --line: #232a4a;
   --accent: #5ea2f5;
   --accent-deep: #8fbcf8;
@@ -292,13 +292,16 @@ body {
 .btn:hover { transform: translateY(-1px); }
 
 .btn-primary {
-  background: var(--color-brand);
+  background: var(--accent-deep);
   color: white;
   box-shadow: 0 6px 20px -8px color-mix(in oklab, var(--color-brand) 80%, transparent);
 }
 .btn-primary:hover {
-  background: var(--accent-deep);
+  background: var(--color-brand-700);
   box-shadow: 0 10px 28px -10px color-mix(in oklab, var(--color-brand) 90%, transparent);
+}
+.dark .btn-primary {
+  color: #0b0e1a;
 }
 
 .btn-white {
