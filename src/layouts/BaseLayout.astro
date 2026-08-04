@@ -137,7 +137,7 @@ if (schemaType === 'FAQPage' && faqEntries.length > 0) {
     </script>
   </head>
   <body class={bodyClass}>
-    <SiteHeader client:load overlay={headerOverlay} />
+    <SiteHeader client:idle overlay={headerOverlay} />
     <SiteSearch client:only="vue" />
     <main data-pagefind-body>
       <slot />
