@@ -1,0 +1,17 @@
+{
+  "name": "Confium",
+  "short_name": "Confium",
+  "description": "Threshold-native trust infrastructure for a post-quantum world.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e1a",
+  "theme_color": "#1a7bec",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
