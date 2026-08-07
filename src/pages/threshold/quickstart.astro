@@ -1,0 +1,60 @@
+---
+import Quickstart from '../../components/astro/minisite/Quickstart.astro';
+import Steps from '../../components/astro/primitives/Steps.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+const steps = [
+  { title: 'Install Rust + cargo', description: 'Rust 1.85+ (edition 2024). Install via rustup.' },
+  { title: 'Install confium-cli', description: 'cargo install --locked confium-cli' },
+  { title: 'Run a 3-party DKG', description: 'Generate shares for a 2-of-3 threshold key.' },
+  { title: 'Sign a message', description: 'Combine 2 shares to produce an ECDSA signature.' },
+  { title: 'Verify', description: 'Confirm the signature with the public key.' },
+];
+---
+
+<Quickstart product={product} intro="Get a 2-of-3 threshold ECDSA signature in 5 minutes. No HSM, no K8s, just cargo and a terminal.">
+  <Steps steps={steps}>
+    <span slot="step-1" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup default stable
+rustc --version  # need 1.85+</code></pre>
+    </span>
+    <span slot="step-2" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo install --locked confium-cli
+confium --version</code></pre>
+    </span>
+    <span slot="step-3" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium threshold dkg \
+  --parties 3 \
+  --threshold 2 \
+  --scheme cmp20 \
+  --out-dir ./shares/
+ls ./shares/
+# party1.json  party2.json  party3.json  public.json</code></pre>
+    </span>
+    <span slot="step-4" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium threshold sign \
+  --shares ./shares/party1.json ./shares/party2.json \
+  --message "hello, threshold world" \
+  --out ./signature.der
+# Combined signature from 2 shares; party3 was offline.</code></pre>
+    </span>
+    <span slot="step-5" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium verify ecdsa-p256 \
+  --message "hello, threshold world" \
+  --signature ./signature.der \
+  --public-key ./shares/public.json
+# → valid</code></pre>
+    </span>
+  </Steps>
+
+  <div class="mt-12 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+    <p class="text-sm text-gray-700">
+      <strong>What just happened:</strong> you ran a 3-party distributed key
+      generation (DKG), combined 2 of 3 shares to sign a message (the third
+      party was unnecessary), and verified the result against the joint public
+      key. That's the entire threshold-signing primitive.
+    </p>
+  </div>
+</Quickstart>
