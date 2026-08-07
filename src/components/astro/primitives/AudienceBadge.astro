@@ -1,0 +1,32 @@
+---
+import { getAudience } from '../../../data/audiences';
+import type { Product } from '../../../data/products';
+
+interface Props {
+  slug: string;
+  product?: Product;
+}
+
+const { slug, product } = Astro.props;
+const audience = getAudience(slug);
+const label = audience?.name ?? slug;
+const href = audience ? `/audiences/${audience.slug}/` : null;
+const color = product?.accentColor ?? '#2563EB';
+---
+
+{href ? (
+  <a
+    href={href}
+    class="inline-flex items-center text-xs px-2 py-0.5 rounded-full no-underline hover:underline"
+    style={`background: ${color}20; color: ${color}; border: 1px solid ${color}40;`}
+  >
+    {label}
+  </a>
+) : (
+  <span
+    class="inline-flex items-center text-xs px-2 py-0.5 rounded-full"
+    style={`background: ${color}20; color: ${color}; border: 1px solid ${color}40;`}
+  >
+    {label}
+  </span>
+)}

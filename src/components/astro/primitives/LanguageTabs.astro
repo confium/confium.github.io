@@ -1,0 +1,56 @@
+---
+interface Tab {
+  id: string;
+  label: string;
+}
+
+interface Props {
+  tabs?: Tab[];
+}
+
+const defaultTabs = [
+  { id: 'rust', label: 'Rust' },
+  { id: 'cli', label: 'CLI' },
+  { id: 'python', label: 'Python' },
+  { id: 'ruby', label: 'Ruby' },
+  { id: 'wasm', label: 'WASM' },
+  { id: 'go', label: 'Go' },
+];
+
+const { tabs = defaultTabs } = Astro.props;
+const tabIds = tabs.map((t) => `tab-${t.id}-${Math.random().toString(36).slice(2, 8)}`);
+---
+
+<div class="language-tabs" data-language-tabs>
+  <div class="border-b border-gray-200">
+    <nav class="flex flex-wrap gap-1" role="tablist">
+      {tabs.map((tab, i) => (
+        <button
+          type="button"
+          class={`px-3 py-2 text-sm font-medium border-b-2 transition-colors ${
+            i === 0
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-gray-600 hover:text-gray-900'
+          }`}
+          role="tab"
+          aria-selected={i === 0 ? 'true' : 'false'}
+          data-tab-target={tabIds[i]}
+          onclick={`document.querySelectorAll('[data-language-tabs] [data-tab-target]').forEach(b => { b.classList.remove('border-blue-600', 'text-blue-600'); b.classList.add('border-transparent', 'text-gray-600'); b.setAttribute('aria-selected', 'false'); }); this.classList.remove('border-transparent', 'text-gray-600'); this.classList.add('border-blue-600', 'text-blue-600'); this.setAttribute('aria-selected', 'true'); document.querySelectorAll('[data-language-tabs] [data-tab-panel]').forEach(p => p.classList.add('hidden')); document.getElementById('${tabIds[i]}').classList.remove('hidden');`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </nav>
+  </div>
+
+  {tabs.map((tab, i) => (
+    <div
+      id={tabIds[i]}
+      class={`tab-content mt-4 ${i === 0 ? '' : 'hidden'}`}
+      role="tabpanel"
+      data-tab-panel
+    >
+      <slot name={tab.id}>{tab.label} content</slot>
+    </div>
+  ))}
+</div>

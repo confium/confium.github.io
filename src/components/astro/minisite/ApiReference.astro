@@ -1,0 +1,35 @@
+---
+import Minisite from '../../../layouts/Minisite.astro';
+import LanguageTabs from '../../astro/primitives/LanguageTabs.astro';
+import type { Product } from '../../../data/products';
+
+interface Props {
+  product: Product;
+  languages?: string[];
+}
+
+const { product, languages = ['rust', 'cli', 'python', 'ruby'] } = Astro.props;
+const title = `${product.name} — API Reference`;
+---
+
+<Minisite product={product} title={title}>
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold mb-4">API reference</h2>
+    <p class="text-gray-700 leading-relaxed">
+      Canonical code shapes for {product.name}, with per-language tabs.
+      Copy-paste-runnable.
+    </p>
+  </section>
+
+  <slot />
+
+  <div class="mt-12 pt-8 border-t border-gray-200">
+    <h3 class="font-bold mb-3">Auto-generated docs</h3>
+    <ul class="space-y-1 text-sm">
+      <li><a href={`https://docs.rs/${product.crates[0]}`} class="text-blue-600 hover:underline" target="_blank">Rust API (docs.rs/{product.crates[0]})</a></li>
+      <li><a href={`/bindings/python/`} class="text-blue-600 hover:underline">Python bindings</a></li>
+      <li><a href={`/bindings/ruby/`} class="text-blue-600 hover:underline">Ruby bindings</a></li>
+      <li><a href={`/bindings/wasm/`} class="text-blue-600 hover:underline">WASM bindings</a></li>
+    </ul>
+  </div>
+</Minisite>

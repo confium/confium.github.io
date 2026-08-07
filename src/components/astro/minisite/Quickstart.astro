@@ -1,0 +1,37 @@
+---
+import Minisite from '../../../layouts/Minisite.astro';
+import Steps from '../../astro/primitives/Steps.astro';
+import type { Product } from '../../../data/products';
+
+interface Props {
+  product: Product;
+  intro?: string;
+}
+
+const { product, intro } = Astro.props;
+const title = `${product.name} — Quickstart`;
+---
+
+<Minisite product={product} title={title}>
+  {intro && (
+    <p class="text-lg text-gray-700 leading-relaxed mb-8">{intro}</p>
+  )}
+
+  <div class="bg-blue-50 border-l-4 border-blue-400 p-4 mb-8 rounded">
+    <p class="text-sm text-blue-800">
+      <strong>Time:</strong> ~5 minutes &nbsp;·&nbsp;
+      <strong>Prerequisites:</strong> Rust 1.85+ (or Docker / language SDK per the tabs below)
+    </p>
+  </div>
+
+  <slot />
+
+  <div class="mt-12 pt-8 border-t border-gray-200">
+    <h2 class="text-xl font-bold mb-3">Next steps</h2>
+    <ul class="space-y-2">
+      <li>→ Read the <a href={`/${product.slug}/docs/`} class="text-blue-600 hover:underline">concepts documentation</a></li>
+      <li>→ Browse <a href={`/${product.slug}/use-cases/`} class="text-blue-600 hover:underline">real-world use cases</a></li>
+      <li>→ See the <a href={`/${product.slug}/api/`} class="text-blue-600 hover:underline">full API reference</a></li>
+    </ul>
+  </div>
+</Minisite>
