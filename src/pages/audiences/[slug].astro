@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/astro/primitives/Section.astro';
+import { audiences, useCasesForAudience, getAudience, type Audience } from '../../data/audiences';
+import { getProduct } from '../../data/products';
+
+export function getStaticPaths() {
+  return audiences.map((audience) => ({
+    params: { slug: audience.slug },
+    props: { audience },
+  }));
+}
+
+interface Props {
+  audience: Audience;
+}
+
+const { audience } = Astro.props;
+const useCases = useCasesForAudience(audience.slug);
+const products = audience.primaryProductSlugs.map((s) => getProduct(s)!).filter(Boolean);
+const accent = '#2563EB';
+---
+
+<BaseLayout title={`${audience.name} — Confium`}>
+  <Section>
+    <a href="/audiences/" class="text-sm text-gray-500 hover:text-gray-700">← All audiences</a>
+    <h1 class="text-4xl font-bold mt-4">{audience.name}</h1>
+    <p class="text-xl text-gray-600 mt-3">{audience.tagline}</p>
+  </Section>
+
+  <Section title="Recommended journey">
+    <ol class="space-y-4">
+      {audience.journey.map((step, i) => (
+        <li class="border border-gray-200 rounded-lg p-4">
+          <a href={step.href} class="block group">
+            <p class="font-bold group-hover:text-blue-600">{step.title}</p>
+            <p class="text-gray-600 text-sm mt-1">{step.description}</p>
+          </a>
+        </li>
+      ))}
+    </ol>
+  </Section>
+
+  {products.length > 0 && (
+    <Section title="Primary Confium products">
+      <div class="grid md:grid-cols-2 gap-4">
+        {products.map((product) => (
+          <a
+            href={`/${product.slug}/`}
+            class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all"
+            style={`border-left: 4px solid ${product.accentColor}`}
+          >
+            <h3 class="font-bold" style={`color: ${product.accentColor}`}>{product.name}</h3>
+            <p class="text-sm text-gray-600 mt-2">{product.tagline}</p>
+          </a>
+        ))}
+      </div>
+    </Section>
+  )}
+
+  {useCases.length > 0 && (
+    <Section title="Use cases for this audience">
+      <div class="space-y-3">
+        {useCases.map((uc) => (
+          <div class="border border-gray-200 rounded-lg p-4">
+            <p class="font-bold">{uc.title}</p>
+            <p class="text-gray-600 text-sm mt-1">{uc.summary}</p>
+            <div class="flex flex-wrap gap-1 mt-3">
+              {uc.productSlugs.map((slug) => {
+                const p = getProduct(slug);
+                return p ? (
+                  <a href={`/${slug}/`} class="text-xs px-2 py-0.5 rounded-full hover:underline" style={`background: ${p.accentColor}20; color: ${p.accentColor}`}>{p.name}</a>
+                ) : null;
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  )}
+</BaseLayout>
