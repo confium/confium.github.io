@@ -1,0 +1,62 @@
+---
+import Install from '../../components/astro/minisite/Install.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+---
+
+<Install product={product}>
+  <div class="space-y-8">
+    <div>
+      <h3 class="font-bold text-lg mb-2">Rust crate</h3>
+      <p class="text-sm text-gray-700 mb-3">For application embedding.</p>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo add confium-threshold</code></pre>
+      <p class="text-xs text-gray-500 mt-2">
+        Or pin specific schemes via features:
+        <code class="bg-gray-100 px-1 rounded">confium-threshold = { version = "0.4", features = ["cmp20", "frost-p256"] }</code>
+      </p>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-2">CLI</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo install --locked confium-cli</code></pre>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-2">Docker (signerd)</h3>
+      <p class="text-sm text-gray-700 mb-3">For production signing service.</p>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>docker pull confium/signerd:latest
+docker run -d \
+  -p 7000:7000 \
+  -v ./shares:/etc/confium/shares:ro \
+  -v ./signerd.toml:/etc/confium/signerd.toml:ro \
+  confium/signerd:latest</code></pre>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-2">Kubernetes operator</h3>
+      <p class="text-sm text-gray-700 mb-3">For declarative share management.</p>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>kubectl apply -f https://confium.org/operator.yaml
+kubectl apply -f - <<EOF
+apiVersion: confium.org/v1
+kind: ThresholdKey
+metadata:
+  name: my-key
+spec:
+  threshold: 2
+  parties: 3
+  scheme: cmp20
+EOF</code></pre>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-2">Ruby gem</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>gem install confium</code></pre>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-2">Python</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>pip install confium</code></pre>
+    </div>
+  </div>
+</Install>

@@ -1,0 +1,76 @@
+---
+import ApiReference from '../../components/astro/minisite/ApiReference.astro';
+import LanguageTabs from '../../components/astro/primitives/LanguageTabs.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+---
+
+<ApiReference product={product}>
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">Canonical flow: DKG → sign → verify</h3>
+    <LanguageTabs>
+      <div slot="rust" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`// Cargo.toml: confium-threshold = { version = "0.4", features = ["cmp20"] }
+use confium_threshold::cmp20;
+
+// 1. DKG (3 parties, threshold 2)
+let keygen = cmp20::keygen(threshold=2, parties=3)?;
+
+// 2. Sign with any 2 of 3 shares
+let sig = cmp20::sign(
+    &[keygen.shares[0].clone(), keygen.shares[1].clone()],
+    threshold=2,
+    message=b"hello",
+)?;
+
+// 3. Verify with the joint public key
+assert!(cmp20::verify(&sig, &keygen.public_key, b"hello")?);`}</code></pre>
+      </div>
+      <div slot="cli" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# DKG
+confium threshold dkg --parties 3 --threshold 2 --scheme cmp20 --out ./shares/
+
+# Sign with 2 of 3 shares
+confium threshold sign \\
+    --shares ./shares/party1.json ./shares/party2.json \\
+    --message "hello" \\
+    --out ./sig.der
+
+# Verify
+confium verify ecdsa-p256 \\
+    --message "hello" \\
+    --signature ./sig.der \\
+    --public-key ./shares/public.json`}</code></pre>
+      </div>
+      <div slot="python" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# pip install confium
+from confium.tc import Cmp20
+
+# DKG
+kg = Cmp20.keygen(threshold=2, parties=3)
+
+# Sign with 2 shares
+sig = Cmp20.sign([kg.shares[0], kg.shares[1]], threshold=2, message=b"hello")
+
+# Verify
+assert Cmp20.verify(sig, kg.public_key, b"hello")`}</code></pre>
+      </div>
+      <div slot="ruby" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# gem install confium
+require 'confium'
+
+# DKG
+kg = Confium::TC::Cmp20.keygen(threshold: 2, parties: 3)
+
+# Sign with 2 shares
+sig = Confium::TC::Cmp20.sign([kg.shares[0], kg.shares[1]],
+                              threshold: 2,
+                              message: "hello")
+
+# Verify
+raise unless Confium::TC::Cmp20.verify(sig, kg.public_key, "hello")`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+</ApiReference>

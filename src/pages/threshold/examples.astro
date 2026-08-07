@@ -1,0 +1,35 @@
+---
+import Examples from '../../components/astro/minisite/Examples.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+---
+
+<Examples product={product}>
+  <div class="grid md:grid-cols-2 gap-6">
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/threshold_local_dkg.rs"
+       class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Local 3-party DKG</h4>
+      <p class="text-sm text-gray-700 mt-2">Runnable Rust example. Spins up 3 in-process parties, runs DKG, signs, verifies. Best starting point.</p>
+      <p class="text-xs text-gray-500 mt-3">threshold_local_dkg.rs</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/threshold_signerd_deploy.yaml"
+       class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">signerd deployment</h4>
+      <p class="text-sm text-gray-700 mt-2">Docker Compose + signerd.toml for a 3-node production signing cluster.</p>
+      <p class="text-xs text-gray-500 mt-3">threshold_signerd_deploy.yaml</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/threshold_ruby_quickstart.rb"
+       class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Ruby quickstart</h4>
+      <p class="text-sm text-gray-700 mt-2">5-line Ruby script: DKG, sign, verify. Uses the gem.</p>
+      <p class="text-xs text-gray-500 mt-3">threshold_ruby_quickstart.rb</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/threshold_python_quickstart.py"
+       class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Python quickstart</h4>
+      <p class="text-sm text-gray-700 mt-2">Python equivalent: DKG, sign, verify via the confium package.</p>
+      <p class="text-xs text-gray-500 mt-3">threshold_python_quickstart.py</p>
+    </a>
+  </div>
+</Examples>

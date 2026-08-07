@@ -1,0 +1,82 @@
+---
+import Minisite from '../../layouts/Minisite.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+---
+
+<Minisite product={product}>
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">What is Confium Threshold?</h2>
+    <p class="text-gray-700 leading-relaxed">
+      Confium Threshold is a production-grade threshold signing platform. It replaces
+      single-key HSMs with T-of-N distributed signing — no single party can sign alone,
+      and compromising any T-1 parties doesn't compromise the key.
+    </p>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Key Features</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      {product.features.map((f) => (
+        <div class="border border-gray-200 rounded-lg p-4">
+          <p class="font-medium">{f}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Supported Algorithms</h2>
+    <ul class="list-disc pl-6 space-y-1">
+      <li><strong>CMP20</strong> — 3-round threshold ECDSA over P-256 with real Paillier MtA</li>
+      <li><strong>GG18</strong> — 4-round threshold ECDSA over P-256</li>
+      <li><strong>FROST-P256</strong> — 2-round threshold ECDSA over P-256 (Shamir + Feldman VSS)</li>
+      <li><strong>FROST-Ed25519</strong> — 2-round threshold EdDSA over Ed25519</li>
+      <li><strong>MuSig</strong> — 2-round threshold Schnorr signatures</li>
+    </ul>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Quick Start</h2>
+    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm">
+      <div class="text-gray-400"># Install</div>
+      <div>{product.install}</div>
+      <div class="text-gray-400 mt-2"># Generate threshold key (2-of-3 CMP20)</div>
+      <div>confium tc keygen --scheme cmp20 --threshold 2 --party-count 3</div>
+      <div class="text-gray-400 mt-2"># Sign a message</div>
+      <div>confium tc sign --scheme cmp20 --shares keyset.json --threshold 2 --message "hello"</div>
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Who is this for?</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      {product.audience.map((a) => (
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p class="font-medium">{a}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-bold mb-4">Architecture</h2>
+    <p class="text-gray-700 mb-4">
+      The coordinator orchestrates signing sessions across distributed signers.
+      Each signer holds a share of the private key. The coordinator collects
+      commitments, runs the MtA protocol, and aggregates partial signatures
+      into a standard ECDSA signature verifiable with the joint public key.
+    </p>
+    <div class="grid md:grid-cols-2 gap-4">
+      <div class="border border-gray-200 rounded-lg p-4">
+        <h3 class="font-bold mb-2">Coordinator</h3>
+        <p class="text-sm text-gray-600">TCP server with multi-round protocol orchestration, policy enforcement, rate limiting, backpressure, and Prometheus metrics.</p>
+      </div>
+      <div class="border border-gray-200 rounded-lg p-4">
+        <h3 class="font-bold mb-2">Signer Daemon</h3>
+        <p class="text-sm text-gray-600">Standalone binary (<code>confium-signerd</code>) that connects to the coordinator, registers, and responds to signing requests.</p>
+      </div>
+    </div>
+  </section>
+</Minisite>

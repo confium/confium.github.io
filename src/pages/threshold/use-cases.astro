@@ -1,0 +1,8 @@
+---
+import UseCases from '../../components/astro/minisite/UseCases.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+---
+
+<UseCases product={product} intro="Threshold signatures replace single-key custody with T-of-N quorum signing. The use cases below are the patterns we see most often in production deployments." />

@@ -1,0 +1,43 @@
+---
+import DocsIndex from '../../components/astro/minisite/DocsIndex.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('threshold')!;
+---
+
+<DocsIndex product={product}>
+  <div class="space-y-8 mt-12">
+    <div>
+      <h3 class="font-bold text-lg mb-3">Concepts</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/threshold/concepts/threshold-signing" class="text-blue-600 hover:underline">Threshold signing fundamentals (T-of-N)</a></li>
+        <li>→ <a href="/docs/threshold/concepts/dkg" class="text-blue-600 hover:underline">Distributed Key Generation (DKG)</a></li>
+        <li>→ <a href="/docs/threshold/concepts/mta" class="text-blue-600 hover:underline">Multiplicative-to-Additive (MtA) via Paillier</a></li>
+        <li>→ <a href="/docs/threshold/concepts/share-refresh" class="text-blue-600 hover:underline">Share refresh & proactive security (Herzberg)</a></li>
+        <li>→ <a href="/docs/threshold/concepts/reshare" class="text-blue-600 hover:underline">Reshare: changing T or N without re-keying</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-3">How-to</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/threshold/how-to/deploy-signerd" class="text-blue-600 hover:underline">Deploy signerd in production</a></li>
+        <li>→ <a href="/docs/threshold/how-to/integrate-hsm" class="text-blue-600 hover:underline">Protect shares with an HSM (PKCS#11)</a></li>
+        <li>→ <a href="/docs/threshold/how-to/refresh" class="text-blue-600 hover:underline">Schedule Herzberg share refresh</a></li>
+        <li>→ <a href="/docs/threshold/how-to/monitor" class="text-blue-600 hover:underline">Monitor signing sessions (Prometheus)</a></li>
+        <li>→ <a href="/docs/threshold/how-to/policy" class="text-blue-600 hover:underline">Attribute-based signing policies</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h3 class="font-bold text-lg mb-3">Reference</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="https://docs.rs/confium-threshold" class="text-blue-600 hover:underline" target="_blank">Rust API (docs.rs/confium-threshold)</a></li>
+        <li>→ <a href="/docs/threshold/reference/config" class="text-blue-600 hover:underline">signerd config reference</a></li>
+        <li>→ <a href="/docs/threshold/reference/cli" class="text-blue-600 hover:underline">confium threshold subcommands</a></li>
+        <li>→ <a href="/specs/22-threshold-session" class="text-blue-600 hover:underline">Threshold session spec</a></li>
+        <li>→ <a href="/specs/70-cmp20" class="text-blue-600 hover:underline">CMP20 spec</a></li>
+      </ul>
+    </div>
+  </div>
+</DocsIndex>
