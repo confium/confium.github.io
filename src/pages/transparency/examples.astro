@@ -1,0 +1,27 @@
+---
+import Examples from '../../components/astro/minisite/Examples.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('transparency')!;
+---
+
+<Examples product={product}>
+  <div class="grid md:grid-cols-2 gap-6">
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/transparency_local_log.rs" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Local Merkle log</h4>
+      <p class="text-sm text-gray-700 mt-2">Append entries to an in-memory tree, generate proofs, verify.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/transparency_log_server.yaml" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Log server deployment</h4>
+      <p class="text-sm text-gray-700 mt-2">Docker Compose for production log server with persistent storage.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/transparency_cloudflare_worker.ts" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Cloudflare Worker verifier</h4>
+      <p class="text-sm text-gray-700 mt-2">Edge verification at 250+ POPs. Zero cold start.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/transparency_python_verify.py" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Python verifier</h4>
+      <p class="text-sm text-gray-700 mt-2">CLI tool: download a log root, verify an inclusion proof.</p>
+    </a>
+  </div>
+</Examples>

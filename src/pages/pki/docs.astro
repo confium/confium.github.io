@@ -1,0 +1,39 @@
+---
+import DocsIndex from '../../components/astro/minisite/DocsIndex.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+---
+
+<DocsIndex product={product}>
+  <div class="space-y-8 mt-12">
+    <div>
+      <h3 class="font-bold text-lg mb-3">Concepts</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/pki/concepts/threshold-ca" class="text-blue-600 hover:underline">Threshold CA lifecycle (issue, revoke, CRL)</a></li>
+        <li>→ <a href="/docs/pki/concepts/ocsp-crl" class="text-blue-600 hover:underline">OCSP / CRL from threshold keys</a></li>
+        <li>→ <a href="/docs/pki/concepts/acme" class="text-blue-600 hover:underline">ACME integration with threshold CA</a></li>
+        <li>→ <a href="/docs/pki/concepts/composite" class="text-blue-600 hover:underline">Composite signatures (PQ migration)</a></li>
+        <li>→ <a href="/docs/pki/concepts/attributes" class="text-blue-600 hover:underline">Attribute-based signing policies</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">How-to</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/pki/how-to/deploy-pkcs11-server" class="text-blue-600 hover:underline">Deploy PKCS#11 server as HSM replacement</a></li>
+        <li>→ <a href="/docs/pki/how-to/configure-openssl" class="text-blue-600 hover:underline">Configure OpenSSL 3.0 provider</a></li>
+        <li>→ <a href="/docs/pki/how-to/integrate-jce" class="text-blue-600 hover:underline">Integrate JCE into Java apps</a></li>
+        <li>→ <a href="/docs/pki/how-to/threshold-ca" class="text-blue-600 hover:underline">Stand up a threshold CA</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">Reference</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="https://docs.rs/confium-pki" class="text-blue-600 hover:underline" target="_blank">Rust API</a></li>
+        <li>→ <a href="/specs/81-threshold-ca" class="text-blue-600 hover:underline">Threshold CA spec</a></li>
+        <li>→ <a href="/specs/82-composite-signatures" class="text-blue-600 hover:underline">Composite signatures spec</a></li>
+        <li>→ <a href="/specs/83-pkcs11-server" class="text-blue-600 hover:underline">PKCS#11 server spec</a></li>
+      </ul>
+    </div>
+  </div>
+</DocsIndex>

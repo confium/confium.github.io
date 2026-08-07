@@ -1,0 +1,8 @@
+---
+import UseCases from '../../components/astro/minisite/UseCases.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('transparency')!;
+---
+
+<UseCases product={product} intro="Tamper-evident audit trails on RFC 6962. Common deployment patterns:" />

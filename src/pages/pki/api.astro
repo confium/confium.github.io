@@ -1,0 +1,57 @@
+---
+import ApiReference from '../../components/astro/minisite/ApiReference.astro';
+import LanguageTabs from '../../components/astro/primitives/LanguageTabs.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+---
+
+<ApiReference product={product}>
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">Parse + verify a certificate</h3>
+    <LanguageTabs tabs={[{id:'rust',label:'Rust'},{id:'cli',label:'CLI'},{id:'python',label:'Python'}]}>
+      <div slot="rust" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`use confium_pki::Certificate;
+
+let cert = Certificate::from_der(&der_bytes)?;
+println!("Subject: {}", cert.subject());
+println!("Not after: {}", cert.not_after());
+cert.verify_chain(&[root_cert])?;`}</code></pre>
+      </div>
+      <div slot="cli" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`confium pki parse-cert --in cert.der
+confium pki verify --cert cert.der --anchor root.der`}</code></pre>
+      </div>
+      <div slot="python" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium.pki import Certificate
+
+cert = Certificate.from_der(der_bytes)
+print("Subject:", cert.subject)
+cert.verify_chain([root_cert])`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">Composite signature (PQ migration)</h3>
+    <LanguageTabs tabs={[{id:'rust',label:'Rust'},{id:'cli',label:'CLI'}]}>
+      <div slot="rust" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`use confium_composite::{CompositeSignature, Component};
+
+let sig = CompositeSignature::sign_multi(
+    &[("ed25519", &ed_privkey), ("ml-dsa-65", &mldsa_privkey)],
+    b"message",
+)?;
+assert!(sig.verify(b"message")?);`}</code></pre>
+      </div>
+      <div slot="cli" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`confium pki composite-sign \\
+    --message "message" \\
+    --classical-key ed25519.key \\
+    --pq-key mldsa.key \\
+    --out sig.bin
+confium pki composite-verify --message "message" --signature sig.bin`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+</ApiReference>

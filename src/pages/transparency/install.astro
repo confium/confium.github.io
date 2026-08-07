@@ -1,0 +1,30 @@
+---
+import Install from '../../components/astro/minisite/Install.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('transparency')!;
+---
+
+<Install product={product}>
+  <div class="space-y-8">
+    <div>
+      <h3 class="font-bold text-lg mb-2">Rust crate</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo add confium-transparency</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Docker (log server)</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>docker pull confium/log-server:latest
+docker run -p 7878:7878 -v ./log.db:/data/log.db confium/log-server:latest</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Cloudflare Workers (edge verifier)</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>npm install @confium/log-edge
+wrangler deploy</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Python / Ruby</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>pip install confium
+gem install confium</code></pre>
+    </div>
+  </div>
+</Install>

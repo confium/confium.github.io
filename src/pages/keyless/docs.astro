@@ -1,0 +1,37 @@
+---
+import DocsIndex from '../../components/astro/minisite/DocsIndex.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('keyless')!;
+---
+
+<DocsIndex product={product}>
+  <div class="space-y-8 mt-12">
+    <div>
+      <h3 class="font-bold text-lg mb-3">Concepts</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/keyless/concepts/oidc" class="text-blue-600 hover:underline">OIDC for code signing</a></li>
+        <li>→ <a href="/docs/keyless/concepts/short-lived-certs" class="text-blue-600 hover:underline">Short-lived certificates from threshold keys</a></li>
+        <li>→ <a href="/docs/keyless/concepts/anchoring" class="text-blue-600 hover:underline">Transparency log anchoring</a></li>
+        <li>→ <a href="/docs/keyless/concepts/root-of-trust" class="text-blue-600 hover:underline">Root of trust model</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">How-to</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/keyless/how-to/github-action" class="text-blue-600 hover:underline">Configure the GitHub Action</a></li>
+        <li>→ <a href="/docs/keyless/how-to/new-oidc-provider" class="text-blue-600 hover:underline">Add a new OIDC provider (Google/GitLab/Azure AD/Okta)</a></li>
+        <li>→ <a href="/docs/keyless/how-to/verify-in-ci" class="text-blue-600 hover:underline">Verify keyless signatures in CI</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">Reference</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="https://docs.rs/confium-keyless" class="text-blue-600 hover:underline" target="_blank">Rust API</a></li>
+        <li>→ <a href="/specs/90-oidc-binding" class="text-blue-600 hover:underline">OIDC binding spec</a></li>
+        <li>→ <a href="/specs/91-keyless-flow" class="text-blue-600 hover:underline">Keyless signing flow spec</a></li>
+        <li>→ <a href="/specs/92-short-lived-cert" class="text-blue-600 hover:underline">Short-lived certificate spec</a></li>
+      </ul>
+    </div>
+  </div>
+</DocsIndex>

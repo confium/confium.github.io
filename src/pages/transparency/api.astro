@@ -1,0 +1,40 @@
+---
+import ApiReference from '../../components/astro/minisite/ApiReference.astro';
+import LanguageTabs from '../../components/astro/primitives/LanguageTabs.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('transparency')!;
+---
+
+<ApiReference product={product}>
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">Canonical flow: append → prove → verify</h3>
+    <LanguageTabs tabs={[{id:'rust',label:'Rust'},{id:'cli',label:'CLI'},{id:'python',label:'Python'}]}>
+      <div slot="rust" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`use confium_transparency::MerkleTree;
+
+let mut tree = MerkleTree::new();
+let seq = tree.append(b"sha256:abc...")?;
+let root = tree.root();
+
+let proof = tree.inclusion_proof(seq)?;
+assert!(proof.verify(&root)?);`}</code></pre>
+      </div>
+      <div slot="cli" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`confium transparency append --artifact-hash sha256:abc...
+confium transparency prove --seq 0 --out proof.json
+confium transparency verify --proof proof.json --root &lt;(confium transparency root)`}</code></pre>
+      </div>
+      <div slot="python" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium.transparency import MerkleTree
+
+tree = MerkleTree()
+seq = tree.append(b"sha256:abc...")
+root = tree.root()
+
+proof = tree.inclusion_proof(seq)
+assert proof.verify(root)`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+</ApiReference>

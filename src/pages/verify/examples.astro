@@ -1,0 +1,27 @@
+---
+import Examples from '../../components/astro/minisite/Examples.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('verify')!;
+---
+
+<Examples product={product}>
+  <div class="grid md:grid-cols-2 gap-6">
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/verify_browser_wasm.html" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Browser WASM</h4>
+      <p class="text-sm text-gray-700 mt-2">Single HTML page; verifies a signature client-side.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/verify_node_endpoint.ts" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Node verify endpoint</h4>
+      <p class="text-sm text-gray-700 mt-2">Express handler wrapping @confium/confium-wasm.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/verify_python_ci.py" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">CI verification gate</h4>
+      <p class="text-sm text-gray-700 mt-2">Block deploys on verification failure.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/verify_ruby_sinatra.rb" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Sinatra verify service</h4>
+      <p class="text-sm text-gray-700 mt-2">Single-file Ruby HTTP verifier.</p>
+    </a>
+  </div>
+</Examples>

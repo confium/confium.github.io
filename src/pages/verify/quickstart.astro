@@ -1,0 +1,47 @@
+---
+import Quickstart from '../../components/astro/minisite/Quickstart.astro';
+import Steps from '../../components/astro/primitives/Steps.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('verify')!;
+const steps = [
+  { title: 'Install the WASM package', description: 'npm install @confium/confium-wasm' },
+  { title: 'Load the WASM module', description: 'Import + init in your page.' },
+  { title: 'Verify a composite signature', description: 'Browser-side, no server calls.' },
+  { title: 'Verify a transparency inclusion proof', description: 'Same module, different API.' },
+  { title: 'Optional: deploy verify-server', description: 'HTTP endpoint for non-WASM clients.' },
+];
+---
+
+<Quickstart product={product} intro="Verify threshold signatures, transparency proofs, and cert chains anywhere — browser, edge, server, CLI.">
+  <Steps steps={steps}>
+    <span slot="step-1" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>npm install @confium/confium-wasm</code></pre>
+    </span>
+    <span slot="step-2" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>// ESM
+import init, { CompositeSignature } from '@confium/confium-wasm';
+await init();  // one-time WASM bootstrap</code></pre>
+    </span>
+    <span slot="step-3" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>const sig = new CompositeSignature(components);
+const ok = sig.verify(message);
+console.log(ok ? '✅ valid' : '❌ invalid');</code></pre>
+    </span>
+    <span slot="step-4" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>import { verifyInclusionWithHead } from '@confium/confium-wasm';
+
+const ok = verifyInclusionWithHead(proofJson, headJson);
+console.log(ok ? '✅ in log' : '❌ not in log');</code></pre>
+    </span>
+    <span slot="step-5" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>docker pull confium/verify-server:latest
+docker run -p 8080:8080 confium/verify-server
+
+# Verify via HTTP:
+curl -X POST http://localhost:8080/v1/composite/verify \\
+    -H 'Content-Type: application/json' \\
+    -d '{"message":"...","signature":"..."}'</code></pre>
+    </span>
+  </Steps>
+</Quickstart>

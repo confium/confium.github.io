@@ -1,0 +1,61 @@
+---
+import Quickstart from '../../components/astro/minisite/Quickstart.astro';
+import Steps from '../../components/astro/primitives/Steps.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('keyless')!;
+const steps = [
+  { title: 'Add the GitHub Action', description: 'Drop confium/action into your release workflow.' },
+  { title: 'Push a tag', description: 'Trigger a release; the Action runs.' },
+  { title: 'Watch the Action produce a signature + cert', description: 'OIDC-issued short-lived cert anchored to the transparency log.' },
+  { title: 'Verify in CI', description: 'Use confium verify to check the artifact.' },
+  { title: 'Verify in browser', description: 'Use verify.confium.org or the WASM snippet.' },
+];
+---
+
+<Quickstart product={product} intro="Sign a GitHub release keylessly — no signing key to manage, no key rotation, OIDC only.">
+  <Steps steps={steps}>
+    <span slot="step-1" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code># .github/workflows/release.yml
+on:
+  release:
+    types: [created]
+
+permissions:
+  id-token: write
+  contents: write
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: confium/action@v1
+        with:
+          artifact: release.tar.gz</code></pre>
+    </span>
+    <span slot="step-2" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>git tag v1.0.0
+git push origin v1.0.0
+# Release is created automatically; the Action runs.</code></pre>
+    </span>
+    <span slot="step-3" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code># Action output:
+# ✅ Signed release.tar.gz
+# Signature: https://confium.org/attestations/&lt;id&gt;/sig.bin
+# Certificate: https://confium.org/attestations/&lt;id&gt;/cert.pem
+# Transparency log: appended at seq 4823, root sha256:abc...</code></pre>
+    </span>
+    <span slot="step-4" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium keyless verify \\
+    --artifact release.tar.gz \\
+    --signature sig.bin \\
+    --cert cert.pem
+# → valid; cert issued to GitHub repo yourname/yourrepo@v1.0.0</code></pre>
+    </span>
+    <span slot="step-5" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code># Browser:
+open "https://verify.confium.org/?artifact=https://github.com/.../release.tar.gz"</code></pre>
+    </span>
+  </Steps>
+</Quickstart>
