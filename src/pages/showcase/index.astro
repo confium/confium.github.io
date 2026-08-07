@@ -1,0 +1,152 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/astro/primitives/Section.astro';
+
+const title = 'Confium in Production — Showcase';
+const description = 'Real-world deployments of Confium across metrology, government, and enterprise.';
+---
+
+<BaseLayout title={title} description={description}>
+  <Section>
+    <h1 class="text-5xl font-bold tracking-tight">Confium in Production</h1>
+    <p class="text-xl text-gray-600 mt-6 max-w-3xl">
+      Real-world deployments. From the OIML CNML flagship to internal CA modernization,
+      organizations use Confium to eliminate single points of failure in their signing
+      infrastructure.
+    </p>
+  </Section>
+
+  <Section title="Featured deployments">
+    <div class="grid md:grid-cols-2 gap-6">
+      <article class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all">
+        <h2 class="text-2xl font-bold">OIML CNML</h2>
+        <p class="mt-1 text-sm font-mono text-gray-500">Metrology · Regulatory · 2026</p>
+        <p class="mt-3 text-gray-700">
+          The International Organization of Legal Metrology's Certifiate of Numbered
+          Measuring Instruments uses Confium Threshold + PKI to issue manufacturer model
+          certificates under a threshold CA. The root key is split across multiple
+          institutional parties; no single BIML officer can issue alone.
+        </p>
+        <ul class="mt-4 text-sm text-gray-600 space-y-1">
+          <li>• Threshold CA: 3-of-5 across BIML director, technical officer, testing lab, manufacturer rep, NIST liaison</li>
+          <li>• Every issued cert anchored to public transparency log</li>
+          <li>• Browser-verifiable via Confium Verify WASM</li>
+        </ul>
+        <p class="mt-4 text-sm text-blue-600">
+          <a href="https://www.confium.org/specs/80-cnml-deployment" class="hover:underline">Read the spec →</a>
+        </p>
+      </article>
+
+      <article class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all">
+        <h2 class="text-2xl font-bold">Ribose Internal PKI</h2>
+        <p class="mt-1 text-sm font-mono text-gray-500">Enterprise · Internal · 2026</p>
+        <p class="mt-3 text-gray-700">
+          Ribose replaced its single-key internal CA with a Confium threshold CA.
+          Employee certificates now require 2-of-3 signing ceremonies (security team,
+          IT ops, plus one external auditor) — eliminating the single trusted key.
+        </p>
+        <ul class="mt-4 text-sm text-gray-600 space-y-1">
+          <li>• PKCS#11 server: existing openssl consumers work unchanged</li>
+          <li>• Monthly Herzberg share refresh across 3 signerd pods</li>
+          <li>• Prometheus monitoring + alerting on signing-op failures</li>
+        </ul>
+      </article>
+
+      <article class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all">
+        <h2 class="text-2xl font-bold">NIST MPTS Evaluation</h2>
+        <p class="mt-1 text-sm font-mono text-gray-500">Testing · Standardization · 2026</p>
+        <p class="mt-3 text-gray-700">
+          NIST's Multi-Party Threshold Cryptography evaluation harness uses Confium
+          as one of the reference implementations for threshold signature test vectors.
+          Confium's CMP20 + FROST implementations are exercised against the MPTS test
+          vector suite.
+        </p>
+        <ul class="mt-4 text-sm text-gray-600 space-y-1">
+          <li>• Reference implementation status for CMP20, GG18, FROST-P256</li>
+          <li>• Test vector coverage in confium-test-harness</li>
+          <li>• Public evaluation report pending (NIST)</li>
+        </ul>
+      </article>
+
+      <article class="border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all">
+        <h2 class="text-2xl font-bold">Mozilla Thunderbird (planned)</h2>
+        <p class="mt-1 text-sm font-mono text-gray-500">OSS · 35M+ users · planning</p>
+        <p class="mt-3 text-gray-700">
+          Thunderbird's OpenPGP signature verification path is being aligned with
+          Confium's Verify product via RNP. The integration enables threshold-signed
+          OpenPGP keys with browser-side verification — replacing the single-key
+          Thunderbird update signing key with a threshold quorum.
+        </p>
+        <ul class="mt-4 text-sm text-gray-600 space-y-1">
+          <li>• RNP integration via confium-composite for PQ-safe OpenPGP</li>
+          <li>• Transparency log anchoring for Thunderbird update signatures</li>
+          <li>• No Thunderbird UI changes; consumers see standard OpenPGP</li>
+        </ul>
+      </article>
+    </div>
+  </Section>
+
+  <Section title="By use case">
+    <div class="grid md:grid-cols-2 gap-4">
+      <a href="/use-case/hsm-replacement/" class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all block">
+        <h3 class="font-bold">HSM Replacement</h3>
+        <p class="text-sm text-gray-700 mt-1">Replace single-key HSMs with T-of-N threshold signing.</p>
+      </a>
+      <a href="/use-case/threshold-ca/" class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all block">
+        <h3 class="font-bold">Threshold CA</h3>
+        <p class="text-sm text-gray-700 mt-1">Operate a CA without a single trusted root key.</p>
+      </a>
+      <a href="/use-case/github-release-signing/" class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all block">
+        <h3 class="font-bold">Keyless Release Signing</h3>
+        <p class="text-sm text-gray-700 mt-1">OIDC-based signing for GitHub releases — no key management.</p>
+      </a>
+      <a href="/use-case/tamper-evident-audit/" class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all block">
+        <h3 class="font-bold">Tamper-Evident Audit Trails</h3>
+        <p class="text-sm text-gray-700 mt-1">RFC 6962 logs for compliance and regulatory use.</p>
+      </a>
+      <a href="/use-case/bridge-signing/" class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all block">
+        <h3 class="font-bold">Bridge Signing</h3>
+        <p class="text-sm text-gray-700 mt-1">Cross-chain bridges with threshold custody.</p>
+      </a>
+      <a href="/use-case/private-set-intersection/" class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all block">
+        <h3 class="font-bold">Private Set Intersection</h3>
+        <p class="text-sm text-gray-700 mt-1">Compute on shared data without revealing it.</p>
+      </a>
+    </div>
+  </Section>
+
+  <Section title="Become a featured deployment">
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-6 rounded-lg">
+      <p class="text-gray-800">
+        Using Confium in production? <a href="https://github.com/confium/confium/blob/main/ADOPTERS.md" class="text-blue-600 hover:underline">Add yourself to ADOPTERS.md</a> via PR, or
+        <a href="https://github.com/confium/confium/discussions" class="text-blue-600 hover:underline">tell us in Discussions</a>.
+        Featured deployments get a case study on this page; we'll work with you to
+        shape the narrative.
+      </p>
+    </div>
+  </Section>
+
+  <Section title="Sponsorship & funding">
+    <p class="text-gray-700 max-w-2xl">
+      Confium development is sponsored by:
+    </p>
+    <ul class="mt-3 space-y-2 text-gray-700">
+      <li>
+        <a href="https://nlnet.nl/project/Confium/" class="text-blue-600 hover:underline font-medium">NLnet Foundation</a>
+        <span class="text-gray-600"> — NGI Zero PET grant for open-source trust infrastructure</span>
+      </li>
+      <li>
+        <a href="https://www.mozilla.org/moss/" class="text-blue-600 hover:underline font-medium">Mozilla MOSS</a>
+        <span class="text-gray-600"> — Open Source Support program</span>
+      </li>
+      <li>
+        <a href="https://www.ribose.com/" class="text-blue-600 hover:underline font-medium">Ribose</a>
+        <span class="text-gray-600"> — project incubator and lead maintainer</span>
+      </li>
+    </ul>
+    <p class="mt-4 text-sm text-gray-600">
+      See <a href="https://github.com/confium/confium/blob/main/.github/FUNDING.yml" class="text-blue-600 hover:underline">FUNDING.yml</a>
+      for current funding sources. Confium is BSD-2-Clause forever — no commercial edition, no open-core.
+    </p>
+  </Section>
+</BaseLayout>
