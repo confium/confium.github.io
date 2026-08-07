@@ -1,0 +1,11 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Playground from '../../components/vue/Playground.vue';
+
+const title = 'Confium Playground — zero-install DKG + sign + verify';
+const description = 'Run threshold signing in your browser. No install, no signup, no waiting.';
+---
+
+<BaseLayout title={title} description={description}>
+  <Playground client:load />
+</BaseLayout>

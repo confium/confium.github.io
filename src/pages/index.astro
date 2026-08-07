@@ -1,201 +1,85 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Hero from '../components/astro/sections/Hero.astro';
-import ThreeModes from '../components/astro/sections/ThreeModes.astro';
-import SignOff from '../components/astro/sections/SignOff.astro';
 import Section from '../components/astro/primitives/Section.astro';
-import Card from '../components/astro/Card.astro';
-import CtaLink from '../components/astro/primitives/CtaLink.astro';
-import Timeline from '../components/astro/primitives/Timeline.astro';
-import InstallTabs from '../components/vue/InstallTabs.vue';
-import Reveal from '../components/vue/Reveal.vue';
-import { PROOF_POINTS, DEPLOYMENTS, STEPS } from '../data/homepage';
-
-const blogPosts = [
-  {
-    href: '/blog/2026-07-31-threshold-code-signing/',
-    title: 'Threshold code signing without sharing the key',
-    excerpt: 'How to add multi-stakeholder threshold signing to your release pipeline — no HSM, no single point of failure.',
-    category: 'Code signing',
-  },
-  {
-    href: '/blog/2026-07-31-custody-without-a-custodian/',
-    title: 'Custody without a custodian',
-    excerpt: 'Threshold encryption for succession, inheritance, and institutional key escrow.',
-    category: 'Custody',
-  },
-  {
-    href: '/blog/2026-07-31-transparency-logs-missing-piece/',
-    title: 'Transparency logs: the missing piece in trust infrastructure',
-    excerpt: 'How Merkle transparency logs turn one-off signatures into a verifiable history.',
-    category: 'Transparency',
-  },
-];
+import { products } from '../data/products';
 ---
 
-<BaseLayout
-  title="Confium"
-  description="Threshold-native trust infrastructure for a post-quantum world. A configurable framework organizations deploy with their own parameters."
-  headerOverlay
->
-  <Hero />
-
-  <ThreeModes />
-
-  <Section
-    tone="blue"
-    eyebrow="Mode 4 — Keyless Threshold"
-    title="Threshold signing without key management"
-    lead="Ephemeral per-ceremony threshold quorums with OIDC-verified signers. No persistent keys, no share rotation, no HSM. Combines Confium threshold signing with the Sigstore keyless pattern."
-  >
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Card title="No key management" description="Ephemeral keys per ceremony. Nothing to lose, leak, or rotate." />
-      <Card title="OIDC-verified signers" description="Each signer authenticates via GitHub, Google, or Okta. Identity is the trust anchor." />
-      <Card title="Transparency-logged" description="Every ceremony anchored to log.confium.org. Full audit trail." />
+<BaseLayout title="Confium — Threshold-Native Trust Infrastructure">
+  <section class="py-20 px-4">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-5xl font-bold tracking-tight">
+        Threshold-native trust infrastructure
+      </h1>
+      <p class="text-xl text-gray-600 mt-6 max-w-2xl mx-auto">
+        Six products for distributed cryptographic trust — from threshold signing
+        to transparency logs to privacy-preserving computation.
+      </p>
     </div>
-    <div class="mt-6">
-      <CtaLink
-        href="/docs/mode-4-keyless-threshold/"
-        label="Read the Mode 4 design doc"
-      />
-    </div>
-  </Section>
+  </section>
 
-  <Section
-    eyebrow="log.confium.org"
-    title="Public transparency log"
-    lead="Every Confium signature, certificate, and signing ceremony can be anchored to a free, hosted, Bitcoin-anchored Merkle transparency log. Append-only, independently verifiable, cert-aware."
-  >
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      <Card title="Four tiers" description="SQLite dev → PostgreSQL prod → multi-region → pure edge (Cloudflare Workers + D1)." />
-      <Card title="Cert-aware API" description="All Confium-issued certs (CNML, code-signing, SSH, document, TLS) get first-class treatment." />
-      <Card title="$220/month at scale" description="Pure-edge tier is 10–50× cheaper than multi-region PostgreSQL." />
-    </div>
-    <div class="mt-6">
-      <CtaLink
-        href="/docs/log-confium-org/"
-        label="Read the log.confium.org docs"
-      />
-    </div>
-  </Section>
-
-  <Section
-    eyebrow="How it works"
-    title="From key generation to audited signature"
-    lead="A signing operation passes through five stages. The secret is created once, split into N shares, and never reconstructed. Every signing event anchors into a transparency log for audit."
-  >
-    <Timeline steps={STEPS} />
-    <div class="mt-6">
-      <CtaLink
-        href="/concepts/threshold-crypto-101/"
-        label="Read the threshold crypto primer"
-      />
-    </div>
-  </Section>
-
-  <Section
-    tone="blue"
-    eyebrow="What makes Confium different"
-    title="Six properties no single-key PKI gives you"
-    lead="Conventional PKI assumes a single trusted CA. Every property below is a structural weakness of that model — and a structural property of Confium's threshold-native design."
-  >
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {PROOF_POINTS.map((d, i) => (
-        <Reveal delayMs={i * 50}>
-          <Card title={d.title} description={d.body} />
-        </Reveal>
-      ))}
-    </div>
-  </Section>
-
-  <Section
-    id="install"
-    eyebrow="Get started"
-    title="Install in your language"
-    lead="Seven bindings ship today: Ruby, Python, Node.js, WASM (browser + WASI), Go, and the Rust core. Each wraps the same engine. Pick your language, install, and start signing or verifying in under five minutes."
-  >
-    <div class="grid lg:grid-cols-[1.3fr_1fr] gap-8 items-start">
-      <Reveal>
-        <InstallTabs client:visible />
-      </Reveal>
-      <Reveal delayMs={80}>
-        <div class="card p-6 bg-surface-dim border-accent/20">
-          <p class="mono-label !text-accent">Five-minute path</p>
-          <h3 class="mt-2 font-sans text-lg font-bold">Verify a signature, end to end</h3>
-          <ol class="mt-4 space-y-3 text-sm text-muted">
-            <li class="flex gap-3">
-              <span class="font-mono text-accent font-bold flex-shrink-0">1.</span>
-              <span><code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">gem install confium</code> — installs the gem and builds the native extension.</span>
-            </li>
-            <li class="flex gap-3">
-              <span class="font-mono text-accent font-bold flex-shrink-0">2.</span>
-              <span>Require and parse a certificate: <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">Confium::PKI::Certificate.from_pem(...)</code></span>
-            </li>
-            <li class="flex gap-3">
-              <span class="font-mono text-accent font-bold flex-shrink-0">3.</span>
-              <span>Validate the chain via <code class="font-mono text-xs bg-surface px-1.5 py-0.5 rounded">PathValidator</code>.</span>
-            </li>
-            <li class="flex gap-3">
-              <span class="font-mono text-accent font-bold flex-shrink-0">4.</span>
-              <span>Verify a composite signature with the per-algorithm callbacks.</span>
-            </li>
-            <li class="flex gap-3">
-              <span class="font-mono text-accent font-bold flex-shrink-0">5.</span>
-              <span>Anchor the verification event in a transparency log.</span>
-            </li>
-          </ol>
-          <a href="/audiences/developers/" class="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-accent hover:text-accent-deep">
-            Full developer guide <span aria-hidden="true">→</span>
+  <section class="py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-2xl font-bold text-center mb-12">Choose your product</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {products.map((product) => (
+          <a
+            href={`/${product.slug}/`}
+            class="group border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all hover:border-transparent"
+            style={`border-left: 4px solid ${product.accentColor}`}
+          >
+            <h3 class="text-lg font-bold group-hover:text-gray-900" style={`color: ${product.accentColor}`}>
+              {product.name}
+            </h3>
+            <p class="text-sm text-gray-600 mt-2">{product.tagline}</p>
+            <div class="flex flex-wrap gap-1 mt-4">
+              {product.audience.slice(0, 2).map((a) => (
+                <span class="text-xs bg-gray-100 px-2 py-0.5 rounded-full">{a}</span>
+              ))}
+            </div>
+            <p class="text-xs text-gray-400 mt-3">
+              {product.crates.length} crates · {product.features.length} features
+            </p>
           </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="py-16 px-4 bg-gray-50">
+    <div class="max-w-4xl mx-auto text-center">
+      <h2 class="text-3xl font-bold mb-4">Built on proven cryptography</h2>
+      <p class="text-gray-600 max-w-2xl mx-auto">
+        CMP20, GG18, FROST, Paillier homomorphic encryption, NIZK proofs,
+        RFC 6962 transparency logs, composite signatures — all in one BSD-2-Clause
+        open-source framework. 61 Rust crates, 945+ tests, 5 language bindings.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4 mt-8">
+        <a href="/playground/" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">
+          Try the Playground →
+        </a>
+        <a href="/docs/getting-started/" class="border border-gray-300 px-6 py-3 rounded-lg font-medium hover:bg-gray-100">
+          Get Started
+        </a>
+        <a href="https://github.com/confium/confium" class="border border-gray-300 px-6 py-3 rounded-lg font-medium hover:bg-gray-100">
+          GitHub
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-12 px-4">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-2xl font-bold mb-8">Sponsored by</h2>
+      <div class="flex items-center gap-8">
+        <div class="text-gray-500">
+          <p class="font-medium">NLnet Foundation</p>
+          <p class="text-sm">NGI Zero PET</p>
         </div>
-      </Reveal>
+        <div class="text-gray-500">
+          <p class="font-medium">Mozilla MOSS</p>
+          <p class="text-sm">Open Source Support</p>
+        </div>
+      </div>
     </div>
-  </Section>
-
-  <Section
-    tone="gold"
-    eyebrow="Reference deployments"
-    title="Where Sovereign PKI is the right shape"
-    lead="Institutional certificate infrastructure where no single party can be trusted. These are six scenarios where Mode 3 is already the natural fit — not an exhaustive list."
-  >
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-      {DEPLOYMENTS.map((d, i) => (
-        <Reveal delayMs={i * 50}>
-          <Card title={d.name} description={d.body} tone="gold" />
-        </Reveal>
-      ))}
-    </div>
-    <CtaLink
-      href="/use-cases/sovereign-pki/"
-      label="Read the Sovereign PKI use case"
-      tone="gold"
-      block
-    />
-  </Section>
-
-  <Section
-    eyebrow="From the blog"
-    title="Recent writing"
-    class="bg-surface-dim"
-  >
-    <div class="grid md:grid-cols-3 gap-4">
-      {blogPosts.map((post, i) => (
-        <Reveal delayMs={i * 60}>
-          <Card
-            eyebrow={post.category}
-            title={post.title}
-            description={post.excerpt}
-            href={post.href}
-          />
-        </Reveal>
-      ))}
-    </div>
-    <CtaLink
-      href="/blog/"
-      label="All posts"
-      block
-    />
-  </Section>
-
-  <SignOff />
+  </section>
 </BaseLayout>
