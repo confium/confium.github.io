@@ -1,0 +1,115 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Section from '../../components/astro/primitives/Section.astro';
+import { useCases, audiences, getUseCase, useCasesForAudience, useCasesForProduct } from '../../data/audiences';
+import { getProduct } from '../../data/products';
+import type { UseCase } from '../../data/audiences';
+
+export function getStaticPaths() {
+  return useCases.map((uc) => ({
+    params: { slug: uc.slug },
+    props: { useCase: uc },
+  }));
+}
+
+interface Props {
+  useCase: UseCase;
+}
+
+const { useCase } = Astro.props;
+
+// Cross-links: products that implement this use case + audiences that care.
+const products = useCase.productSlugs.map((s) => getProduct(s)).filter(Boolean);
+const relevantAudiences = audiences.filter((a) => useCase.audienceSlugs.includes(a.slug));
+
+// Related use cases: share at least one product or audience.
+const related = useCases
+  .filter((uc) => uc.slug !== useCase.slug)
+  .filter((uc) =>
+    uc.productSlugs.some((p) => useCase.productSlugs.includes(p)) ||
+    uc.audienceSlugs.some((a) => useCase.audienceSlugs.includes(a))
+  )
+  .slice(0, 4);
+
+const pageTitle = `${useCase.title} — Use Case`;
+---
+
+<BaseLayout title={pageTitle} description={useCase.summary}>
+  <Section>
+    <a href="/use-cases/" class="text-sm text-gray-500 hover:text-gray-700">← All use cases</a>
+    <h1 class="text-4xl font-bold mt-4">{useCase.title}</h1>
+    <p class="text-xl text-gray-700 leading-relaxed mt-4 max-w-3xl">{useCase.summary}</p>
+  </Section>
+
+  {products.length > 0 && (
+    <Section title="Implemented by">
+      <div class="grid md:grid-cols-2 gap-4">
+        {products.map((p) => (
+          <a
+            href={`/${p!.slug}/`}
+            class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all"
+            style={`border-left: 4px solid ${p!.accentColor}`}
+          >
+            <h3 class="font-bold" style={`color: ${p!.accentColor}`}>{p!.name}</h3>
+            <p class="text-sm text-gray-700 mt-2">{p!.tagline}</p>
+            <p class="text-xs text-gray-500 mt-3">→ Product overview</p>
+          </a>
+        ))}
+      </div>
+    </Section>
+  )}
+
+  {relevantAudiences.length > 0 && (
+    <Section title="Relevant to">
+      <div class="grid md:grid-cols-2 gap-4">
+        {relevantAudiences.map((a) => (
+          <a href={`/audiences/${a.slug}/`} class="border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all">
+            <h3 class="font-bold">{a.name}</h3>
+            <p class="text-sm text-gray-700 mt-2">{a.tagline}</p>
+            <p class="text-xs text-gray-500 mt-3">→ Audience overview</p>
+          </a>
+        ))}
+      </div>
+    </Section>
+  )}
+
+  <Section title="How to evaluate">
+    <ol class="space-y-3">
+      <li class="border border-gray-200 rounded-lg p-4">
+        <p class="font-bold">1. Read the relevant product overview</p>
+        <p class="text-gray-700 text-sm mt-1">Start with the product pages above for the architectural model.</p>
+      </li>
+      <li class="border border-gray-200 rounded-lg p-4">
+        <p class="font-bold">2. Run the quickstart</p>
+        <p class="text-gray-700 text-sm mt-1">Each product page has a 5-minute quickstart that runs locally.</p>
+      </li>
+      <li class="border border-gray-200 rounded-lg p-4">
+        <p class="font-bold">3. Read the spec</p>
+        <p class="text-gray-700 text-sm mt-1">
+          Specs at <a href="https://www.confium.org/specs/PRODUCTS" class="text-blue-600 hover:underline">/specs/PRODUCTS</a>
+          cover the protocol details.
+        </p>
+      </li>
+      <li class="border border-gray-200 rounded-lg p-4">
+        <p class="font-bold">4. Talk to us</p>
+        <p class="text-gray-700 text-sm mt-1">
+          Open a Discussion on <a href="https://github.com/confium/confium/discussions" class="text-blue-600 hover:underline">GitHub</a>
+          tagged `evaluation-help`.
+        </p>
+      </li>
+    </ol>
+  </Section>
+
+  {related.length > 0 && (
+    <Section title="Related use cases">
+      <div class="grid md:grid-cols-2 gap-4">
+        {related.map((uc) => (
+          <a href={`/use-case/${uc.slug}/`} class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all">
+            <h4 class="font-bold">{uc.title}</h4>
+            <p class="text-sm text-gray-700 mt-2">{uc.summary}</p>
+          </a>
+        ))}
+      </div>
+    </Section>
+  )}
+</BaseLayout>
