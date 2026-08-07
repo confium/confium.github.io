@@ -1,0 +1,41 @@
+---
+import DocsIndex from '../../components/astro/minisite/DocsIndex.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('privacy')!;
+---
+
+<DocsIndex product={product}>
+  <div class="space-y-8 mt-12">
+    <div>
+      <h3 class="font-bold text-lg mb-3">Concepts</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/privacy/concepts/psi" class="text-blue-600 hover:underline">Private Set Intersection (PSI)</a></li>
+        <li>→ <a href="/docs/privacy/concepts/pir" class="text-blue-600 hover:underline">Private Information Retrieval (PIR)</a></li>
+        <li>→ <a href="/docs/privacy/concepts/dp" class="text-blue-600 hover:underline">Differential Privacy (DP)</a></li>
+        <li>→ <a href="/docs/privacy/concepts/mpc" class="text-blue-600 hover:underline">Multi-party Computation (MPC / SPDZ)</a></li>
+        <li>→ <a href="/docs/privacy/concepts/ring-sigs" class="text-blue-600 hover:underline">Ring signatures</a></li>
+        <li>→ <a href="/docs/privacy/concepts/blind-sigs" class="text-blue-600 hover:underline">Blind signatures</a></li>
+        <li>→ <a href="/docs/privacy/concepts/vrf-vdf" class="text-blue-600 hover:underline">VRF + VDF</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">How-to</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/privacy/how-to/choose-primitive" class="text-blue-600 hover:underline">Choose the right primitive</a></li>
+        <li>→ <a href="/docs/privacy/how-to/two-party-psi" class="text-blue-600 hover:underline">Two-party PSI</a></li>
+        <li>→ <a href="/docs/privacy/how-to/mpc-cluster" class="text-blue-600 hover:underline">MPC cluster deployment</a></li>
+        <li>→ <a href="/docs/privacy/how-to/anonymous-credentials" class="text-blue-600 hover:underline">Issue anonymous credentials</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">Reference</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="https://docs.rs/confium-privacy" class="text-blue-600 hover:underline" target="_blank">Rust API</a></li>
+        <li>→ <a href="/specs/31-psi" class="text-blue-600 hover:underline">PSI spec</a></li>
+        <li>→ <a href="/specs/32-mpc-spdz" class="text-blue-600 hover:underline">MPC spec</a></li>
+        <li>→ <a href="/specs/33-differential-privacy" class="text-blue-600 hover:underline">DP spec</a></li>
+      </ul>
+    </div>
+  </div>
+</DocsIndex>

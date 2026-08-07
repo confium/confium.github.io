@@ -1,0 +1,52 @@
+---
+import Quickstart from '../../components/astro/minisite/Quickstart.astro';
+import Steps from '../../components/astro/primitives/Steps.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('privacy')!;
+const steps = [
+  { title: 'Add the crate', description: 'cargo add confium-privacy' },
+  { title: 'Pick a primitive', description: 'PSI, PIR, DP, MPC, ring sigs, blind sigs, VRF, VDF.' },
+  { title: 'Run a 2-party PSI', description: 'Find the intersection of two sets without revealing them.' },
+  { title: 'Verify the result', description: 'Confirm only the intersection was revealed.' },
+  { title: 'Adapt', description: 'Swap primitives; same ergonomics.' },
+];
+---
+
+<Quickstart product={product} intro="Compute on shared data without revealing the inputs. PSI is the canonical starting point.">
+  <Steps steps={steps}>
+    <span slot="step-1" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo add confium-privacy</code></pre>
+    </span>
+    <span slot="step-2" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>use confium_privacy::psi::EcdhPsi;
+use confium_privity::pir::SealPir;
+use confium_privacy::dp::ZcdpBudget;
+// 15+ primitives available</code></pre>
+    </span>
+    <span slot="step-3" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>let server = EcdhPsi::new(vec!["alice@ex.com".to_string()]);
+let request = server.request();
+
+let client_set: Vec&lt;String&gt; = vec!["alice@ex.com".into(), "carol@ex.com".into()];
+let response = server.respond(client_set.iter().map(|s| s.as_bytes()));
+
+let intersection = EcdhPsi::client_compute(&request, &response);
+// → {"alice@ex.com"}</code></pre>
+    </span>
+    <span slot="step-4" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>// Server never learned client_set.
+// Client only learned the intersection, not the server set beyond that.
+assert_eq!(intersection, vec!["alice@ex.com"]);</code></pre>
+    </span>
+    <span slot="step-5" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>// Same flow for ring sigs, VRFs, blind sigs, etc.
+use confium_privacy::ring_sig::RingSig;
+use confium_privacy::vrf::Ecvrf;
+
+let sig = RingSig::sign(&privkey, &[pubkey1, pubkey2, pubkey3], msg)?;
+// Verifier can confirm ONE of {pubkey1, pubkey2, pubkey3} signed,
+// but not which.</code></pre>
+    </span>
+  </Steps>
+</Quickstart>

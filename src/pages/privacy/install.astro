@@ -1,0 +1,23 @@
+---
+import Install from '../../components/astro/minisite/Install.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('privacy')!;
+---
+
+<Install product={product}>
+  <div class="space-y-8">
+    <div>
+      <h3 class="font-bold text-lg mb-2">Rust crate</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo add confium-privacy</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Python</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>pip install confium</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Ruby</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>gem install confium</code></pre>
+    </div>
+  </div>
+</Install>

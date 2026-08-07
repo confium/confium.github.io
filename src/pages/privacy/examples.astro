@@ -1,0 +1,27 @@
+---
+import Examples from '../../components/astro/minisite/Examples.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('privacy')!;
+---
+
+<Examples product={product}>
+  <div class="grid md:grid-cols-2 gap-6">
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/privacy_psi_two_party.rs" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Two-party PSI</h4>
+      <p class="text-sm text-gray-700 mt-2">ECDH-PSI between two parties over a TCP transport.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/privacy_dp_aggregation.py" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">DP aggregation</h4>
+      <p class="text-sm text-gray-700 mt-2">Aggregate user telemetry with zCDP budget.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/privacy_ring_signature.rb" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Ring signatures</h4>
+      <p class="text-sm text-gray-700 mt-2">Sign as one-of-N via Ruby.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/privacy_vrf_randomness.rs" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">VRF randomness</h4>
+      <p class="text-sm text-gray-700 mt-2">Verifiable randomness for leader election.</p>
+    </a>
+  </div>
+</Examples>

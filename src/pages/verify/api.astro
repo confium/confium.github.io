@@ -1,0 +1,39 @@
+---
+import ApiReference from '../../components/astro/minisite/ApiReference.astro';
+import LanguageTabs from '../../components/astro/primitives/LanguageTabs.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('verify')!;
+---
+
+<ApiReference product={product} languages={['ts', 'python', 'ruby', 'bash']}>
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">Verify a composite signature</h3>
+    <LanguageTabs tabs={[{id:'ts',label:'TypeScript'},{id:'python',label:'Python'},{id:'ruby',label:'Ruby'},{id:'bash',label:'HTTP'}]}>
+      <div slot="ts" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`import init, { CompositeSignature } from '@confium/confium-wasm';
+await init();
+
+const sig = new CompositeSignature(components);
+const ok = sig.verify(message);`}</code></pre>
+      </div>
+      <div slot="python" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium import CompositeSignature
+
+sig = CompositeSignature(components)
+assert sig.verify(message)`}</code></pre>
+      </div>
+      <div slot="ruby" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`require 'confium'
+
+sig = Confium::Composite::Signature.new(components)
+raise unless sig.verify(message)`}</code></pre>
+      </div>
+      <div slot="bash" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`curl -X POST http://verify-server:8080/v1/composite/verify \\
+    -H 'Content-Type: application/json' \\
+    -d '{"message":"...","signature":"..."}'`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+</ApiReference>

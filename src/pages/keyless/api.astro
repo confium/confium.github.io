@@ -1,0 +1,45 @@
+---
+import ApiReference from '../../components/astro/minisite/ApiReference.astro';
+import LanguageTabs from '../../components/astro/primitives/LanguageTabs.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('keyless')!;
+---
+
+<ApiReference product={product} languages={['yaml', 'bash', 'python']}>
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">Configure signing</h3>
+    <LanguageTabs tabs={[{id:'yaml',label:'GitHub Action'},{id:'bash',label:'CLI'},{id:'python',label:'Python'}]}>
+      <div slot="yaml" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# .github/workflows/release.yml
+on: { release: { types: [created] } }
+permissions: { id-token: write, contents: write }
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: confium/action@v1
+        with:
+          artifact: release.tar.gz`}</code></pre>
+      </div>
+      <div slot="bash" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# Local verify
+confium keyless verify \\
+    --artifact release.tar.gz \\
+    --signature sig.bin \\
+    --cert cert.pem`}</code></pre>
+      </div>
+      <div slot="python" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium.keyless import verify
+
+verify(
+    artifact="release.tar.gz",
+    signature="sig.bin",
+    certificate="cert.pem",
+)
+# → True (cert issued to GitHub repo via OIDC)`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+</ApiReference>

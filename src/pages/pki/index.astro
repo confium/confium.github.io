@@ -1,0 +1,52 @@
+---
+import Minisite from '../../layouts/Minisite.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+---
+
+<Minisite product={product}>
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">What is {product.name}?</h2>
+    <p class="text-gray-700 leading-relaxed">{product.description}</p>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Key Features</h2>
+    <div class="grid md:grid-cols-2 gap-4">
+      {product.features.map((f) => (
+        <div class="border border-gray-200 rounded-lg p-4">
+          <p class="font-medium">{f}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Quick Start</h2>
+    <div class="bg-gray-900 text-gray-100 rounded-lg p-4 font-mono text-sm">
+      <div class="text-gray-400"># Install</div>
+      <div>{product.install}</div>
+    </div>
+  </section>
+
+  <section class="mb-12">
+    <h2 class="text-2xl font-bold mb-4">Who is this for?</h2>
+    <div class="grid md:grid-cols-3 gap-4">
+      {product.audience.map((a) => (
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p class="font-medium">{a}</p>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section>
+    <h2 class="text-2xl font-bold mb-4">Crates</h2>
+    <div class="flex flex-wrap gap-2">
+      {product.crates.map((c) => (
+        <code class="bg-gray-100 px-2 py-1 rounded text-sm">{c}</code>
+      ))}
+    </div>
+  </section>
+</Minisite>

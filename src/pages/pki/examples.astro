@@ -1,0 +1,27 @@
+---
+import Examples from '../../components/astro/minisite/Examples.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+---
+
+<Examples product={product}>
+  <div class="grid md:grid-cols-2 gap-6">
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/pki_issue_cert.rs" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Issue a cert from threshold keys</h4>
+      <p class="text-sm text-gray-700 mt-2">Combine threshold signing with X.509 issuance.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/pki_pkcs11_server.yaml" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">PKCS#11 server deployment</h4>
+      <p class="text-sm text-gray-700 mt-2">Drop-in replacement for an HSM-backed PKCS#11 module.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/pki_openssl_provider.conf" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">OpenSSL provider config</h4>
+      <p class="text-sm text-gray-700 mt-2">Use Confium from OpenSSL 3.0 without changing application code.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/pki_composite_sign.py" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Composite signing</h4>
+      <p class="text-sm text-gray-700 mt-2">Sign with classical + PQ keys; verify either component.</p>
+    </a>
+  </div>
+</Examples>

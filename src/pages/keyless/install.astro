@@ -1,0 +1,27 @@
+---
+import Install from '../../components/astro/minisite/Install.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('keyless')!;
+---
+
+<Install product={product}>
+  <div class="space-y-8">
+    <div>
+      <h3 class="font-bold text-lg mb-2">GitHub Action</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>uses: confium/action@v1</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">GitLab CI</h3>
+      <p class="text-sm text-gray-700">See <a href="/keyless/docs/gitlab" class="text-blue-600 hover:underline">GitLab CI integration</a>.</p>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">CLI (local verification)</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo install --locked confium-cli</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Browser verifier</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>npm install @confium/confium-wasm</code></pre>
+    </div>
+  </div>
+</Install>

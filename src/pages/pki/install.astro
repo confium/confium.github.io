@@ -1,0 +1,42 @@
+---
+import Install from '../../components/astro/minisite/Install.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+---
+
+<Install product={product}>
+  <div class="space-y-8">
+    <div>
+      <h3 class="font-bold text-lg mb-2">Rust crate</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo add confium-pki
+# Full PKI product surface:
+cargo add confium-pki --features full</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">PKCS#11 server (HSM replacement)</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>docker pull confium/pkcs11-server:latest
+docker run -p 2345:2345 -v ./shares:/etc/confium/shares:ro confium/pkcs11-server</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">OpenSSL 3.0 provider</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo install confium-openssl-provider
+# Add to openssl.conf:
+# provider = confium
+# /usr/lib/ossl-modules/confium.so</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">JCE provider (Java)</h3>
+      <p class="text-sm text-gray-700 mb-3">Download the JAR; add to classpath:</p>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>&lt;dependency&gt;
+  &lt;groupId&gt;org.confium&lt;/groupId&gt;
+  &lt;artifactId&gt;confium-jce&lt;/artifactId&gt;
+  &lt;version&gt;0.3.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">TLS signer</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>docker pull confium/tls-signer:latest</code></pre>
+    </div>
+  </div>
+</Install>

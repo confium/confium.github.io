@@ -1,0 +1,50 @@
+---
+import Quickstart from '../../components/astro/minisite/Quickstart.astro';
+import Steps from '../../components/astro/primitives/Steps.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+const steps = [
+  { title: 'Install', description: 'cargo install --locked confium-cli' },
+  { title: 'Parse a cert', description: 'Inspect an existing X.509 certificate.' },
+  { title: 'Verify a cert chain', description: 'Verify a leaf cert against an anchor.' },
+  { title: 'Composite sign (PQ migration)', description: 'Sign a payload with classical + PQ keys.' },
+  { title: 'Verify composite', description: 'Verify the composite signature.' },
+];
+---
+
+<Quickstart product={product} intro="Parse, verify, and produce PQ-composite signatures — the three things every PKI integration needs.">
+  <Steps steps={steps}>
+    <span slot="step-1" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo install --locked confium-cli</code></pre>
+    </span>
+    <span slot="step-2" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium pki parse-cert --in example.der
+# Subject: CN=example.com
+# Issuer: CN=Confium Test CA
+# Serial: 4A:3F:...
+# Not After: 2027-08-07T00:00:00Z</code></pre>
+    </span>
+    <span slot="step-3" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium pki verify \\
+    --cert example.der \\
+    --anchor root.der
+# → valid</code></pre>
+    </span>
+    <span slot="step-4" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium pki composite-sign \\
+    --message "hello" \\
+    --classical-key ed25519.key \\
+    --pq-key mldsa.key \\
+    --out composite-sig.bin</code></pre>
+    </span>
+    <span slot="step-5" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium pki composite-verify \\
+    --message "hello" \\
+    --signature composite-sig.bin \\
+    --classical-pubkey ed25519.pub \\
+    --pq-pubkey mldsa.pub
+# → valid</code></pre>
+    </span>
+  </Steps>
+</Quickstart>

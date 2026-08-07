@@ -1,0 +1,8 @@
+---
+import UseCases from '../../components/astro/minisite/UseCases.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('pki')!;
+---
+
+<UseCases product={product} intro="PKI patterns enabled by threshold signing:" />

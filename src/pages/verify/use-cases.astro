@@ -1,0 +1,8 @@
+---
+import UseCases from '../../components/astro/minisite/UseCases.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('verify')!;
+---
+
+<UseCases product={product} intro="Verify-side patterns: browser, edge, server, CI:" />

@@ -1,0 +1,27 @@
+---
+import Examples from '../../components/astro/minisite/Examples.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('keyless')!;
+---
+
+<Examples product={product}>
+  <div class="grid md:grid-cols-2 gap-6">
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/keyless_github_action.yml" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">GitHub Action</h4>
+      <p class="text-sm text-gray-700 mt-2">Complete release workflow with keyless signing.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/keyless_gitlab_ci.yml" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">GitLab CI</h4>
+      <p class="text-sm text-gray-700 mt-2">Same flow for GitLab; uses GitLab OIDC.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/keyless_python_verify.py" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Python verifier</h4>
+      <p class="text-sm text-gray-700 mt-2">Drop into a release pipeline.</p>
+    </a>
+    <a href="https://github.com/confium/confium/tree/main/crates/confium-examples/examples/keyless_browser_verify.html" class="border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-all block">
+      <h4 class="font-bold">Browser verifier</h4>
+      <p class="text-sm text-gray-700 mt-2">Static HTML page using WASM.</p>
+    </a>
+  </div>
+</Examples>

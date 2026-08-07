@@ -1,0 +1,38 @@
+---
+import DocsIndex from '../../components/astro/minisite/DocsIndex.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('verify')!;
+---
+
+<DocsIndex product={product}>
+  <div class="space-y-8 mt-12">
+    <div>
+      <h3 class="font-bold text-lg mb-3">Concepts</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/verify/concepts/verifier-only" class="text-blue-600 hover:underline">Verifier-only design philosophy</a></li>
+        <li>→ <a href="/docs/verify/concepts/provenance" class="text-blue-600 hover:underline">Provenance & transparency-log anchoring</a></li>
+        <li>→ <a href="/docs/verify/concepts/batch-verify" class="text-blue-600 hover:underline">Batch verification + LRU cache</a></li>
+        <li>→ <a href="/docs/verify/concepts/bindings" class="text-blue-600 hover:underline">Language bindings parity model</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">How-to</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="/docs/verify/how-to/wasm-in-spa" class="text-blue-600 hover:underline">Embed WASM in a SPA</a></li>
+        <li>→ <a href="/docs/verify/how-to/ci-gate" class="text-blue-600 hover:underline">Add verify gate to CI</a></li>
+        <li>→ <a href="/docs/verify/how-to/server-deploy" class="text-blue-600 hover:underline">Deploy verify-server</a></li>
+        <li>→ <a href="/docs/verify/how-to/dashboard" class="text-blue-600 hover:underline">Real-time verify dashboard</a></li>
+      </ul>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-3">Reference</h3>
+      <ul class="space-y-2 text-sm">
+        <li>→ <a href="https://www.npmjs.com/package/@confium/confium-wasm" class="text-blue-600 hover:underline" target="_blank">npm package</a></li>
+        <li>→ <a href="/bindings/parity" class="text-blue-600 hover:underline">Bindings parity matrix</a></li>
+        <li>→ <a href="/specs/61-wasm-verifier" class="text-blue-600 hover:underline">WASM verifier spec</a></li>
+        <li>→ <a href="/specs/62-http-verify" class="text-blue-600 hover:underline">HTTP verify spec</a></li>
+      </ul>
+    </div>
+  </div>
+</DocsIndex>

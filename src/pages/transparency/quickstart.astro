@@ -1,0 +1,48 @@
+---
+import Quickstart from '../../components/astro/minisite/Quickstart.astro';
+import Steps from '../../components/astro/primitives/Steps.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('transparency')!;
+const steps = [
+  { title: 'Install', description: 'cargo install --locked confium-cli' },
+  { title: 'Start a local log', description: 'Run an RFC 6962 log server in the background.' },
+  { title: 'Append an entry', description: 'Add an artifact hash to the log.' },
+  { title: 'Prove inclusion', description: 'Generate an inclusion proof for a specific entry.' },
+  { title: 'Verify', description: 'Verify the proof against the tree head.' },
+];
+---
+
+<Quickstart product={product} intro="Stand up a local RFC 6962 transparency log, append an entry, and produce a verifiable inclusion proof — in 5 minutes.">
+  <Steps steps={steps}>
+    <span slot="step-1" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo install --locked confium-cli
+confium --version</code></pre>
+    </span>
+    <span slot="step-2" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium transparency serve \\
+    --data ./log.db \\
+    --port 7878 &
+# Log server is now running on localhost:7878</code></pre>
+    </span>
+    <span slot="step-3" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium transparency append \\
+    --artifact-hash sha256:$(printf "hello" | sha256sum | cut -d' ' -f1) \\
+    --url http://localhost:7878
+# → appended at sequence 0</code></pre>
+    </span>
+    <span slot="step-4" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium transparency prove \\
+    --seq 0 \\
+    --url http://localhost:7878 \\
+    --out ./proof.json
+# → inclusion proof written to ./proof.json</code></pre>
+    </span>
+    <span slot="step-5" class="block mt-2">
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>confium transparency verify \\
+    --proof ./proof.json \\
+    --root &lt;(confium transparency root --url http://localhost:7878)
+# → valid</code></pre>
+    </span>
+  </Steps>
+</Quickstart>

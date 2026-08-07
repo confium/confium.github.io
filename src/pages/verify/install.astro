@@ -1,0 +1,31 @@
+---
+import Install from '../../components/astro/minisite/Install.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('verify')!;
+---
+
+<Install product={product}>
+  <div class="space-y-8">
+    <div>
+      <h3 class="font-bold text-lg mb-2">npm (browser / Node)</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>npm install @confium/confium-wasm</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">PyPI</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>pip install confium</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">RubyGems</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>gem install confium</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">Go</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>go get github.com/confium/confium-go</code></pre>
+    </div>
+    <div>
+      <h3 class="font-bold text-lg mb-2">HTTP service</h3>
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>docker pull confium/verify-server:latest</code></pre>
+    </div>
+  </div>
+</Install>

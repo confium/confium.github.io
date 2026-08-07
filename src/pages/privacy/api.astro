@@ -1,0 +1,31 @@
+---
+import ApiReference from '../../components/astro/minisite/ApiReference.astro';
+import LanguageTabs from '../../components/astro/primitives/LanguageTabs.astro';
+import { getProduct } from '../../data/products';
+
+const product = getProduct('privacy')!;
+---
+
+<ApiReference product={product} languages={['rust', 'python']}>
+  <section class="mb-12">
+    <h3 class="text-xl font-bold mb-4">PSI (ECDH-based)</h3>
+    <LanguageTabs tabs={[{id:'rust',label:'Rust'},{id:'python',label:'Python'}]}>
+      <div slot="rust" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`use confium_privacy::psi::EcdhPsi;
+
+let server = EcdhPsi::new(["a@example.com".to_string()]);
+let req = server.request();
+let resp = server.respond(["a@example.com".as_bytes(), "b@example.com".as_bytes()]);
+let intersection = EcdhPsi::client_compute(&req, &resp);`}</code></pre>
+      </div>
+      <div slot="python" class="mt-4">
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium.privacy import EcdhPsi
+
+server = EcdhPsi(["a@example.com"])
+request = server.request()
+response = server.respond([b"a@example.com", b"b@example.com"])
+intersection = EcdhPsi.client_compute(request, response)`}</code></pre>
+      </div>
+    </LanguageTabs>
+  </section>
+</ApiReference>
