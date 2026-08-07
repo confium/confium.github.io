@@ -1,0 +1,33 @@
+---
+import { getProduct } from '../../../data/products';
+import type { UseCase } from '../../../data/audiences';
+
+interface Props {
+  useCase: UseCase;
+}
+
+const { useCase } = Astro.props;
+const products = useCase.productSlugs
+  .map((slug) => getProduct(slug))
+  .filter(Boolean);
+---
+
+<div class="border border-gray-200 rounded-lg p-5 hover:shadow-md transition-all">
+  <h3 class="font-bold text-lg">{useCase.title}</h3>
+  <p class="text-sm text-gray-700 mt-2 leading-relaxed">{useCase.summary}</p>
+
+  {products.length > 0 && (
+    <div class="flex flex-wrap gap-1 mt-4">
+      <span class="text-xs text-gray-500 mr-1">Products:</span>
+      {products.map((p) => (
+        <a
+          href={`/${p!.slug}/`}
+          class="text-xs px-2 py-0.5 rounded-full hover:underline no-underline"
+          style={`background: ${p!.accentColor}20; color: ${p!.accentColor}`}
+        >
+          {p!.name}
+        </a>
+      ))}
+    </div>
+  )}
+</div>

@@ -1,0 +1,45 @@
+---
+import Minisite from '../../../layouts/Minisite.astro';
+import UseCaseCard from '../../astro/primitives/UseCaseCard.astro';
+import type { Product } from '../../../data/products';
+import { useCasesForProduct } from '../../../data/audiences';
+
+interface Props {
+  product: Product;
+  intro?: string;
+}
+
+const { product, intro } = Astro.props;
+const title = `${product.name} — Use Cases`;
+const useCases = useCasesForProduct(product.slug);
+---
+
+<Minisite product={product} title={title}>
+  <section class="mb-8">
+    <h2 class="text-2xl font-bold mb-4">Use cases</h2>
+    {intro ? (
+      <p class="text-gray-700 leading-relaxed">{intro}</p>
+    ) : (
+      <p class="text-gray-700 leading-relaxed">
+        Real-world deployments patterns for {product.name}. Each use case links
+        to the audiences that primarily care about it.
+      </p>
+    )}
+  </section>
+
+  {useCases.length === 0 ? (
+    <div class="border border-gray-200 rounded-lg p-6 text-gray-600">
+      Use cases for {product.name} are being written. Check back soon, or
+      contribute one via a PR to
+      <code class="bg-gray-100 px-1 py-0.5 rounded">src/data/audiences/index.ts</code>.
+    </div>
+  ) : (
+    <div class="space-y-4">
+      {useCases.map((uc) => (
+        <UseCaseCard useCase={uc} />
+      ))}
+    </div>
+  )}
+
+  <slot />
+</Minisite>

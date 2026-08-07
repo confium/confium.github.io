@@ -1,0 +1,43 @@
+---
+interface Step {
+  title: string;
+  description?: string;
+}
+
+interface Props {
+  steps?: Step[];
+}
+
+const { steps = [] } = Astro.props;
+const hasSteps = steps.length > 0;
+const autoIds = hasSteps
+  ? steps.map((_, i) => `step-${i}-${Math.random().toString(36).slice(2, 6)}`)
+  : [];
+---
+
+{hasSteps ? (
+  <ol class="space-y-6">
+    {steps.map((step, i) => (
+      <li class="flex gap-4" id={autoIds[i]}>
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold">
+          {i + 1}
+        </div>
+        <div class="flex-1 pt-1">
+          <h3 class="font-bold">{step.title}</h3>
+          {step.description && (
+            <p class="text-gray-700 mt-1 leading-relaxed">{step.description}</p>
+          )}
+          {i === 0 && <slot name="step-1" />}
+          {i === 1 && <slot name="step-2" />}
+          {i === 2 && <slot name="step-3" />}
+          {i === 3 && <slot name="step-4" />}
+          {i === 4 && <slot name="step-5" />}
+        </div>
+      </li>
+    ))}
+  </ol>
+) : (
+  <div class="space-y-6">
+    <slot />
+  </div>
+)}
