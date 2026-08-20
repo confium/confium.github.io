@@ -20,6 +20,7 @@ const adocFrontmatter = z.object({
   author: z.string().optional(),
   tags: z.array(z.string()).default([]),
   category: z.string().optional(),
+  order: z.number().optional(),
 });
 
 const mdFrontmatter = z.object({

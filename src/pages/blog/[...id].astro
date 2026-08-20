@@ -28,7 +28,7 @@ const dateStr = post.data.date
   : '';
 
 // Reading time: rough estimate from word count. ~225 wpm for technical prose.
-const body = post.body;
+const body = post.body ?? '';
 const words = body.split(/\s+/).filter(Boolean).length;
 const readingMinutes = Math.max(1, Math.round(words / 225));
 
