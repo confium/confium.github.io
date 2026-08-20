@@ -149,7 +149,7 @@
 
     <footer class="footer">
       <p>
-        Want this in your terminal? <a href="/getting-started/">Install Confium CLI</a> — same APIs, runs locally.
+        Want this in your terminal? <a href="/docs/getting-started/">Install Confium CLI</a> — same APIs, runs locally.
       </p>
       <p>
         Questions? <a href="https://github.com/confium/confium/discussions">GitHub Discussions</a>.

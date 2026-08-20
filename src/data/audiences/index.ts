@@ -25,7 +25,7 @@ export const audiences: Audience[] = [
     journey: [
       { title: '1. Evaluate', description: 'Read the Threshold product overview.', href: '/threshold/' },
       { title: '2. Prototype', description: 'Run a 3-party local DKG.', href: '/threshold/quickstart/' },
-      { title: '3. Deploy', description: 'Stand up a production signerd cluster.', href: '/threshold/docs/deploy/' },
+      { title: '3. Deploy', description: 'Stand up a production signerd cluster.', href: '/threshold/docs/' },
     ],
   },
   {
@@ -36,7 +36,7 @@ export const audiences: Audience[] = [
     useCaseSlugs: ['cicd-signing', 'k8s-operator-deploy', 'monitoring-alerting', 'policy-enforcement'],
     journey: [
       { title: '1. Evaluate', description: 'Read the Threshold + Verify overviews.', href: '/threshold/' },
-      { title: '2. Deploy', description: 'Use the Kubernetes operator recipe.', href: '/threshold/docs/deploy-k8s/' },
+      { title: '2. Deploy', description: 'Use the Kubernetes operator recipe.', href: '/threshold/docs/' },
       { title: '3. Verify', description: 'Add CI verification gate.', href: '/verify/quickstart/' },
     ],
   },
@@ -73,7 +73,7 @@ export const audiences: Audience[] = [
     journey: [
       { title: '1. Evaluate', description: 'Read the Transparency product overview.', href: '/transparency/' },
       { title: '2. Verify', description: 'Run an inclusion proof against a log.', href: '/transparency/quickstart/' },
-      { title: '3. Archive', description: 'Configure ERS long-term archival.', href: '/transparency/docs/ers/' },
+      { title: '3. Archive', description: 'Configure ERS long-term archival.', href: '/transparency/docs/' },
     ],
   },
   {
@@ -85,7 +85,7 @@ export const audiences: Audience[] = [
     journey: [
       { title: '1. Evaluate', description: 'Read Threshold + Privacy overviews.', href: '/threshold/' },
       { title: '2. Prototype', description: 'Run a CMP20 sign ceremony.', href: '/threshold/quickstart/' },
-      { title: '3. Adapt', description: 'Apply adaptor signatures for atomic swaps.', href: '/privacy/docs/adaptor-sigs/' },
+      { title: '3. Adapt', description: 'Apply adaptor signatures for atomic swaps.', href: '/privacy/docs/' },
     ],
   },
   {
@@ -97,7 +97,7 @@ export const audiences: Audience[] = [
     journey: [
       { title: '1. Evaluate', description: 'Read the Privacy product overview.', href: '/privacy/' },
       { title: '2. Prototype', description: 'Run a two-party PSI.', href: '/privacy/quickstart/' },
-      { title: '3. Deploy', description: 'Integrate with your application.', href: '/privacy/docs/integrate/' },
+      { title: '3. Deploy', description: 'Integrate with your application.', href: '/privacy/docs/' },
     ],
   },
   {
@@ -109,7 +109,7 @@ export const audiences: Audience[] = [
     journey: [
       { title: '1. Evaluate', description: 'Read the Verify product overview.', href: '/verify/' },
       { title: '2. Embed', description: 'Drop the WASM snippet into your page.', href: '/verify/quickstart/' },
-      { title: '3. Scale', description: 'Deploy verify-server for batch verification.', href: '/verify/docs/server/' },
+      { title: '3. Scale', description: 'Deploy verify-server for batch verification.', href: '/verify/docs/' },
     ],
   },
 ];
