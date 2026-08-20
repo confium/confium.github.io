@@ -108,7 +108,7 @@ end`}></code></pre>
       <p>
         For the full walkthrough (install, parse cert, validate chain,
         anchor in transparency log), see the
-        <a href="https://github.com/confium/confium-ruby/tree/main/docs/sinatra-verifier.mdx">Sinatra verifier quickstart</a>
+        <a href="https://github.com/confium/confium-ruby/tree/main/docs/examples.mdx">Sinatra verifier quickstart</a>
         in the Ruby gem docs.
       </p>
     </Reveal>
@@ -144,7 +144,7 @@ let sig = FrostP256::sign(&amp;kp.private_key, b"threshold test")?;
 println!("der: &#123;&#125;, fixed: &#123;&#125;", sig.der.len(), sig.fixed.len());</code></pre>
       <p>
         The full end-to-end walkthrough lives in the
-        <a href="https://github.com/confium/confium/tree/main/docs/threshold-signing.mdx">threshold-signing example</a>
+        <a href="https://github.com/confium/confium-ruby/tree/main/examples/threshold_signing.rb">threshold-signing example</a>
         in the Rust workspace docs.
       </p>
     </Reveal>
@@ -195,7 +195,7 @@ console.log(result.per_component);     // { Ed25519: true, ... }`}></code></pre>
         the keys as advisory and defensively check for presence.
       </p>
       <p>
-        See the <a href="https://github.com/confium/confium-ruby/tree/main/docs/.mdx">error handling guide</a>
+        See the <a href="https://github.com/confium/confium-ruby/tree/main/docs/error-handling.mdx">error handling guide</a>
         for HTTP-status mapping and rescue patterns.
       </p>
     </Reveal>
@@ -203,7 +203,7 @@ console.log(result.per_component);     // { Ed25519: true, ... }`}></code></pre>
     <Reveal>
       <h2>Where to read next</h2>
       <ul>
-        <li><strong>Ruby API reference</strong> — <a href="https://github.com/confium/confium-ruby/tree/main/docs/.mdx">all 11 subsystems documented</a>.</li>
+        <li><strong>Ruby API reference</strong> — <a href="https://github.com/confium/confium-ruby/tree/main/docs/api-reference.mdx">all 11 subsystems documented</a>.</li>
         <li><strong>Rust workspace map</strong> — <a href="/software/rust/docs/">43-crate layout</a>.</li>
         <li><strong>Sinatra verifier quickstart</strong> — the canonical end-to-end Ruby example.</li>
         <li><strong>Threshold signing example</strong> — the canonical end-to-end Rust example.</li>
