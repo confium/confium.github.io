@@ -50,8 +50,8 @@ const sidebar = docs
       <p>
         Documentation for {sw.data.name} has not been pulled yet. The site
         build runs <code>scripts/fetch-sources.mjs</code> to sparse-checkout
-        <code>{sw.data.docs_repo}/{sw.data.docs_subtree}/</code> into
-        <code>vendor/{sw.id}/</code> at build time. If this message persists
+        <code>&#123;sw.data.docs_repo&#125;/&#123;sw.data.docs_subtree&#125;/</code> into
+        <code>vendor/&#123;sw.id&#125;/</code> at build time. If this message persists
         after a fresh build, the upstream repo may be unreachable.
       </p>
     ) : (

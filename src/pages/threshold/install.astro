@@ -13,7 +13,7 @@ const product = getProduct('threshold')!;
       <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>cargo add confium-threshold</code></pre>
       <p class="text-xs text-gray-500 mt-2">
         Or pin specific schemes via features:
-        <code class="bg-gray-100 px-1 rounded">confium-threshold = { version = "0.4", features = ["cmp20", "frost-p256"] }</code>
+        <code class="bg-gray-100 px-1 rounded">confium-threshold = &#123; version = "0.4", features = ["cmp20", "frost-p256"] &#125;</code>
       </p>
     </div>
 
@@ -37,7 +37,7 @@ docker run -d \
       <h3 class="font-bold text-lg mb-2">Kubernetes operator</h3>
       <p class="text-sm text-gray-700 mb-3">For declarative share management.</p>
       <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>kubectl apply -f https://confium.org/operator.yaml
-kubectl apply -f - <<EOF
+kubectl apply -f - &lt;&lt;EOF
 apiVersion: confium.org/v1
 kind: ThresholdKey
 metadata:

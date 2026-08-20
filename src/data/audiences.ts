@@ -9,7 +9,13 @@
  * the docs schema uses singular forms (`developer`, `executive`)
  * while the page slugs are plural (`developers`, `executives`).
  * Components should look up via `resolveAudience(name)`.
+ *
+ * This file re-exports `src/data/audiences/index.ts` so both the
+ * page list (AUDIENCES) and the rich use-case model resolve from
+ * the same import path.
  */
+
+export * from './audiences/index';
 
 export const AUDIENCES = [
   { slug: 'executives', name: 'Executives', tagline: 'Business value, risk, and compliance', aliases: ['executive'] },

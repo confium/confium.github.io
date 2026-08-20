@@ -11,9 +11,9 @@ const product = getProduct('keyless')!;
     <h3 class="text-xl font-bold mb-4">Configure signing</h3>
     <LanguageTabs tabs={[{id:'yaml',label:'GitHub Action'},{id:'bash',label:'CLI'},{id:'python',label:'Python'}]}>
       <div slot="yaml" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# .github/workflows/release.yml
-on: { release: { types: [created] } }
-permissions: { id-token: write, contents: write }
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`# .github/workflows/release.yml
+on: &#123; release: &#123; types: [created] &#125; &#125;
+permissions: &#123; id-token: write, contents: write &#125;
 jobs:
   sign:
     runs-on: ubuntu-latest
@@ -21,24 +21,24 @@ jobs:
       - uses: actions/checkout@v4
       - uses: confium/action@v1
         with:
-          artifact: release.tar.gz`}</code></pre>
+          artifact: release.tar.gz`&#125;</code></pre>
       </div>
       <div slot="bash" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# Local verify
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`# Local verify
 confium keyless verify \\
     --artifact release.tar.gz \\
     --signature sig.bin \\
-    --cert cert.pem`}</code></pre>
+    --cert cert.pem`&#125;</code></pre>
       </div>
       <div slot="python" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium.keyless import verify
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`from confium.keyless import verify
 
 verify(
     artifact="release.tar.gz",
     signature="sig.bin",
     certificate="cert.pem",
 )
-# → True (cert issued to GitHub repo via OIDC)`}</code></pre>
+# → True (cert issued to GitHub repo via OIDC)`&#125;</code></pre>
       </div>
     </LanguageTabs>
   </section>

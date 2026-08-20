@@ -1,0 +1,55 @@
+---
+import { products, type Product } from '../data/products';
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  product: Product;
+  title?: string;
+}
+
+const { product, title } = Astro.props;
+const pageTitle = title || product.name;
+---
+
+<BaseLayout title={pageTitle}>
+  <style define:vars={{ accent: product.accentColor }}>
+    .product-hero {
+      background: linear-gradient(135deg, var(--accent)15, transparent);
+      border-bottom: 3px solid var(--accent);
+    }
+    .product-accent { color: var(--accent); }
+    .product-badge {
+      background: var(--accent)20;
+      color: var(--accent);
+      border: 1px solid var(--accent)40;
+    }
+  </style>
+  <div class="product-hero py-12 px-4">
+    <div class="max-w-4xl mx-auto">
+      <a href="/" class="text-sm text-gray-500 hover:text-gray-700">← All Products</a>
+      <h1 class="text-4xl font-bold mt-4">
+        <span class="product-accent">{product.name}</span>
+      </h1>
+      <p class="text-xl text-gray-600 mt-2">{product.tagline}</p>
+      <div class="flex flex-wrap gap-2 mt-4">
+        {product.audience.map((a) => (
+          <span class="product-badge px-3 py-1 rounded-full text-sm">{a}</span>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <nav class="border-b border-gray-200 bg-white sticky top-0 z-10">
+    <div class="max-w-4xl mx-auto flex gap-6 px-4 py-3">
+      <a href={`/${product.slug}/`} class="text-sm font-medium hover:product-accent">Overview</a>
+      <a href={`/${product.slug}/quickstart/`} class="text-sm font-medium hover:product-accent">Quickstart</a>
+      <a href={`/${product.slug}/docs/`} class="text-sm font-medium hover:product-accent">Docs</a>
+      <a href={`/${product.slug}/use-cases/`} class="text-sm font-medium hover:product-accent">Use Cases</a>
+      <a href={`/${product.slug}/api/`} class="text-sm font-medium hover:product-accent">API</a>
+    </div>
+  </nav>
+
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <slot />
+  </main>
+</BaseLayout>

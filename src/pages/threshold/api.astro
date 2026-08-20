@@ -11,7 +11,7 @@ const product = getProduct('threshold')!;
     <h3 class="text-xl font-bold mb-4">Canonical flow: DKG → sign → verify</h3>
     <LanguageTabs>
       <div slot="rust" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`// Cargo.toml: confium-threshold = { version = "0.4", features = ["cmp20"] }
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`// Cargo.toml: confium-threshold = &#123; version = "0.4", features = ["cmp20"] &#125;
 use confium_threshold::cmp20;
 
 // 1. DKG (3 parties, threshold 2)
@@ -25,10 +25,10 @@ let sig = cmp20::sign(
 )?;
 
 // 3. Verify with the joint public key
-assert!(cmp20::verify(&sig, &keygen.public_key, b"hello")?);`}</code></pre>
+assert!(cmp20::verify(&sig, &keygen.public_key, b"hello")?);`&#125;</code></pre>
       </div>
       <div slot="cli" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# DKG
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`# DKG
 confium threshold dkg --parties 3 --threshold 2 --scheme cmp20 --out ./shares/
 
 # Sign with 2 of 3 shares
@@ -41,10 +41,10 @@ confium threshold sign \\
 confium verify ecdsa-p256 \\
     --message "hello" \\
     --signature ./sig.der \\
-    --public-key ./shares/public.json`}</code></pre>
+    --public-key ./shares/public.json`&#125;</code></pre>
       </div>
       <div slot="python" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# pip install confium
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`# pip install confium
 from confium.tc import Cmp20
 
 # DKG
@@ -54,10 +54,10 @@ kg = Cmp20.keygen(threshold=2, parties=3)
 sig = Cmp20.sign([kg.shares[0], kg.shares[1]], threshold=2, message=b"hello")
 
 # Verify
-assert Cmp20.verify(sig, kg.public_key, b"hello")`}</code></pre>
+assert Cmp20.verify(sig, kg.public_key, b"hello")`&#125;</code></pre>
       </div>
       <div slot="ruby" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`# gem install confium
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`# gem install confium
 require 'confium'
 
 # DKG
@@ -69,7 +69,7 @@ sig = Confium::TC::Cmp20.sign([kg.shares[0], kg.shares[1]],
                               message: "hello")
 
 # Verify
-raise unless Confium::TC::Cmp20.verify(sig, kg.public_key, "hello")`}</code></pre>
+raise unless Confium::TC::Cmp20.verify(sig, kg.public_key, "hello")`&#125;</code></pre>
       </div>
     </LanguageTabs>
   </section>
