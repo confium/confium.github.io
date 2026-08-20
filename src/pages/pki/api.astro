@@ -11,23 +11,23 @@ const product = getProduct('pki')!;
     <h3 class="text-xl font-bold mb-4">Parse + verify a certificate</h3>
     <LanguageTabs tabs={[{id:'rust',label:'Rust'},{id:'cli',label:'CLI'},{id:'python',label:'Python'}]}>
       <div slot="rust" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`use confium_pki::Certificate;
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`use confium_pki::Certificate;
 
 let cert = Certificate::from_der(&der_bytes)?;
-println!("Subject: {}", cert.subject());
-println!("Not after: {}", cert.not_after());
-cert.verify_chain(&[root_cert])?;`}</code></pre>
+println!("Subject: &#123;&#125;", cert.subject());
+println!("Not after: &#123;&#125;", cert.not_after());
+cert.verify_chain(&[root_cert])?;`&#125;</code></pre>
       </div>
       <div slot="cli" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`confium pki parse-cert --in cert.der
-confium pki verify --cert cert.der --anchor root.der`}</code></pre>
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`confium pki parse-cert --in cert.der
+confium pki verify --cert cert.der --anchor root.der`&#125;</code></pre>
       </div>
       <div slot="python" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium.pki import Certificate
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`from confium.pki import Certificate
 
 cert = Certificate.from_der(der_bytes)
 print("Subject:", cert.subject)
-cert.verify_chain([root_cert])`}</code></pre>
+cert.verify_chain([root_cert])`&#125;</code></pre>
       </div>
     </LanguageTabs>
   </section>
@@ -36,21 +36,21 @@ cert.verify_chain([root_cert])`}</code></pre>
     <h3 class="text-xl font-bold mb-4">Composite signature (PQ migration)</h3>
     <LanguageTabs tabs={[{id:'rust',label:'Rust'},{id:'cli',label:'CLI'}]}>
       <div slot="rust" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`use confium_composite::{CompositeSignature, Component};
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`use confium_composite::&#123;CompositeSignature, Component&#125;;
 
 let sig = CompositeSignature::sign_multi(
     &[("ed25519", &ed_privkey), ("ml-dsa-65", &mldsa_privkey)],
     b"message",
 )?;
-assert!(sig.verify(b"message")?);`}</code></pre>
+assert!(sig.verify(b"message")?);`&#125;</code></pre>
       </div>
       <div slot="cli" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`confium pki composite-sign \\
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`confium pki composite-sign \\
     --message "message" \\
     --classical-key ed25519.key \\
     --pq-key mldsa.key \\
     --out sig.bin
-confium pki composite-verify --message "message" --signature sig.bin`}</code></pre>
+confium pki composite-verify --message "message" --signature sig.bin`&#125;</code></pre>
       </div>
     </LanguageTabs>
   </section>

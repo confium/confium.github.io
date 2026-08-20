@@ -32,7 +32,7 @@ let client_set: Vec&lt;String&gt; = vec!["alice@ex.com".into(), "carol@ex.com".i
 let response = server.respond(client_set.iter().map(|s| s.as_bytes()));
 
 let intersection = EcdhPsi::client_compute(&request, &response);
-// → {"alice@ex.com"}</code></pre>
+// → &#123;"alice@ex.com"&#125;</code></pre>
     </span>
     <span slot="step-4" class="block mt-2">
       <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>// Server never learned client_set.
@@ -45,7 +45,7 @@ use confium_privacy::ring_sig::RingSig;
 use confium_privacy::vrf::Ecvrf;
 
 let sig = RingSig::sign(&privkey, &[pubkey1, pubkey2, pubkey3], msg)?;
-// Verifier can confirm ONE of {pubkey1, pubkey2, pubkey3} signed,
+// Verifier can confirm ONE of &#123;pubkey1, pubkey2, pubkey3&#125; signed,
 // but not which.</code></pre>
     </span>
   </Steps>

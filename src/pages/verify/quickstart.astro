@@ -20,7 +20,7 @@ const steps = [
     </span>
     <span slot="step-2" class="block mt-2">
       <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>// ESM
-import init, { CompositeSignature } from '@confium/confium-wasm';
+import init, &#123; CompositeSignature &#125; from '@confium/confium-wasm';
 await init();  // one-time WASM bootstrap</code></pre>
     </span>
     <span slot="step-3" class="block mt-2">
@@ -29,7 +29,7 @@ const ok = sig.verify(message);
 console.log(ok ? '✅ valid' : '❌ invalid');</code></pre>
     </span>
     <span slot="step-4" class="block mt-2">
-      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>import { verifyInclusionWithHead } from '@confium/confium-wasm';
+      <pre class="bg-gray-900 text-gray-100 p-3 rounded text-sm overflow-x-auto"><code>import &#123; verifyInclusionWithHead &#125; from '@confium/confium-wasm';
 
 const ok = verifyInclusionWithHead(proofJson, headJson);
 console.log(ok ? '✅ in log' : '❌ not in log');</code></pre>
@@ -41,7 +41,7 @@ docker run -p 8080:8080 confium/verify-server
 # Verify via HTTP:
 curl -X POST http://localhost:8080/v1/composite/verify \\
     -H 'Content-Type: application/json' \\
-    -d '{"message":"...","signature":"..."}'</code></pre>
+    -d '&#123;"message":"...","signature":"..."&#125;'</code></pre>
     </span>
   </Steps>
 </Quickstart>

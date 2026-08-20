@@ -141,7 +141,7 @@ assert_eq!(recovered, kp.private_key);
 
 // 5. Sign with the original key (in production, sign with shares).
 let sig = FrostP256::sign(&amp;kp.private_key, b"threshold test")?;
-println!("der: {}, fixed: {}", sig.der.len(), sig.fixed.len());</code></pre>
+println!("der: &#123;&#125;, fixed: &#123;&#125;", sig.der.len(), sig.fixed.len());</code></pre>
       <p>
         The full end-to-end walkthrough lives in the
         <a href="https://github.com/confium/confium/tree/main/docs/examples/threshold-signing.mdx">threshold-signing example</a>

@@ -11,28 +11,28 @@ const product = getProduct('verify')!;
     <h3 class="text-xl font-bold mb-4">Verify a composite signature</h3>
     <LanguageTabs tabs={[{id:'ts',label:'TypeScript'},{id:'python',label:'Python'},{id:'ruby',label:'Ruby'},{id:'bash',label:'HTTP'}]}>
       <div slot="ts" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`import init, { CompositeSignature } from '@confium/confium-wasm';
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`import init, &#123; CompositeSignature &#125; from '@confium/confium-wasm';
 await init();
 
 const sig = new CompositeSignature(components);
-const ok = sig.verify(message);`}</code></pre>
+const ok = sig.verify(message);`&#125;</code></pre>
       </div>
       <div slot="python" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`from confium import CompositeSignature
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`from confium import CompositeSignature
 
 sig = CompositeSignature(components)
-assert sig.verify(message)`}</code></pre>
+assert sig.verify(message)`&#125;</code></pre>
       </div>
       <div slot="ruby" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`require 'confium'
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`require 'confium'
 
 sig = Confium::Composite::Signature.new(components)
-raise unless sig.verify(message)`}</code></pre>
+raise unless sig.verify(message)`&#125;</code></pre>
       </div>
       <div slot="bash" class="mt-4">
-        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>{`curl -X POST http://verify-server:8080/v1/composite/verify \\
+        <pre class="bg-gray-900 text-gray-100 p-4 rounded text-sm overflow-x-auto"><code>&#123;`curl -X POST http://verify-server:8080/v1/composite/verify \\
     -H 'Content-Type: application/json' \\
-    -d '{"message":"...","signature":"..."}'`}</code></pre>
+    -d '&#123;"message":"...","signature":"..."&#125;'`&#125;</code></pre>
       </div>
     </LanguageTabs>
   </section>
