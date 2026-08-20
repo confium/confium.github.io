@@ -13,7 +13,7 @@
  * build failure (corrupt content) is left for Astro to surface.
  */
 
-import { existsSync, readFileSync, mkdirSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -86,7 +86,9 @@ function fetchSoftwareDocs() {
     const id = file.replace(/\.(md|mdx)$/, '');
     const repoHttps = normalizeRepoUrl(fm.docs_repo);
     const subtree = (fm.docs_subtree || 'docs').replace(/^\/+|\/+$/g, '');
-    sparseClone(repoHttps, fm.docs_ref || 'main', join(VENDOR, id), [subtree]);
+    const target = join(VENDOR, id);
+    sparseClone(repoHttps, fm.docs_ref || 'main', target, [subtree]);
+    sanitizeMdxHeaders(target);
   }
 }
 
@@ -96,7 +98,39 @@ function fetchSpecs() {
     console.log('[fetch-sources] no src/content/specs/ — skipping specs');
     return;
   }
-  sparseClone(SPECS_REPO, SPECS_REF, join(VENDOR, 'specs'), ['specs/']);
+  const target = join(VENDOR, 'specs');
+  sparseClone(SPECS_REPO, SPECS_REF, target, ['specs/']);
+  sanitizeMdxHeaders(target);
+}
+
+/**
+ * Patches vendored MDX to survive the MDX 3 parser:
+ *
+ *  - HTML comments at the top of a file (`<!-- ... -->`) are illegal;
+ *    the `<!` is parsed as JSX. Rewrite to MDX-style comments.
+ *  - Markdown autolinks (`<https://...>`) are not accepted by MDX;
+ *    rewrite to explicit `[label](url)` links.
+ */
+function sanitizeMdxHeaders(root) {
+  const files = readdirSync(root, { withFileTypes: true, recursive: true });
+  for (const entry of files) {
+    if (!entry.isFile() || !entry.name.endsWith('.mdx')) continue;
+    const parent = entry.path ?? entry.parentPath ?? root;
+    const path = join(parent, entry.name);
+    const text = readFileSync(path, 'utf8');
+    let sanitized = text;
+    if (sanitized.match(/^<!--/m)) {
+      sanitized = sanitized.replace(/^<!--([\s\S]*?)-->/, '{/*$1*/}');
+    }
+    sanitized = sanitized.replace(
+      /<((?:https?|mailto):[^>\s]+)>/g,
+      (_, url) => `[${url}](${url})`,
+    );
+    if (sanitized !== text) {
+      writeFileSync(path, sanitized);
+      console.log(`[fetch-sources] sanitized ${path}`);
+    }
+  }
 }
 
 /**
