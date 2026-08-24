@@ -1,6 +1,6 @@
 ---
 name: Ruby
-description: "Native Ruby extension (magnus + rb-sys) wrapping the Confium engine. Composite sign + verify, transparency log, PKI + CMS, threshold sessions, attributes DSL. Hard-bundles rnp-rs for OpenPGP armor encode/decode."
+description: "Native Ruby extension (magnus + rb-sys) wrapping the Confium engine. Composite sign + verify, transparency log, PKI + CMS, threshold sessions, attributes DSL, typed errors, JSON transport."
 install_command: "gem install confium"
 docs_repo: "github.com/confium/confium-ruby"
 docs_ref: "main"
@@ -8,25 +8,27 @@ docs_subtree: "docs"
 weight: 2
 ---
 
-The Ruby gem wraps the Rust engine via a native extension built
-at `gem install` time. The full Confium API surface is available
-to Ruby applications.
+The Ruby gem wraps the Rust engine via a pure-Rust native extension
+(`rb_sys` + `magnus`, no C dependencies). Pre-compiled gems are
+published for seven platforms, so most installs need nothing but
+Ruby itself.
 
 ## What's covered
 
 | Subsystem | Ruby surface |
 | --- | --- |
-| **Composite signatures** | `Confium::Composite.sign_ed25519`, `sign_p256`, `verify`, `verify_with` — Ed25519 + ECDSA-P256 composite sign + verify. |
-| **Transparency log** | `Confium::Transparency::MerkleTree`, `InclusionProof` with `#verify_with_leaf` for external auditors, `#verify_consistency` per RFC 6962 §2.1.2. |
-| **PKI** | `Confium::PKI::Certificate`, `CSR.from_pem` / `from_der`, fingerprint + validity + serial accessors. |
-| **CMS SignedData** | `Confium::PKI::SignedData.build_detached`, `#to_der`, `#verify`, `#verify_with_builtin`. |
-| **XMLDSig** | Canonicalize XML prior to signature. |
-| **Attributes DSL** | `Confium::Attributes::Predicate.parse`, `SignerAttributes`, evaluation against a signer set. |
+| **Composite signatures** | `Confium::Composite.sign_ed25519`, `sign_p256`, `Signature.new(components).verify(message)` — Ed25519 + ECDSA-P256 composites with per-component results. |
+| **JSON transport** | `Composite::Signature.components_to_json` / `.from_json` — hex-encoded wire format for moving composites between services. |
+| **Transparency log** | `Confium::Transparency::MerkleTree`, `InclusionProof#verify(root)` / `#verify_with_leaf(leaf, root)`, `#verify_consistency` per RFC 6962. |
+| **PKI** | `Confium::PKI::Certificate.from_pem` / `from_der`, `CSR`, fingerprint + validity + serial accessors, `PathValidator.validate`. |
+| **CMS SignedData** | `SignedData.from_json`, `build_detached`, `CMS::SignedDataBuilder` (Ed25519 + ECDSA-P256 signers). |
+| **XMLDSig** | Canonicalize XML (RFC 3076 + Exclusive C14N) prior to signature. |
+| **Attributes DSL** | `Confium::Attributes.parse`, `Signer`, `Predicate#satisfied_by?` — threshold policy over signer attributes. |
 | **Identity + Config** | `Confium::Identity::Actor`, `Confium::Config::Manifest` (deployment manifest TOML validation). |
-| **Threshold sessions** | `Confium::TC::FrostP256` (Shamir + ECDSA), `ElGamalP256`, `CMP20`, `GG18` — the full threshold protocol surface. |
-| **Long-term archival** | `Confium::ERS::EvidenceRecord` — RFC 4998 Evidence Record Syntax. |
-| **OTS anchoring** | `Confium::OTS` — OpenTimestamps client for anchoring transparency roots in Bitcoin. |
-| **OpenPGP (bundled)** | `Confium::OpenPGP.armor`, `.dearmor` — RFC 9580 OpenPGP armor, hard-bundled via `rnp-rs`. |
+| **Threshold sessions** | `Confium::TC::FrostP256` (Shamir + ECDSA), `ElGamalP256`, `CMP20`, `GG18`, `ShareFile` persistence. |
+| **Long-term archival** | `Confium::ERS::EvidenceRecord` — RFC 4998 evidence records with renewal. |
+| **Typed errors** | `Confium::ParseError`, `VerificationError`, `ThresholdError`, `CryptoError`, `IndexError`, `PolicyViolationError`, ... — every documented failure path, each with a structured `details` Hash. |
+| **OpenPGP armor** | `Confium::OpenPGP.armor` / `.dearmor` — RFC 9580 ASCII armor with CRC-24 verification, pure Ruby. |
 
 ## Install
 
@@ -34,76 +36,84 @@ to Ruby applications.
 gem install confium
 ```
 
-The gem compiles a Rust native extension at install time using
-`rb_sys` + `magnus`. Prerequisites:
+Pre-compiled gems ship for `x86_64-linux`, `aarch64-linux`,
+`x86_64-linux-musl`, `aarch64-linux-musl`, `x86_64-darwin`,
+`arm64-darwin`, and `x64-mingw-ucrt` — each carrying one extension
+per Ruby C-ABI window (3.1, 3.2, 3.3+), so installation on those
+platforms needs only Ruby ≥ 3.1.
 
-- Ruby ≥ 3.1
-- Rust stable 1.85+
-- A C toolchain (`cc`, `make`)
-
-The native extension has `rnp-rs` (OpenPGP, RFC 9580) **hard-bundled** —
-no separate `ruby-rnp` install needed for armor encode/decode.
+Source builds (other platforms, or from the repo) additionally need
+the Rust stable toolchain — and nothing else: the extension is
+pure Rust with no C dependencies.
 
 ## Sign + verify a composite signature
 
 ```ruby
 require "confium"
 
-# Sign
-sig = Confium::Composite.sign_ed25519(
-  message: "hello",
-  secret_key: ed25519_secret_key_bytes,
-)
-puts sig.signature.unpack1("H*")
+kp = Confium::Composite.generate_ed25519_keypair
+component = Confium::Composite.sign_ed25519(kp["private_key"], "hello")
+sig = Confium::Composite::Signature.new([component])
 
-# Verify
-result = Confium::Composite.verify(
-  message: "hello",
-  signature: sig.signature,
-  public_key: ed25519_public_key_bytes,
-)
-puts result.valid?  # => true
+result = sig.verify("hello")
+puts result.all_verified?  # => true
+result.per_component.each_value do |c|
+  puts "#{c['algorithm']}: #{c['verified']}"
+end
 ```
 
-## Anchor a signature in the transparency log
+Move the signature to another service as JSON — binary fields are
+hex-encoded on the wire:
 
 ```ruby
+json = Confium::Composite::Signature.components_to_json([component])
+# ... transport ...
+sig = Confium::Composite::Signature.from_json(json)
+sig.verify("hello").all_verified?  # => true
+```
+
+## Anchor a hash in the transparency log
+
+```ruby
+require "digest"
+
 tree = Confium::Transparency::MerkleTree.new
-seq = tree.append(
-  artifact_type: :threshold_signature,
-  artifact_hash: sha256_of_signature,
-)
+seq = tree.append(Digest::SHA256.digest(artifact_bytes))
+
 proof = tree.inclusion_proof(seq)
+proof.verify(tree.root)  # => true
 
-# External auditor verifies with the published leaf hash + root:
-proof.verify_with_leaf(leaf_hash, root_hash)  # raises on failure
+# External auditor with only the leaf hash + published root:
+proof.verify_with_leaf(leaf_hash, root_hash)  # => true | false
 ```
 
-## Long-term archival via RFC 4998 ERS
+## Typed errors with structured details
 
 ```ruby
-ers = Confium::ERS::EvidenceRecord.new
-ers.add_archival_timestamp(timestamp_token_der)
-ers.add_otss_root(transparency_root_hash, ots_stamp)
-archive_record = ers.to_der  # RFC 4998 ERS envelope
+begin
+  Confium::PKI::Certificate.from_pem(input)
+rescue Confium::ParseError => e
+  e.details  # => { format: "pem", operation: "Certificate.from_pem", ... }
+end
+
+begin
+  Confium::TC::Cmp20.sign(shares, 3, message)
+rescue Confium::ThresholdError => e
+  e.have_count  # => 2
+  e.need_count  # => 3
+end
 ```
 
-The envelope preserves the verifiability of a signature long
-after the original signing algorithm's security has degraded.
-
-## OpenPGP armor (hard-bundled)
+## OpenPGP armor
 
 ```ruby
-require "confium"
-
-# Standard OpenPGP armor — no separate ruby-rnp install needed
 armored = Confium::OpenPGP.armor(raw_bytes, Confium::OpenPGP::PUBLIC_KEY)
-decoded = Confium::OpenPGP.dearmor(armored)
+decoded = Confium::OpenPGP.dearmor(armored)  # verifies the CRC-24
 ```
 
 For full RFC 9580 OpenPGP (key generation, signing, verification,
-encryption), install `ruby-rnp` alongside. The two gems coexist
-without symbol conflict. See
+encryption), install `ruby-rnp` alongside — the two coexist without
+symbol conflict. See
 [Confium and RNP](/concepts/confium-and-rnp/) for the
 sibling-project relationship.
 
@@ -113,4 +123,6 @@ sibling-project relationship.
   — the dual-world pattern (standard PGP + threshold signing).
 - [Long-term archival use case](/use-cases/long-term-archival/)
   — ERS in practice.
-- [`confium-ruby` source](https://github.com/confium/confium-ruby).
+- [Full gem documentation](https://github.com/confium/confium-ruby/tree/main/docs)
+  — installation, API reference, error handling, and the Sinatra
+  verifier quickstart.
