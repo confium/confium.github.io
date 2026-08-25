@@ -75,7 +75,7 @@ Until the C bridge ships, Go consumers have two paths:
 2. **OpenSSL provider** — for Go services that already use
    `crypto/tls`, Confium's OpenSSL 3.0 provider slots in
    without Go-side changes. See
-   [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/).
+   [the PKI product](/pki/).
 
 ## See also
 

@@ -1,33 +1,40 @@
 ---
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import PageHero from '../../components/astro/PageHero.astro';
-import { byOrder, toCardItems, buildSidebar } from '../../lib/nav';
+import { byOrder, buildSidebar, DOC_GROUP_LABELS, DOC_GROUP_ORDER } from '../../lib/nav';
 
 const docs = byOrder(await import('astro:content').then((m) => m.getCollection('docs')));
 const sidebar = await buildSidebar('docs');
-const cards = toCardItems(docs);
+const groups = DOC_GROUP_ORDER
+  .map((key) => ({ key, entries: docs.filter((d) => ((d.data as { group?: string }).group ?? 'start') === key) }))
+  .filter((g) => g.entries.length > 0);
 ---
 
-<DocsLayout title="Docs" description="Technical documentation for Confium — architecture, four deployment modes, components, security, deployment, benchmarks, quickstarts, migration guides, API references." sidebar={sidebar}>
+<DocsLayout title="Docs" description="Technical documentation for Confium — the architecture of the 66-crate workspace, the six products, security model, deployment, benchmarks, CLI, API references, and migration guides." sidebar={sidebar}>
   <PageHero
     eyebrow="Documentation"
     title="Docs"
-    description="Technical documentation for the Confium engine, its four deployment modes, deployment artifacts, benchmarks, and the principles that shape every crate."
+    description="Technical documentation for Confium: the architecture of the 66-crate Rust workspace, the six products built on it, deployment and operations, API references, and migration guides."
   />
 
-  <ul class="mt-8 grid gap-4 sm:grid-cols-2">
-    {cards.map((card) => (
-      <li>
-        <a href={card.href} class="group block h-full rounded-lg border border-line bg-card p-5 hover:border-brand-300 dark:hover:border-brand-700 transition-colors">
-          <div class="flex items-baseline justify-between gap-2">
-            <h2 class="text-lg font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300">{card.title}</h2>
-            <span aria-hidden="true" class="text-muted-foreground group-hover:text-brand-600">→</span>
-          </div>
-          {card.description && (
-            <p class="mt-1 text-sm text-muted-foreground">{card.description}</p>
-          )}
-        </a>
-      </li>
-    ))}
-  </ul>
+  {groups.map((group) => (
+    <section class="mt-12">
+      <h2 class="text-xl font-bold tracking-tight">{DOC_GROUP_LABELS[group.key]}</h2>
+      <ul class="mt-4 grid gap-4 sm:grid-cols-2">
+        {group.entries.map((entry) => (
+          <li>
+            <a href={`/docs/${entry.id}/`} class="group block h-full rounded-lg border border-line bg-card p-5 hover:border-brand-300 dark:hover:border-brand-700 transition-colors">
+              <div class="flex items-baseline justify-between gap-2">
+                <h3 class="text-lg font-semibold group-hover:text-brand-700 dark:group-hover:text-brand-300">{entry.data.title}</h3>
+                <span aria-hidden="true" class="text-muted-foreground group-hover:text-brand-600">→</span>
+              </div>
+              {entry.data.description && (
+                <p class="mt-1 text-sm text-muted-foreground">{entry.data.description}</p>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  ))}
 </DocsLayout>

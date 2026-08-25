@@ -1,6 +1,6 @@
 ---
 name: Ruby
-description: "Native Ruby extension (magnus + rb-sys) wrapping the Confium engine. Composite sign + verify, transparency log, PKI + CMS, threshold sessions, attributes DSL, typed errors, JSON transport."
+description: "Native Ruby extension (magnus + rb-sys) wrapping the Confium crates directly. Composite sign + verify, transparency log, PKI + CMS, threshold signing sessions and coordinators, audit sinks, OpenPGP armor + opt-in verification, typed errors, JSON transport."
 install_command: "gem install confium"
 docs_repo: "github.com/confium/confium-ruby"
 docs_ref: "main"
@@ -25,10 +25,11 @@ Ruby itself.
 | **XMLDSig** | Canonicalize XML (RFC 3076 + Exclusive C14N) prior to signature. |
 | **Attributes DSL** | `Confium::Attributes.parse`, `Signer`, `Predicate#satisfied_by?` — threshold policy over signer attributes. |
 | **Identity + Config** | `Confium::Identity::Actor`, `Confium::Config::Manifest` (deployment manifest TOML validation). |
-| **Threshold sessions** | `Confium::TC::FrostP256` (Shamir + ECDSA), `ElGamalP256`, `CMP20`, `GG18`, `ShareFile` persistence. |
+| **Threshold signing** | `Confium::TC::SigningSession` (the state machine + CMP20/GG18 combine), `Coordinator` (in-process), `NetworkCoordinator` + `SignerClient` (multi-host over TCP), `FrostP256` (Shamir + ECDSA), `ElGamalP256`, `ShareFile` persistence. |
+| **Audit sinks** | `Confium::Audit` — every signing/verification op fires a record; `FileSink`, `MemorySink`, `StderrSink`, `OtlpSink` (OTLP/HTTP JSON). |
 | **Long-term archival** | `Confium::ERS::EvidenceRecord` — RFC 4998 evidence records with renewal. |
 | **Typed errors** | `Confium::ParseError`, `VerificationError`, `ThresholdError`, `CryptoError`, `IndexError`, `PolicyViolationError`, ... — every documented failure path, each with a structured `details` Hash. |
-| **OpenPGP armor** | `Confium::OpenPGP.armor` / `.dearmor` — RFC 9580 ASCII armor with CRC-24 verification, pure Ruby. |
+| **OpenPGP** | `Confium::OpenPGP.armor` / `.dearmor` — RFC 9580 ASCII armor with CRC-24 verification, pure Ruby. Signature verification (`verify_detached`, `verify`) is an opt-in build: `Confium::OpenPGP::PGP_AVAILABLE` reports whether the extension was built with the `pgp` cargo feature. |
 
 ## Install
 
@@ -39,8 +40,8 @@ gem install confium
 Pre-compiled gems ship for `x86_64-linux`, `aarch64-linux`,
 `x86_64-linux-musl`, `aarch64-linux-musl`, `x86_64-darwin`,
 `arm64-darwin`, and `x64-mingw-ucrt` — each carrying one extension
-per Ruby C-ABI window (3.1, 3.2, 3.3+), so installation on those
-platforms needs only Ruby ≥ 3.1.
+per Ruby ABI window (3.1, 3.2, 3.3, 3.4, 4.0), so installation on
+those platforms needs only Ruby ≥ 3.1.
 
 Source builds (other platforms, or from the repo) additionally need
 the Rust stable toolchain — and nothing else: the extension is

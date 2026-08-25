@@ -3,6 +3,7 @@ title: "confium-jce-provider"
 description: "Java Cryptography Extension provider — exposes Confium threshold signing to Java applications via KeyStore / Cipher / Signature APIs."
 audience: developer
 order: 28
+group: adapters
 ---
 
 # `confium-jce-provider`
@@ -27,7 +28,7 @@ signature operations through Confium threshold sessions.
 Add the JAR to your application's classpath:
 
 ```xml
-<!-- Maven -->
+Maven
 <dependency>
   <groupId>org.confium</groupId>
   <artifactId>confium-jce-provider</artifactId>
@@ -121,5 +122,5 @@ the WASM verifier package via JNI.
 
 - [Tooling overview](/docs/tooling/)
 - [PKCS#11 server](/docs/tooling/pkcs11-server/) — alternative via `SunPKCS11`.
-- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [the PKI product](/pki/)
 - [Java JCE documentation](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/security/Provider.html)

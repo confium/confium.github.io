@@ -1,13 +1,14 @@
 ---
 title: Adapters
-description: "Deep dives into the Mode 2 adapters — PKCS#11, OpenSSL 3.0, JCE, TLS 1.3. How they wire existing consumers into Confium."
+description: "Deep dives into the PKI adapters — PKCS#11, OpenSSL 3.0, JCE, TLS 1.3. How they wire existing consumers into Confium."
 audience: developer
 order: 31
+group: adapters
 ---
 
 # Adapters
 
-Confium's Mode 2 (PKI Drop-in) works through adapter libraries.
+Confium's PKI drop-in works through adapter libraries.
 Each adapter speaks a standard API (PKCS#11, OpenSSL provider,
 JCE, TLS callback) and routes operations into Confium threshold
 sessions. This section documents each adapter in depth.
@@ -37,7 +38,7 @@ Every adapter follows the same shape:
 
 ## See also
 
-- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [the PKI product](/pki/)
 - [Tooling overview](/docs/tooling/)
 - [Web TLS use case](/use-cases/web-tls/)
 - [Architecture](/docs/architecture/)

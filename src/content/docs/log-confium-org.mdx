@@ -2,6 +2,7 @@
 title: "log.confium.org — public transparency log"
 description: "A free, hosted, Bitcoin-anchored Merkle transparency log for every Confium signature, certificate, and signing ceremony."
 order: 50
+group: architecture
 ---
 
 # log.confium.org — public transparency log
@@ -44,7 +45,7 @@ Every Confium-issued cert gets first-class treatment:
 - **GET /v1/certificates/`{fingerprint}`** — lookup by SHA-256.
 - **GET /v1/issuers/`{dn}`/certificates** — list by issuer DN.
 
-Cert types auto-classified: CNML, code-signing, email, document,
+Cert types auto-classified: institutional, code-signing, email, document,
 timestamping, TLS, and generic X.509.
 
 ## Monitoring

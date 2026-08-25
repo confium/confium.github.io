@@ -3,6 +3,7 @@ title: Migrate from HSM-only
 description: "You have an HSM today. You want threshold signing without replacing the HSM. This guide walks the migration path — same HSM, same consumers, threshold signing behind it."
 audience: architect
 order: 1
+group: guides
 ---
 
 import AdapterPatternDiagram from '../../../components/brand/AdapterPatternDiagram.astro';
@@ -14,7 +15,7 @@ HSM-backed key storage. The question isn't "HSM or threshold" —
 it's "HSM with single-party signing, or HSM with threshold
 signing?"
 
-Confium's Mode 2 (PKI Drop-in) answers that. The HSM stays
+Confium's PKI drop-in answers that. The HSM stays
 exactly where it is. The consumers (OpenSSL, Java, PKCS#11
 clients) keep working unchanged. Behind the scenes, every
 signing operation now requires a threshold quorum.

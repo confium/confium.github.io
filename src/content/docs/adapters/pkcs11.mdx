@@ -3,6 +3,7 @@ title: PKCS#11 adapter
 description: "PKCS#11 v3.0 adapter — expose Confium as a virtual HSM to OpenSSL, Java, nginx, and custom consumers."
 audience: developer
 order: 32
+group: adapters
 ---
 
 import AdapterPatternDiagram from '../../../components/brand/AdapterPatternDiagram.astro';
@@ -55,7 +56,7 @@ Confium maps this as:
 | Slot | One threshold signing identity |
 | Token | The set of objects associated with that identity |
 | Token label | The signer's human-readable ID |
-| Object: certificate | The signing cert (issued by Confium Mode 3) |
+| Object: certificate | The signing cert (issued by Confium's CA) |
 | Object: public key | The threshold key's public part |
 | Object: private key | A reference that triggers a threshold session |
 
@@ -175,4 +176,4 @@ env CONFium_TLS_PIN;
 - [Adapters overview](/docs/adapters/)
 - [OpenSSL provider](/docs/adapters/openssl/) — alternative for OpenSSL 3.0 native.
 - [confium-pkcs11-server binary](/docs/tooling/pkcs11-server/)
-- [Mode 2 — PKI Drop-in](/docs/mode2-pki-drop-in/)
+- [the PKI product](/pki/)

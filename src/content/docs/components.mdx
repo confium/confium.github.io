@@ -1,214 +1,116 @@
 ---
 title: Components
-description: The 57-crate Confium Rust workspace, grouped by category. Engine, threshold crypto, PKI, storage, network, Mode 2 adapters, transparency log infrastructure, deployment, benchmarks, Mode 4 keyless, operators, IaC, verification services, fuzzing.
+description: Every component in the Confium repository — the 66-crate Rust workspace plus the Go, Cloudflare Worker, and sibling-repo edges — one line each, grouped by the architecture layers.
 audience: developer
 order: 6
+group: architecture
 ---
 
 # Components
 
-The Confium Rust workspace contains **57 crates** organized by
-concern. This page maps every crate to its category and role. For
-full API details, browse the
-[Confium repository](https://github.com/confium/confium) — the
-relevant crate's source has inline rustdoc.
+The Confium repository holds a **66-crate Rust workspace** plus a
+few deliberately non-Rust edges. This page maps every component to
+its layer and role — the layer model itself is explained in
+[Architecture](/docs/architecture/). For full API details, browse
+the [repository](https://github.com/confium/confium); every crate's
+source carries inline rustdoc.
 
-## Categories
-
-| Category | Role |
-| --- | --- |
-| **Engine / Core** | The host library, plugin loader, public API, CLI, daemon. |
-| **Threshold cryptography** | Threshold signing protocols (FROST, CMP20, GG18) + coordinator + reshare. |
-| **Threshold encryption** | Threshold encryption schemes (ElGamal, ECIES, ML-KEM, FHE). |
-| **PKI / Certificates** | X.509, CSR, CMS SignedData, XMLDSig, composite signatures, attribute predicates. |
-| **Storage / Hardware** | Compartmentalized backends: PKCS#11, TPM, cloud KMS, OpenPGP card. |
-| **Mode 2 / PKI replacement** | Drop-in adapters for PKCS#11, OpenSSL, JCE, TLS. |
-| **Network / Transport** | TCP, QUIC, WebSocket transports and sandbox runtimes. |
-| **Deployment / Identity** | Actor identity, deployment manifest TOML, container + Helm artifacts. |
-| **Transparency / Archival** | Merkle transparency log + OTS anchoring + ERS archival. |
-| **Cross-cutting patterns** | Threshold key escrow + threshold revocation (Thunderbird-inspired). |
-| **Language bindings** | Python (PyO3), WASM (wasm-bindgen). Ruby is a sibling repo. |
-| **Performance / Eval** | Criterion benchmark suite + NIST MPTS test harness. |
-| **Research frontier** | Threshold ring signatures and other explorations. |
-
-## Engine / Core
+## Engine & platform
 
 | Crate | Role |
 | --- | --- |
-| `confium-core` | Engine: plugin loader, registry, FFI entry points (10 interfaces shipped). |
-| `confium-api` | Public Rust API + plugin SDK shared types (`OpaqueHandle`, `OptionMap`, `PluginMetadata`, `PluginError`). |
-| `confium-macros` | Proc-macros for plugin authors (`#[plugin_interface]`, `#[export]`). |
-| `confium-cli` | `confium` end-user command. |
-| `confium-daemon` | JSON-RPC 2.0 daemon over Unix socket / TCP. |
-| `confium-mock-plugin` | Reference mock plugin built entirely with the macros. |
-| `confium-publish` | `confium-publish` author tool for the plugin registry. |
-| `confium-registry` | Static plugin / publisher / trust-root catalog. |
-| `confium-test-harness` | NIST MPTS evaluation bench. |
-| `confium-examples` | Standalone example binaries. |
+| `confium-core` | Engine: plugin loader, registry, and FFI entry points. |
+| `confium-api` | Public Rust API + plugin SDK shared types. |
+| `confium-macros` | Proc-macros for plugin authors. |
+| `confium-mock-plugin` | Reference mock plugin for testing the loader. |
+| `confium-net` | Network transport abstraction for multi-party protocols. |
+| `confium-net-tcp` / `confium-net-quic` / `confium-net-ws` | TCP, QUIC, and WebSocket transports. |
+| `confium-store` | Compartmentalized key and secret persistence. |
+| `confium-store-pkcs11` / `confium-store-tpm` / `confium-store-cloud` / `confium-store-openpgp-card` | PKCS#11, TPM 2.0, cloud KMS, and OpenPGP-card (YubiKey, Nitrokey) backends. |
+| `confium-sandbox-wasm` / `confium-sandbox-process` | WASM and out-of-process sandboxes for isolating plugin execution. |
+| `confium-deployment` | Deployment manifest schema and actor identity. |
 
-## Threshold cryptography
-
-| Crate | Role |
-| --- | --- |
-| `confium-tc` | TC session primitives (interface) + coordinator + reshare modules. |
-| `confium-tc-frost-ed25519` | Real FROST-ed25519 (3-round signing). |
-| `confium-tc-frost-p256` | Real P-256 Shamir + ECDSA. |
-| `confium-tc-cmp20` | Real CMP20 threshold ECDSA. |
-| `confium-tc-gg18` | Real GG18 threshold ECDSA. |
-| `confium-tc-bls` | Threshold BLS skeleton. |
-| `confium-tc-frost-ml-dsa-65` | Threshold ML-DSA-65 (research). |
-
-## Threshold encryption
+## Foundations — shared crypto (publishable)
 
 | Crate | Role |
 | --- | --- |
-| `confium-tc-elgamal-p256` | Real threshold ElGamal-P256. |
-| `confium-tc-ecies-p256` | Threshold ECIES skeleton. |
-| `confium-tc-ml-kem` | Threshold ML-KEM (FIPS 203) research. |
-| `confium-tc-fhe-bfv` | Threshold BFV FHE research. |
+| `confium-crypto-vss` | Verifiable secret sharing, Paillier, Schnorr proofs, NIZK. |
+| `confium-crypto-zk` | Zero-knowledge proofs: set membership, signature possession, accumulators. |
+| `confium-privacy` | MPC, PSI, PIR, differential privacy, ring signatures. |
+| `confium-observability` | Structured logging, trace correlation, metrics, syslog. |
 
-## PKI / Certificates
-
-Consolidated into a single crate (`confium-pki`) covering every
-PKI concern — X.509, CSR, CMS, XMLDSig, delegation templates,
-path validation.
+## Foundations — schemes and domain crypto
 
 | Crate | Role |
 | --- | --- |
-| `confium-pki` | X.509 cert + CSR + CMS SignedData + XMLDSig + delegation (shipped, real). |
-| `confium-composite` | Composite multi-alg signatures for PQC migration (shipped, real). |
-| `confium-attributes` | Attribute-based threshold predicates + DSL (shipped, real). |
+| `confium-tc` | Threshold primitives facade: session, coordinator, reshare, KEM, TCP server. |
+| `confium-tc-core` | The minimal session interface scheme plugins compile against. |
+| `confium-tc-keys` | Key lifecycle, HSM protection, production hardening. |
+| `confium-tc-frost-ed25519` / `confium-tc-frost-p256` / `confium-tc-frost-ml-dsa-65` | FROST threshold signatures over Ed25519, P-256, and ML-DSA-65. |
+| `confium-tc-cmp20` | CMP20 threshold ECDSA over P-256. |
+| `confium-tc-gg18` | GG18 threshold ECDSA. |
+| `confium-tc-bls` | Threshold BLS for cross-organization aggregation. |
+| `confium-tc-elgamal-p256` / `confium-tc-ecies-p256` / `confium-tc-ml-kem` / `confium-tc-fhe-bfv` | Threshold encryption: ElGamal, ECIES, ML-KEM (FIPS 203), BFV FHE. |
+| `confium-composite` | Composite multi-algorithm signatures for post-quantum migration. |
+| `confium-attributes` | Attribute-based party selection with a predicate DSL. |
+| `confium-pki` | X.509 certs, scoped delegation, CMS, XMLDSig. |
+| `confium-pki-tc` | Threshold PKI: CT log, OCSP, ACME, attribute-based encryption. |
+| `confium-transparency` | Append-only Merkle transparency log, OTS anchoring, ERS archival. |
+| `confium-patterns` | Deployment patterns: threshold key escrow and revocation. |
+| `confium-ring` | Threshold ring signatures for anonymous signing. |
+| `confium-signatif` | SIGNATIF framework layer: trust graph, co-signed artifacts, verification pipeline, coverage reports. |
 
-## Storage / Hardware
+## Services
 
 | Crate | Role |
 | --- | --- |
-| `confium-store` | Store pillar with compartmentalized backends. |
-| `confium-store-pkcs11` | PKCS#11 wrapping backend. |
-| `confium-store-tpm` | TPM 2.0 sealed storage. |
-| `confium-store-cloud` | AWS / GCP / Azure KMS REST. |
-| `confium-store-openpgp-card` | OpenPGP card backend (YubiKey, Nitrokey). |
+| `confium-coordinator` | Distributed signing coordinator: session orchestration, rate limiting, policy, metrics. |
+| `confium-signerd` | Signer daemon — connects to the coordinator, answers signing requests. |
+| `confium-log-server` | Public transparency-log server (the log.confium.org reference). |
+| `confium-log-edge` | Cloudflare Worker ingest edge for the public log (TypeScript). |
+| `confium-log-monitor` | Third-party monitor — detects log forks and consistency violations. |
+| `confium-verify-server` | HTTP service verifying threshold signatures and transparency proofs. |
+| `confium-registry` | Client for the static-site plugin catalog. |
+| `confium-oidc` | OIDC token verifier for keyless identity-bound ceremonies. |
+| `confium-keyless` | Keyless product facade — OIDC-based keyless threshold signing. |
+| `confium-operator` | Kubernetes operator for signing ceremonies. |
 
-## Mode 2 / PKI replacement
+## Products
 
 | Crate | Role |
 | --- | --- |
-| `confium-pkcs11-server` | PKCS#11 v3.0 dispatch to threshold protocol. |
-| `confium-openssl-provider` | OpenSSL 3.0 provider. |
-| `confium-tls-signer` | TLS 1.3 signature callback. |
+| `confium-threshold` | Threshold product facade — T-of-N distributed signing. |
+| `confium-verify` | Verify product facade — multi-language verification. |
+| `confium-keyless` | Keyless product facade (listed under services above for its OIDC wiring). |
+
+Transparency, PKI, and Privacy are served by their foundation
+crates (`confium-transparency`, `confium-pki`, `confium-privacy`)
+directly.
+
+## Surfaces — CLIs, daemons, bindings, adapters
+
+| Component | Role |
+| --- | --- |
+| `confium-cli` | The `confium` end-user command. |
+| `confium-daemon` | JSON-RPC daemon over Unix socket/TCP. |
+| `confium-python` | Python bindings (PyO3; standalone build). |
+| `confium-node` | Node.js bindings. |
+| `confium-wasm` | Browser/Node.js verifier package — verifier-only by design. |
+| `confium-go` | Go bindings via cgo (Go source package). |
+| `confium-terraform-provider` | Terraform provider (Go). |
+| `confium-ruby` | Ruby gem — [sibling repository](https://github.com/confium/confium-ruby). |
+| `confium-pkcs11-server` | PKCS#11 v3.0 server dispatching to threshold protocols. |
+| `confium-openssl-provider` | OpenSSL 3.0 provider for threshold signing. |
 | `confium-jce-provider` | Java Cryptography Extension provider. |
+| `confium-tls-signer` | TLS 1.3 signature callback satisfied by a quorum. |
 
-## Network / Transport
-
-| Crate | Role |
-| --- | --- |
-| `confium-net` | Network abstraction. |
-| `confium-net-tcp` | TCP transport. |
-| `confium-net-quic` | QUIC transport. |
-| `confium-net-ws` | WebSocket transport. |
-| `confium-sandbox-wasm` | WASM sandbox for browser director signing. |
-| `confium-sandbox-process` | Out-of-process sandbox. |
-
-## Deployment / Identity
+## Quality & tooling
 
 | Crate | Role |
 | --- | --- |
-| `confium-deployment` | Actor identity (manufacturer, lab, IA, BIML director) + deployment manifest TOML validation. Backs the Ruby `Confium::Identity::Actor` and `Confium::Config::Manifest` classes. |
-
-## Transparency / Archival
-
-Consolidated into `confium-transparency` — covers RFC 6962 Merkle
-trees, OTS anchoring, and ERS long-term archival in one crate.
-
-| Crate | Role |
-| --- | --- |
-| `confium-transparency` | Append-only Merkle tree (RFC 6962 inclusion + consistency proofs) + OTS anchoring + ERS archival (shipped, real). |
-
-## Transparency log infrastructure
-
-The reference RFC 6962 log server, the pure-edge variant on
-Cloudflare, and the third-party monitor that detects forks.
-
-| Crate | Role |
-| --- | --- |
-| `confium-log-server` | Public transparency log server for Confium (the `log.confium.org` reference implementation). RFC 6962 add / get-entries / inclusion-proof / consistency-proof / latest-root endpoints. |
-| `confium-log-edge` | Pure-edge variant of the log server — Cloudflare Workers + D1 + Durable Objects + Workers KV. No origin server, no RDS, no regions. ~$220/month at 100M entries/year. |
-| `confium-log-monitor` | Third-party monitor for Confium transparency logs — continuously verifies consistency proofs and detects fork attempts. Deploy in independent failure domains. |
-
-## Mode 4 — Keyless Threshold
-
-OIDC-verified ephemeral threshold signing (Sigstore-style keyless
-combined with Confium threshold). See
-[Mode 4 docs](/docs/mode4-keyless-threshold/).
-
-| Crate | Role |
-| --- | --- |
-| `confium-oidc` | OIDC token verifier for any standards-compliant issuer (GitHub Actions, Google, Okta, Azure AD, Auth0). Powers Mode 4's identity-bound ephemeral ceremonies. |
-
-## Cross-cutting patterns
-
-| Crate | Role |
-| --- | --- |
-| `confium-patterns` | Threshold key escrow + threshold revocation (Thunderbird-inspired generalizations). |
-
-## Language bindings
-
-| Crate | Role |
-| --- | --- |
-| `confium-python` | PyO3 native extension: composite sign+verify, transparency, PKI parse + CMS build, attributes DSL, OTS, ERS, XMLDSig. |
-| `confium-node` | NAPI Node.js binding — server-side signing surface (composite sign + verify, transparency, PKI, threshold sessions). |
-| `confium-go` | Go binding (scaffold). API surface stable; C bridge in progress. |
-| `confium-wasm` | `wasm-bindgen` verifier package (`@confium/confium-wasm` on npm). Browser/Node.js verifier only by design. |
-
-The Ruby binding lives in a sibling repo
-([`confium-ruby`](https://github.com/confium/confium-ruby)) and
-wraps the high-level `confium-*` crates via `magnus` + `rb_sys`.
-It hard-bundles `rnp-rs` for OpenPGP armor — see
-[Confium and RNP](/concepts/confium-and-rnp/).
-
-## Performance / Evaluation
-
-| Crate | Role |
-| --- | --- |
-| `confium-benchmarks` | Criterion benchmark suite for composite verify + transparency operations. Run locally or in CI to track perf regressions. |
-| `confium-test-harness` | NIST MPTS evaluation bench — the official MPTS test-vector runner. |
-| `confium-fuzz` | Fuzzing targets for security-critical surfaces. Run via `cargo fuzz` in CI to catch parser + protocol edge cases. |
-
-## Operations / IaC / Services
-
-| Crate | Role |
-| --- | --- |
-| `confium-operator` | Kubernetes operator — declarative threshold signing via `ConfiumSigningCeremony` CRDs. GitOps-friendly. |
-| `confium-terraform-provider` | Terraform provider (Go). Resources: `confium_threshold_key`, `confium_signing_ceremony`, `confium_transparency_log`, `confium_share`. |
-| `confium-signerd` | Distributed threshold signing daemon — one per signer, connects to coordinator, responds to signing requests. |
-| `confium-verify-server` | HTTP verification service (REST). Stateless, anonymous, public-facing. Drop-in alternative to the JSON-RPC daemon for web verifiers. |
-
-## Research frontier
-
-| Crate | Role |
-| --- | --- |
-| `confium-ring` | Threshold ring signatures (skeleton). |
-
-## Choosing a crate
-
-- **As a library**: `confium-core` + interface crates (`composite`,
-  `pki`, `attributes`, `transparency`).
-- **Plugin author**: `confium-api` + `confium-macros`.
-- **Threshold signing**: pick a protocol crate (`frost-ed25519`,
-  `frost-p256`, `cmp20`, `gg18`) and use the `confium-tc`
-  coordinator + reshare modules.
-- **HSM/PKI replacement**: Mode 2 crates — `confium-pkcs11-server`,
-  `confium-openssl-provider`, `confium-jce-provider`.
-- **Institutional PKI**: Mode 3 — `confium-pki`, `confium-composite`,
-  `confium-attributes`, `confium-transparency`, `confium-deployment`.
-- **Production deploy**: `confium-deployment` + the Helm chart in
-  `deploy/helm/`.
-- **Benchmark**: `confium-benchmarks` for criterion runs;
-  `confium-test-harness` for NIST MPTS vectors.
-
-## See also
-
-- [Architecture](/docs/architecture/) — how the crates compose.
-- [Deployment](/docs/deployment/) — Docker, Helm, Grafana for
-  production.
-- [Confium repository](https://github.com/confium/confium)
+| `confium-test-harness` | NIST MPTS evaluation harness. |
+| `confium-benchmarks` | Criterion benches for hot paths. |
+| `confium-fuzz` | Fuzzing targets for security-critical surfaces. |
+| `confium-it` | Cross-crate integration tests — unpublished by design. |
+| `confium-examples` | Runnable example binaries. |
+| `confium-publish` | Author tool for publishing plugins to the registry. |

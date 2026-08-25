@@ -1,30 +1,16 @@
 /**
  * Typed homepage content — single source of truth for the homepage
- * and any component that needs homepage data (e.g. ModeSelector).
+ * and any component that needs homepage data.
  *
  * Components consume these models; they never hardcode content.
  */
 
-export type ModeId = 'peer-tc' | 'pki-drop-in' | 'sovereign-pki';
-
 /**
  * The three identity tones of the Confium brand. Map 1:1 to the
  * three-circle logo and the three deployment modes. Used by Card,
- * Section, ModeVenn, and Timeline to tint mode-specific surfaces.
+ * Section and Timeline to tint product-specific surfaces.
  */
 export type BrandTone = 'blue' | 'teal' | 'gold';
-
-export interface Mode {
-  readonly id: ModeId;
-  readonly tone: BrandTone;
-  readonly label: string;
-  readonly name: string;
-  readonly tagline: string;
-  readonly description: string;
-  readonly bullets: readonly string[];
-  readonly href: string;
-  readonly ctaLabel: string;
-}
 
 export interface ProofPoint {
   readonly title: string;
@@ -51,57 +37,6 @@ export interface Sponsor {
   readonly imageAlt?: string;
   readonly wordmarkText?: string;
 }
-
-export const MODES: readonly Mode[] = [
-  {
-    id: 'peer-tc',
-    tone: 'blue',
-    label: 'Mode 1',
-    name: 'Peer-to-Peer TC',
-    tagline: 'Direct threshold cryptography between nodes.',
-    description:
-      'The simplest deployment: nodes exchange threshold signing messages directly over the transport of choice. No intermediary, no PKI, no translation layer. Use this when you control both ends of the channel and you want minimal moving parts.',
-    bullets: [
-      'MPC, distributed custody, BFT consensus',
-      'Async sessions across hours or days',
-      'Two-round FROST signing, three-round CMP20',
-    ],
-    href: '/docs/mode1-peer-tc/',
-    ctaLabel: 'Read the Mode 1 docs',
-  },
-  {
-    id: 'pki-drop-in',
-    tone: 'teal',
-    label: 'Mode 2',
-    name: 'PKI Drop-in',
-    tagline: 'Threshold keys, unchanged consumers.',
-    description:
-      'Drop Confium in front of existing PKCS#11, OpenSSL, or JCE consumers. They keep working unchanged — but every signature now requires a threshold quorum behind the scenes. This is the natural home for post-quantum migration via composite signatures.',
-    bullets: [
-      'PKCS#11 v3.0 server, OpenSSL 3.0 provider, JCE, TLS signer',
-      'HSM replacement without replacing the HSM consumer',
-      'Composite Ed25519 + ECDSA-P256 + ML-DSA-65 signatures',
-    ],
-    href: '/docs/mode2-pki-drop-in/',
-    ctaLabel: 'Read the Mode 2 docs',
-  },
-  {
-    id: 'sovereign-pki',
-    tone: 'gold',
-    label: 'Mode 3',
-    name: 'Sovereign PKI',
-    tagline: 'Institutional PKI without a single trusted party.',
-    description:
-      'Custom certificate formats, delegation rules, archival cadence, and quorum composition for institutions where no single stakeholder can be trusted. Sovereignty over formats, jurisdictions, governance — the things conventional PKI locks down.',
-    bullets: [
-      'Custom certificate profiles via confium-cert',
-      'Attribute-based quorum: 5-of-9 directors from 3 regions',
-      'Transparency log + OTS anchoring + RFC 4998 ERS archival',
-    ],
-    href: '/docs/mode3-sovereign-pki/',
-    ctaLabel: 'Read the Mode 3 docs',
-  },
-] as const;
 
 export const PROOF_POINTS: readonly ProofPoint[] = [
   {
@@ -136,7 +71,7 @@ export const DEPLOYMENTS: readonly Deployment[] = [
   { name: 'Academic accreditation', body: 'Cross-institutional degree and credential verification without a single trusted authority.' },
   { name: 'Supply-chain provenance', body: 'Manufacturing step attestation anchored in a public transparency log.' },
   { name: 'Treaty organizations', body: 'Multi-state cooperative instruments requiring concurrent sovereign approval.' },
-  { name: 'Certified instruments registry', body: 'A reference Mode 3 deployment among many others.' },
+  { name: 'Certified instruments registry', body: 'A reference sovereign-PKI deployment among many others.' },
 ] as const;
 
 export const STEPS: readonly Step[] = [

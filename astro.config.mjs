@@ -15,6 +15,17 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   site: 'https://www.confium.org',
   trailingSlash: 'always',
+  // Deployment-mode pages were superseded by the six product
+  // minisites; old URLs keep working.
+  redirects: {
+    '/docs/three-modes': '/docs/architecture/',
+    '/docs/four-modes': '/docs/architecture/',
+    '/docs/mode1-peer-tc': '/threshold/',
+    '/docs/mode2-pki-drop-in': '/pki/',
+    '/docs/mode3-sovereign-pki': '/pki/',
+    '/docs/mode4-keyless-threshold': '/keyless/',
+    '/docs/mode-4-keyless-threshold': '/keyless/',
+  },
   compressHTML: true,
   integrations: [vue(), sitemap(), mdx()],
   vite: {

@@ -6,7 +6,9 @@ import Prose from '@components/astro/Prose.astro';
 interface Props {
   title: string;
   description?: string;
-  sidebar?: { label: string; href: string; current?: boolean }[];
+  // Grouped form: [{ heading?, items }]; flat callers may still
+  // pass a bare item array, normalized below.
+  sidebar?: ({ heading?: string; items: { label: string; href: string; current?: boolean }[] } | { label: string; href: string; current?: boolean })[];
   sourcePath?: string;
   headings?: { depth: number; slug: string; text: string }[];
 }
@@ -14,10 +16,12 @@ interface Props {
 const {
   title,
   description,
-  sidebar = [],
   sourcePath,
   headings = [],
 } = Astro.props;
+
+const rawSidebar = Astro.props.sidebar ?? [];
+const sidebar = rawSidebar.map((entry) => ('items' in entry ? entry : { items: [entry] }));
 
 const filteredHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
 ---
@@ -27,18 +31,29 @@ const filteredHeadings = headings.filter((h) => h.depth === 2 || h.depth === 3);
     <div class="lg:grid lg:grid-cols-[16rem_minmax(0,1fr)_14rem] lg:gap-8">
       {sidebar.length > 0 && (
         <aside class="hidden lg:block">
-          <nav class="sticky top-24 space-y-1">
-            {sidebar.map((item) => (
-              <a
-                href={item.href}
-                class={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
-                  item.current
-                    ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-medium'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-brand-50/50 dark:hover:bg-brand-900/10'
-                }`}
-              >
-                {item.label}
-              </a>
+          <nav class="sticky top-24 space-y-4">
+            {sidebar.map((group) => (
+              <div>
+                {group.heading && (
+                  <p class="px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                    {group.heading}
+                  </p>
+                )}
+                <div class="space-y-1">
+                  {group.items.map((item) => (
+                    <a
+                      href={item.href}
+                      class={`block rounded-md px-3 py-1.5 text-sm transition-colors ${
+                        item.current
+                          ? 'bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 font-medium'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-brand-50/50 dark:hover:bg-brand-900/10'
+                      }`}
+                    >
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
             ))}
           </nav>
         </aside>
