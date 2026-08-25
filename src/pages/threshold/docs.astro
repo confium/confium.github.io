@@ -10,33 +10,31 @@ const product = getProduct('threshold')!;
     <div>
       <h3 class="font-bold text-lg mb-3">Concepts</h3>
       <ul class="space-y-2 text-sm">
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Threshold signing fundamentals (T-of-N)</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Distributed Key Generation (DKG)</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Multiplicative-to-Additive (MtA) via Paillier</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Share refresh & proactive security (Herzberg)</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Reshare: changing T or N without re-keying</a></li>
+        <li>→ <a href="/concepts/threshold-crypto-101/" class="text-blue-600 hover:underline">Threshold signing fundamentals (T-of-N)</a></li>
+        <li>→ <a href="/docs/architecture/" class="text-blue-600 hover:underline">Threshold signing, end to end (architecture)</a></li>
+        <li>→ <a href="/concepts/attribute-based-threshold/" class="text-blue-600 hover:underline">Attribute-based quorum selection</a></li>
+        <li>→ <a href="/use-cases/distributed-custody/" class="text-blue-600 hover:underline">Use case: distributed custody</a></li>
+        <li>→ <a href="/use-cases/root-ca-key-ceremony/" class="text-blue-600 hover:underline">Use case: root-CA key ceremony</a></li>
       </ul>
     </div>
-
     <div>
       <h3 class="font-bold text-lg mb-3">How-to</h3>
       <ul class="space-y-2 text-sm">
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Deploy signerd in production</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Protect shares with an HSM (PKCS#11)</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Schedule Herzberg share refresh</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Monitor signing sessions (Prometheus)</a></li>
-        <li>→ <a href="/threshold/" class="text-blue-600 hover:underline">Attribute-based signing policies</a></li>
+        <li>→ <a href="/threshold/quickstart/" class="text-blue-600 hover:underline">Quickstart: first threshold signature</a></li>
+        <li>→ <a href="/docs/deployment/" class="text-blue-600 hover:underline">Deploy signerd and the coordinator</a></li>
+        <li>→ <a href="/docs/adapters/pkcs11/" class="text-blue-600 hover:underline">Protect shares with an HSM (PKCS#11)</a></li>
+        <li>→ <a href="/use-cases/kubernetes-deployment/" class="text-blue-600 hover:underline">Run ceremonies on Kubernetes</a></li>
+        <li>→ <a href="/docs/benchmarks/" class="text-blue-600 hover:underline">Benchmark suite</a></li>
       </ul>
     </div>
-
     <div>
       <h3 class="font-bold text-lg mb-3">Reference</h3>
       <ul class="space-y-2 text-sm">
-        <li>→ <a href="https://docs.rs/confium-threshold" class="text-blue-600 hover:underline" target="_blank">Rust API (docs.rs/confium-threshold)</a></li>
-        <li>→ <a href="https://docs.rs/confium-threshold" class="text-blue-600 hover:underline">signerd config reference</a></li>
-        <li>→ <a href="https://docs.rs/confium-threshold" class="text-blue-600 hover:underline">confium threshold subcommands</a></li>
-        <li>→ <a href="/specs/" class="text-blue-600 hover:underline">Threshold session spec</a></li>
-        <li>→ <a href="/specs/" class="text-blue-600 hover:underline">CMP20 spec</a></li>
+        <li>→ <a href="/docs/rust-api/" class="text-blue-600 hover:underline">Rust API</a></li>
+        <li>→ <a href="/software/ruby/" class="text-blue-600 hover:underline">Ruby: SigningSession + coordinators</a></li>
+        <li>→ <a href="https://docs.rs/confium-threshold" class="text-blue-600 hover:underline" target="_blank">docs.rs/confium-threshold</a></li>
+        <li>→ <a href="/specs/" class="text-blue-600 hover:underline">Threshold session and scheme specs</a></li>
+        <li>→ <a href="/docs/components/" class="text-blue-600 hover:underline">Crate inventory</a></li>
       </ul>
     </div>
   </div>
