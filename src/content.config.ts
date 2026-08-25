@@ -59,6 +59,7 @@ export const collections = {
     schema: adocFrontmatter.extend({
       audience: z.enum(['developer', 'executive', 'evaluator', 'researcher', 'operator', 'architect', 'compliance']).optional(),
       order: z.number().default(0),
+      group: z.enum(['start', 'architecture', 'guides', 'reference', 'adapters']).default('start'),
     }),
   }),
 

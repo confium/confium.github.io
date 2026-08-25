@@ -3,6 +3,7 @@ title: Transparency logs
 description: RFC 6962 Merkle transparency logs. Inclusion proofs, consistency proofs, witness gossip, OTS anchoring. How split-view attacks are detected.
 audience: developer
 order: 9
+group: architecture
 ---
 
 # Transparency logs
@@ -94,10 +95,10 @@ Coordinators share tree heads with each other periodically. If two
 coordinators have different heads for the same tree size, the
 witnesses detect the inconsistency.
 
-Confium's `confium-tc-coordinator` serves as a gossip endpoint for
-Mode 3 deployments. Each institutional coordinator shares its tree
-head with the institutional anchor's coordinator, which acts as the
-global witness.
+Confium's `confium-coordinator` serves as a gossip endpoint for
+institutional PKI deployments. Each institutional coordinator
+shares its tree head with the institutional anchor's coordinator,
+which acts as the global witness.
 
 ### Layer 3 — OTS anchoring
 
@@ -107,11 +108,11 @@ controls the log operator AND all witnesses can still split views.
 providing an irrefutable time-stamped record of "what head existed
 at time T".
 
-Confium's `confium-ots` client supports this.
+The OTS client in `confium-transparency` supports this.
 
-## Recommended Mode 3 deployment
+## Recommended high-assurance deployment
 
-For Mode 3 (highest assurance):
+For institutional PKI (highest assurance):
 
 1. Every transparency tree head is published with a consistency proof
    from the previous head.
@@ -125,4 +126,4 @@ For Mode 3 (highest assurance):
 
 - [Concepts: Transparency logs](/concepts/transparency-logs/)
 - [Security model](/docs/security-model/)
-- [Mode 3 — Sovereign PKI](/docs/mode3-sovereign-pki/)
+- [the PKI product](/pki/)

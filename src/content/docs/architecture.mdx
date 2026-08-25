@@ -1,131 +1,155 @@
 ---
 title: Architecture
-description: Confium's engine, plugin loader, versioned interfaces, coordinator, and the principles that shape every crate.
+description: Confium's 66-crate Rust workspace as a layered graph — engine and plugin contract, shared crypto foundations, six products, services, and the binding surfaces that wrap them.
 audience: developer
 order: 1
+group: architecture
 ---
-
 
 # Architecture
 
-Confium is a configurable engine for multi-stakeholder threshold
-cryptography. The engine loads plugins that implement cryptographic
-primitives; bindings and adapters wrap the engine for different
-language ecosystems and integration points.
+Confium is open-source infrastructure for distributed cryptographic
+trust. One repository holds everything: a 66-crate Rust workspace
+with the engine and its plugin contract, the threshold-cryptography
+foundations, six products built on those foundations, and the
+services and bindings that carry them to applications — plus a few
+deliberately non-Rust edges (a Go package, a Go Terraform provider,
+a Cloudflare Worker log edge, and a standalone Python build).
 
-## Layers
+The Rust workspace is a **strictly layered graph** — dependencies
+point downward only and there are no cycles. Every crate carries
+`#![forbid(unsafe_code)]`; the single exception is `confium-core`,
+whose job is the C ABI and where all unsafe code is centralized.
 
-| Layer | Role |
-| --- | --- |
-| **Host library** | `libconfium` — the engine. Loads plugins, dispatches calls, exposes the `cfm_*` C ABI. |
-| **Plugins** | Dynamic libraries implementing the `cfmp_*` contract for one or more interfaces. |
-| **Adapters** | Mode 2 wrappers (PKCS#11 server, OpenSSL provider, JCE provider, TLS signer) that translate industry-standard APIs into Confium calls. |
-| **Bindings** | Ruby, WASM, and future language bindings that wrap the C ABI for application developers. |
-| **Coordinator** | Async session service for distributed threshold cryptography across geographically separated parties. |
+## The layer map
 
-## The plugin contract
+| Layer | What lives there | Crates |
+| --- | --- | --- |
+| **Surfaces** | What applications touch: CLIs, daemons, language bindings, adapters for industry-standard APIs. | `confium-cli`, `confium-daemon`, `confium-signerd`, `confium-node`, `confium-python` (standalone build), `confium-wasm`, `confium-ruby` (sibling repo), `confium-go` (Go package), `confium-terraform-provider` (Go), `confium-operator` |
+| **Products** | Facades that compose foundations into a story you can install. Three products ship dedicated facade crates (`confium-threshold`, `confium-keyless`, `confium-verify`); Transparency, PKI, and Privacy are served by their foundation crates directly. | `confium-threshold`, `confium-keyless`, `confium-verify`, `confium-transparency`, `confium-pki`, `confium-privacy` |
+| **Services** | Long-running things: coordination, transparency-log serving and monitoring, verification endpoints, registries. | `confium-coordinator`, `confium-log-server`, `confium-log-monitor` (Rust), `confium-log-edge` (Cloudflare Worker), `confium-verify-server`, `confium-registry`, `confium-oidc` |
+| **Foundations** | The cryptographic substance: threshold schemes, PKI, transparency, composite signatures, policy. | `confium-tc-core`, `confium-tc-keys`, the `confium-tc-*` scheme crates, `confium-crypto-vss`, `confium-crypto-zk`, `confium-privacy`, `confium-pki`, `confium-pki-tc`, `confium-composite`, `confium-attributes`, `confium-transparency`, `confium-patterns`, `confium-signatif`, `confium-observability` |
+| **Engine & platform** | The plugin engine and the boring-but-critical substrate. | `confium-core`, `confium-api`, `confium-macros`, `confium-net-*`, `confium-store-*`, `confium-sandbox-*`, `confium-deployment` |
 
-A Confium plugin is a `cdylib` that exports a small set of bootstrap
-symbols. Confium loads the library, calls `cfmp_query_interfaces` to
-discover what the plugin provides, then negotiates per-interface
-versions before routing calls.
+## Six products on shared foundations
 
-Bootstrap symbols:
+The products are the public story; each has its own minisite and
+composes the same foundations differently:
+
+- **[Threshold](/threshold/)** — eliminate single points of failure
+  in signing. FROST, CMP20, GG18 over Ed25519, P-256, and ML-DSA;
+  async ceremonies that complete across hours or days.
+- **[Transparency](/transparency/)** — tamper-evident audit trails:
+  RFC 6962 append-only Merkle logs, inclusion and consistency
+  proofs, OpenTimestamps anchoring, RFC 4998 evidence-record
+  archival. The public reference log runs at
+  [log.confium.org](/docs/log-confium-org/).
+- **[PKI](/pki/)** — run a CA without a single trusted key:
+  threshold certificate issuance, delegation, path validation, and
+  drop-in adapters (PKCS#11 server, OpenSSL 3.0 provider, JCE,
+  TLS 1.3 signer) so existing consumers keep working unchanged.
+- **[Keyless](/keyless/)** — sign releases without managing keys:
+  OIDC-identity-bound ephemeral threshold ceremonies for CI and
+  artifact signing.
+- **[Privacy](/privacy/)** — privacy-preserving primitives: PSI,
+  PIR, differential privacy, oblivious transfer, ring and blind
+  signatures, VRFs and VDFs.
+- **[Verify](/verify/)** — verify threshold artifacts anywhere:
+  a verification pipeline over trusted artifacts and trust graphs
+  (the SIGNATIF framework layer), shipped to browsers via WASM, to
+  any HTTP consumer via `confium-verify-server`, and to Rust,
+  Ruby, Python, Node, and Go.
+
+## The engine and the plugin contract
+
+`confium-core` is a configurable engine: it loads plugins,
+negotiates per-interface versions, and routes calls. A plugin is a
+`cdylib` exporting a small bootstrap surface — the `cfmp_*`
+contract:
 
 | Symbol | Role |
 | --- | --- |
-| `cfmp_interface_version` | Returns the plugin-contract ABI version this plugin targets. |
-| `cfmp_initialize(cfm, opts)` | One-time setup. `cfm` is an opaque host handle; `opts` is the loader-supplied option bag. |
-| `cfmp_finalize(cfm)` | One-time teardown. |
-| `cfmp_query_interfaces` | Returns `name\0version\0` pairs naming the interface types and versions the plugin implements. |
-| `cfmp_metadata` *(optional)* | Returns static metadata (name, version, vendor, license) for the registry. |
-| `cfmp_query_dependencies` *(optional)* | Returns a dependency list. Confium resolves these before `cfmp_initialize`. |
+| `cfmp_interface_version` | Plugin-contract ABI version. |
+| `cfmp_initialize` / `cfmp_finalize` | One-time setup and teardown. |
+| `cfmp_query_interfaces` | `name\0version\0` pairs naming the interface types and versions implemented. |
+| `cfmp_metadata` *(optional)* | Name, version, vendor, license for the registry. |
+| `cfmp_query_dependencies` *(optional)* | Dependencies resolved before `cfmp_initialize`. |
 
-Per-interface symbols follow the pattern `cfmp_{interface}_*` (e.g.
-`cfmp_hash_create`, `cfmp_hash_update`, `cfmp_hash_finalize`).
+Shipped interfaces: `hash`, `rng`, `cipher`, `aead`, `kdf`, `kem`,
+`keyfmt`, `signature`. Adding an interface type means writing a
+module that registers itself — no edits to existing code
+(link-time registration via `inventory`).
 
-## Versioned interfaces
+## Bindings do not go through the C ABI
 
-Each interface is independently versioned. A plugin can implement
-`hash` v0 and `cipher` v1 simultaneously. The host negotiates the
-highest mutually-supported version per interface, per plugin.
+The `cfm_*` C ABI serves **plugins and adapters**, not
+applications. Every language binding wraps the Rust crates
+directly through its own native-extension mechanism:
 
-Shipped interfaces (in `confium-core`):
+| Surface | Mechanism | Notes |
+| --- | --- | --- |
+| Rust | `confium-api` | The canonical public API. |
+| Ruby | magnus + rb_sys | Wraps the `confium-*` crates directly; prebuilt gems for seven platforms, no C toolchain. |
+| Python | PyO3 | Composite, transparency, PKI, attributes. |
+| Node | `confium-node` | Native bindings. |
+| WASM | wasm-bindgen | Verifier-only by design — browsers verify, servers sign. |
+| Go | `confium-go` | cgo bindings linked against the Rust crates. |
+| PKCS#11 / OpenSSL / JCE / TLS | adapter crates | Industry-standard APIs translated into threshold operations. |
 
-- `hash` — cryptographic hash
-- `rng` — random number generation
-- `cipher` — symmetric encryption
-- `aead` — authenticated encryption
-- `kdf` — key derivation
-- `kem` — key encapsulation
-- `key_fmt` — key serialization
-- `signature` — digital signatures
+## Threshold signing, end to end
 
-Adding a new interface is one module that calls `register_interface!`.
-No edits to existing interfaces or to the host dispatch.
+A signing ceremony flows through the stack like this:
 
-## The coordinator
+1. **Key generation** — a DKG or dealer protocol in the scheme
+   crate (`confium-tc-frost-*`, `confium-tc-cmp20`,
+   `confium-tc-gg18`) produces N share blobs and a quorum public
+   key. Shares live in stores (`confium-store-*`: PKCS#11, TPM,
+   cloud KMS, OpenPGP cards) or portable share files.
+2. **Coordination** — `confium-coordinator` runs async sessions:
+   parties submit commitments and shares at their own pace; the
+   session state machine tracks progress; the combine runs once
+   the threshold is met. `confium-signerd` is the daemon signers
+   run; `confium-operator` runs ceremonies on Kubernetes.
+3. **Verification** — verifiers check the resulting signature with
+   plain crypto (Ed25519, ECDSA-P256) or a composite verifier, and
+   anchor trust in transparency logs and trust graphs
+   (`confium-signatif`).
 
-Threshold cryptography protocols (FROST, CMP20, GG18) require multiple
-parties to exchange messages across rounds. The
-`confium-tc-coordinator` service orchestrates these sessions
-asynchronously, so parties do not need to be online simultaneously.
+One signer submitting twice never counts twice toward a threshold;
+identities are load-bearing from the coordinator down to the
+binding-level session objects.
 
-Sessions are identified by a session ID. Each party joins, submits
-their round messages, and the coordinator aggregates them and either
-advances the round or returns the final signature.
+## Transparency and verification
 
-The coordinator is transport-agnostic (`confium-net` abstraction with
-TCP, QUIC, and WebSocket implementations).
+Every product can anchor its artifacts into an append-only log:
+`confium-transparency` implements RFC 6962 inclusion and
+consistency proofs; `confium-log-server` serves a public log (the
+[log.confium.org](/docs/log-confium-org/) reference
+implementation), `confium-log-edge` is the ingest path, and
+`confium-log-monitor` is the third-party watch for fork attempts.
+On top, `confium-signatif` implements the verification pipeline —
+trusted artifacts, trust graphs, coverage reports, and graduated
+verdicts — which `confium-verify-server` and the WASM package
+expose to browsers and HTTP consumers.
 
-## Architecture principles
+## Principles that shape every crate
 
-### OCP via traits
+- **OCP via traits** — new backends register; existing code is
+  never edited to enumerate them.
+- **MECE crate boundaries** — each crate owns one concern; the
+  layering is enforced, not aspirational.
+- **Type-safe errors** — `thiserror`/`snafu` enums everywhere;
+  bindings surface typed, structured errors.
+- **No unsafe code** — `#![forbid(unsafe_code)]` in every crate;
+  FFI is centralized and minimal.
+- **Standards-only integrations** — PKCS#11, OpenSSL 3.0, JCE,
+  CMS, X.509, RFC 6962, RFC 4998, RFC 9580. No vendor SDKs.
 
-New backends add new files. The trait is the contract; the
-implementations are closed for modification. Examples:
+## Where to go next
 
-- `IdentityBackend` — pluggable identity sources
-- `Encapsulator` — KEM backends
-- `Aead` — AEAD backends
-- `QuorumDispatcher` — quorum decision logic
-- `OpenpgpCardBackend` — OpenPGP card hardware backends
-- `ThresholdSigner` — threshold signing protocols
-
-### No unsafe code
-
-Every crate carries `#![forbid(unsafe_code)]`. All FFI is contained in
-`confium-core` and uses `#[unsafe(no_mangle)]` per edition 2024
-requirements.
-
-### No vendor SDKs
-
-Confium integrates with hardware via standards only:
-
-- PKCS#11 v3.0 (HSMs)
-- OpenPGP card (YubiKey, Nitrokey)
-- OpenSSL 3.0 provider (TLS libraries)
-- JCE provider (Java)
-- TPM 2.0
-
-This keeps Confium deployable across vendor boundaries without
-licensing or redistribution concerns.
-
-### Documentation is required
-
-Every crate carries `#![warn(missing_docs)]`. Every public item has a
-doc comment. `cargo doc --workspace --no-deps` must build cleanly.
-
-### Type-safe errors
-
-Errors are typed via `thiserror` (or `snafu` 0.8 in legacy crates).
-Each crate has its own error enum with descriptive variants. No
-string errors.
-
-## See also
-
-- [Deployment modes](/docs/three-modes/)
-- [Components](/docs/components/)
-- [Security model](/docs/security-model/)
-- [Plugin author guide](https://github.com/confium/confium/tree/main/docs/plugin-author-guide.mdx)
-  in the Rust workspace docs.
+- [Components](/docs/components/) — every crate, one line each.
+- [Security model](/docs/security-model/) — the threat model.
+- [Rust API](/docs/rust-api/) and [WASM API](/docs/wasm-api/).
+- The six product pages: [Threshold](/threshold/),
+  [Transparency](/transparency/), [PKI](/pki/),
+  [Keyless](/keyless/), [Privacy](/privacy/), [Verify](/verify/).

@@ -1,6 +1,6 @@
 ---
 name: Rust
-description: Native Rust workspace — 43 crates spanning the engine, threshold protocols, PKI, storage, Mode 2 adapters, and transparency.
+description: Native Rust workspace — 66 crates spanning the engine, threshold protocols, PKI, storage, adapters, transparency, and the six product facades.
 install_command: "cargo add confium-core"
 docs_repo: "github.com/confium/confium"
 docs_ref: "main"

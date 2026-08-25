@@ -62,17 +62,49 @@ export function groupByYear<T extends { data: { date?: Date } }>(
  * Build a sidebar nav from a content collection. `currentId`
  * (optional) marks the current entry as `current: true`.
  */
+const DOC_GROUP_LABELS: Record<string, string> = {
+  start: 'Getting started',
+  architecture: 'Architecture',
+  guides: 'Guides',
+  reference: 'Reference',
+  adapters: 'Adapters & tooling',
+};
+
+const DOC_GROUP_ORDER = ['start', 'architecture', 'guides', 'reference', 'adapters'];
+
+export type SidebarGroup = {
+  heading?: string;
+  items: SidebarItem[];
+};
+
 export async function buildSidebar(
   collection: 'docs' | 'concepts' | 'use_cases',
   currentId?: string,
-): Promise<SidebarItem[]> {
+): Promise<SidebarGroup[]> {
   const entries = await getCollection(collection);
-  return byOrder(entries).map((e) => ({
+  const items = byOrder(entries).map((e) => ({
     label: e.data.title,
     href: `/${collection === 'use_cases' ? 'use-cases' : collection}/${e.id}/`,
     current: e.id === currentId,
   }));
+  if (collection !== 'docs') return [{ items }];
+
+  const groups = new Map<string, SidebarItem[]>();
+  for (const entry of byOrder(entries)) {
+    const key = (entry.data as { group?: string }).group ?? 'start';
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push({
+      label: entry.data.title,
+      href: `/docs/${entry.id}/`,
+      current: entry.id === currentId,
+    });
+  }
+  return DOC_GROUP_ORDER
+    .filter((key) => groups.has(key))
+    .map((key) => ({ heading: DOC_GROUP_LABELS[key], items: groups.get(key)! }));
 }
+
+export { DOC_GROUP_LABELS, DOC_GROUP_ORDER };
 
 /**
  * Map a collection to CardItem for the index-page card grids.
