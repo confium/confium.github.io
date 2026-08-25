@@ -98,6 +98,12 @@ rescue Confium::ParseError => e
 end
 
 begin
+  Confium::PKI::Certificate.from_der(truncated_der)
+rescue Confium::ParseError => e
+  e.offset   # => 20 — the exact byte where DER decoding ran out
+end
+
+begin
   Confium::TC::Cmp20.sign(shares, 3, message)
 rescue Confium::ThresholdError => e
   e.have_count  # => 2
