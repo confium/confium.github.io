@@ -15,7 +15,7 @@ export async function getStaticPaths() {
       const slug = doc.id
         .split(`${vendorId}/docs/`)[1]
         ?.replace(/\.(md|mdx)$/, '') || '';
-      if (!slug || slug.includes('/')) continue;
+      if (!slug || slug === 'index') continue;
       paths.push({
         params: { id: sw.id, slug },
         props: { sw, doc },
