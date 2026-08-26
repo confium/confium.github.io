@@ -103,9 +103,15 @@ export const collections = {
   }),
 
   specDocs: defineCollection({
-    loader: glob({ base: './vendor/specs', pattern: '**/*.{md,mdx}' }),
-    schema: adocFrontmatter.partial().extend({
-      spec_id: z.string().optional(),
-    }),
+    loader: glob({ base: './vendor/specs/specs', pattern: '*.md' }),
+    schema: adocFrontmatter
+      .partial()
+      .extend({
+        spec_id: z.number().optional(),
+        upstream_path: z.string().optional(),
+        status: z.string().optional(),
+        implementation: z.string().optional(),
+        product: z.string().optional(),
+      }),
   }),
 };

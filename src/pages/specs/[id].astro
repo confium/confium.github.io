@@ -1,15 +1,16 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import PageHero from '../../components/astro/PageHero.astro';
 
 export async function getStaticPaths() {
-  const specs = await getCollection('specs');
+  const specs = await getCollection('specDocs');
   return specs.map((s) => ({ params: { id: s.id }, props: { spec: s } }));
 }
 
 const { spec } = Astro.props;
-const allSpecs = await getCollection('specs');
+const allSpecs = await getCollection('specDocs');
+const { Content } = await render(spec);
 
 const sidebar = allSpecs
   .sort((a, b) => a.data.upstream_path.localeCompare(b.data.upstream_path))
@@ -32,27 +33,17 @@ const sidebar = allSpecs
     description={spec.data.description}
   />
 
+  {spec.data.status || spec.data.implementation ? (
+    <p class="mt-2 text-sm text-muted-foreground">
+      {spec.data.status && <span class="font-mono uppercase">status: {spec.data.status}</span>}
+      {spec.data.status && spec.data.implementation && <span> · </span>}
+      {spec.data.implementation && (
+        <span class="font-mono uppercase">implementation: {spec.data.implementation}</span>
+      )}
+    </p>
+  ) : null}
+
   <div class="mt-8 prose prose-lg dark:prose-invert max-w-none">
-    <p>
-      This specification is rendered from the authoritative source at
-      <a href={`https://github.com/confium/specs/blob/main/${spec.data.upstream_path}`}>
-        <code>&#123;spec.data.upstream_path&#125;</code>
-      </a> in the
-      <a href="https://github.com/confium/specs">confium/specs</a>
-      repository.
-    </p>
-
-    <p>
-      The full AsciiDoc source renders through the central site for
-      unified navigation and search. To view the raw spec, follow the
-      link above.
-    </p>
-
-    <p class="text-sm text-muted-foreground mt-8">
-      <strong>Note:</strong> Inline rendering of upstream AsciiDoc into
-      the Astro site is wired through the <code>specDocs</code> collection
-      and <code>scripts/fetch-sources.mjs</code>. If the inline content
-      below is empty, the vendor pull did not succeed for this spec.
-    </p>
+    <Content />
   </div>
 </DocsLayout>
