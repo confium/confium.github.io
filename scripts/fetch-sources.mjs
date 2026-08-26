@@ -13,7 +13,8 @@
  * build failure (corrupt content) is left for Astro to surface.
  */
 
-import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync, rmSync, statSync } from 'node:fs';
+import { relative, resolve as resolvePath } from 'node:path';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -85,6 +86,7 @@ function fetchSoftwareDocs() {
     console.log('[fetch-sources] no src/content/software/ — skipping');
     return;
   }
+  const vendored = [];
   for (const file of readdirSync(softwareDir)) {
     if (!file.endsWith('.md') && !file.endsWith('.mdx')) continue;
     const fm = loadFrontmatter(join(softwareDir, file));
@@ -98,7 +100,13 @@ function fetchSoftwareDocs() {
       const file = join(target, subtree, blocked);
       if (existsSync(file)) rmSync(file);
     }
-    sanitizeMdxHeaders(target);
+    vendored.push({ target, subtree, id, repo: repoHttps, ref: fm.docs_ref || 'main' });
+  }
+  // Second pass: link rewriting needs every vendor present — the
+  // per-language docs cross-link into the full tree under `rust`.
+  for (const v of vendored) {
+    rewriteDocLinks(v.target, v.subtree, v.id, v.repo, v.ref);
+    sanitizeMdxHeaders(v.target);
   }
 }
 
@@ -121,6 +129,110 @@ function fetchSpecs() {
  *  - Markdown autolinks (`<https://...>`) are not accepted by MDX;
  *    rewrite to explicit `[label](url)` links.
  */
+/**
+ * Rewrite repo-relative `.md`/`.mdx` links in vendored docs into
+ * absolute site URLs (`/software/{id}/docs/...`). Upstream docs are
+ * written for GitHub browsing; on the nested site the same relative
+ * links would resolve against the rendered page's URL and 404.
+ * Only links whose target exists inside the vendored subtree are
+ * rewritten; anything else (anchors, images, external) is kept.
+ */
+function rewriteDocLinks(root, subtree, id, repoHttps, ref) {
+  // Cone-mode sparse checkout of a nested subtree (docs/bindings)
+  // also pulls the files directly under docs/; walk the whole docs
+  // root so those top-level files get rewritten too.
+  const docsRoot = join(root, subtree.split('/')[0]);
+  const files = readdirSync(docsRoot, { withFileTypes: true, recursive: true });
+  for (const entry of files) {
+    if (!entry.isFile() || (!entry.name.endsWith('.md') && !entry.name.endsWith('.mdx'))) continue;
+    const parent = entry.path ?? entry.parentPath ?? docsRoot;
+    const path = join(parent, entry.name);
+    const text = readFileSync(path, 'utf8');
+    const re = /\]\(([^)#\s]+?)(#[^)\s]*)?\)/g;
+    let changed = false;
+    const out = text.replace(re, (m, target, anchor) => {
+      // Upstream docs sometimes assume the site's /docs/ IA; map
+      // those into this vendor's own docs tree.
+      if (target.startsWith('/docs/')) {
+        const t = target.slice('/docs/'.length)
+          .replace(/\.(md|mdx)$/, '')
+          .split('/')
+          .map((seg) => seg.toLowerCase().replace(/[^\w-]/g, ''))
+          .join('/');
+        const cands = [join(docsRoot, `${t}.mdx`), join(docsRoot, `${t}.md`),
+                       join(docsRoot, t, 'index.mdx')];
+        for (const c of cands) {
+          if (existsSync(c)) {
+            changed = true;
+            return `](/software/${id}/docs/${t}${anchor ?? ''})`;
+          }
+        }
+        return m;
+      }
+      // Only rewrite relative, potentially-doc links: skip URLs,
+      // images, mailto, and site-absolute links.
+      if (/^(https?:|mailto:|\/|\.png|\.jpe?g|\.svg|\.gif)/i.test(target)) return m;
+      let resolved = resolvePath(dirname(path), target);
+      // Extensionless sibling links: try the .mdx/.md/index forms.
+      if (!/\.(md|mdx)$/.test(resolved)) {
+        for (const cand of [`${resolved}.mdx`, `${resolved}.md`,
+                            join(resolved, 'index.mdx'), join(resolved, 'index.md')]) {
+          if (existsSync(cand)) { resolved = cand; break; }
+        }
+      }
+      if (!/\.(md|mdx)$/.test(resolved)) {
+        // Escapes the docs root (e.g. ../CONTRIBUTING.md): link to
+        // the upstream repository.
+        if (!resolved.startsWith(resolvePath(root) + '/')) return m;
+        const inRepoRoot = relative(join(VENDOR, id), resolved);
+        return `](${repoHttps.replace(/\.git$/, '')}/blob/${ref}/${inRepoRoot}${anchor ?? ''})`;
+      }
+      if (!resolved.startsWith(resolvePath(docsRoot) + '/')) {
+        if (!resolved.startsWith(resolvePath(root) + '/')) return m;
+        const inRepoRoot = relative(join(VENDOR, id), resolved);
+        return `](${repoHttps.replace(/\.git$/, '')}/blob/${ref}/${inRepoRoot}${anchor ?? ''})`;
+      }
+      if (existsSync(resolved)) {
+        // Mirror Astro's github-slugger (dots and other
+        // non-word chars are stripped per segment).
+        const rel = relative(resolvePath(docsRoot), resolved)
+          .replace(/\.(md|mdx)$/, '')
+          .replace(/\/index$/, '')
+          .split('/')
+          .map((seg) => seg.toLowerCase().replace(/[^\w-]/g, ''))
+          .join('/');
+        changed = true;
+        return `](/software/${id}/docs/${rel}${anchor ?? ''})`;
+      }
+      // The per-language vendors pull only the bindings subtree plus
+      // the top level of docs/; links into the rest of the confium
+      // docs resolve against the full tree vendored under `rust`,
+      // mapped by position within the docs root.
+      const rustDocs = join(VENDOR, 'rust', 'docs');
+      const alt = resolvePath(rustDocs, relative(resolvePath(docsRoot), resolved));
+      if (existsSync(rustDocs) && alt.startsWith(resolvePath(rustDocs) + '/') && existsSync(alt)) {
+        const rel = relative(resolvePath(rustDocs), alt)
+          .replace(/\.(md|mdx)$/, '')
+          .replace(/\/index$/, '')
+          .split('/')
+          .map((seg) => seg.toLowerCase().replace(/[^\w-]/g, ''))
+          .join('/');
+        changed = true;
+        return `](/software/rust/docs/${rel}${anchor ?? ''})`;
+      }
+      // Target exists nowhere in the vendored trees: send readers to
+      // the upstream repository instead of a dead link.
+      const inRepo = relative(join(VENDOR, id), resolved);
+      changed = true;
+      return `](${repoHttps.replace(/\.git$/, '')}/blob/${ref}/${inRepo}${anchor ?? ''})`;
+    });
+    if (changed) {
+      writeFileSync(path, out);
+      console.log(`[fetch-sources] rewrote links in ${relative(ROOT, path)}`);
+    }
+  }
+}
+
 function sanitizeMdxHeaders(root) {
   const files = readdirSync(root, { withFileTypes: true, recursive: true });
   for (const entry of files) {
@@ -136,6 +248,9 @@ function sanitizeMdxHeaders(root) {
       /<((?:https?|mailto):[^>\s]+)>/g,
       (_, url) => `[${url}](${url})`,
     );
+    // Escape {braces} in prose so upstream template placeholders
+    // render literally instead of failing as JSX expressions.
+    sanitized = sanitized.replace(/(^|[^`{])\{([a-zA-Z][a-zA-Z0-9_-]*)\}/g, '$1\\{$2\\}');
     if (sanitized !== text) {
       writeFileSync(path, sanitized);
       console.log(`[fetch-sources] sanitized ${path}`);
