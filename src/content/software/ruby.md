@@ -25,7 +25,7 @@ Ruby itself.
 | **XMLDSig** | Canonicalize XML (RFC 3076 + Exclusive C14N) prior to signature. |
 | **Attributes DSL** | `Confium::Attributes.parse`, `Signer`, `Predicate#satisfied_by?` — threshold policy over signer attributes. |
 | **Identity + Config** | `Confium::Identity::Actor`, `Confium::Config::Manifest` (deployment manifest TOML validation). |
-| **Threshold signing** | `Confium::TC::SigningSession` (the state machine + CMP20/GG18 combine), `Coordinator` (in-process), `NetworkCoordinator` + `SignerClient` (multi-host over TCP), `FrostP256` (Shamir + ECDSA), `ElGamalP256`, `ShareFile` persistence. |
+| **Threshold signing** | `Confium::TC::Session` (per-party FROST-ed25519 DKG + signing rounds), `SigningSession` (the state machine + CMP20/GG18 combine), `Coordinator` (in-process), `NetworkCoordinator` + `SignerClient` (multi-host over TCP), `FrostP256` (Shamir + ECDSA), `ElGamalP256`, `ShareFile` persistence. |
 | **Audit sinks** | `Confium::Audit` — every signing/verification op fires a record; `FileSink`, `MemorySink`, `StderrSink`, `OtlpSink` (OTLP/HTTP JSON). |
 | **Long-term archival** | `Confium::ERS::EvidenceRecord` — RFC 4998 evidence records with renewal. |
 | **Typed errors** | `Confium::ParseError`, `VerificationError`, `ThresholdError`, `CryptoError`, `IndexError`, `PolicyViolationError`, ... — every documented failure path, each with a structured `details` Hash. |
@@ -123,6 +123,30 @@ encryption), install `ruby-rnp` alongside — the two coexist without
 symbol conflict. See
 [Confium and RNP](/concepts/confium-and-rnp/) for the
 sibling-project relationship.
+
+## Per-party threshold sessions
+
+Each signer process runs its own session — the share never leaves
+the process:
+
+```ruby
+# 3-party DKG — every party derives the same group public key.
+dkg = %w[p0 p1 p2].each_index.map do |i|
+  Confium::TC::Session.new("FROST-ed25519-dkg",
+                           parties: %w[p0 p1 p2],
+                           threshold: 2, this_party_idx: i)
+end
+# ... broadcast each round's outgoing messages to every party ...
+
+blob = dkg[0].result   # length-prefixed group pubkey || this share
+
+# 2-of-3 signing — every signing party emits the SAME 64-byte
+# RFC-8032 signature, verifiable under the group public key.
+sess = Confium::TC::Session.new("FROST-ed25519",
+                                parties: %w[p0 p1 p2],
+                                threshold: 2, this_party_idx: 0,
+                                local_share: blob, message: "payload")
+```
 
 ## See also
 

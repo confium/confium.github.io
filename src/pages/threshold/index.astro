@@ -32,7 +32,7 @@ const product = getProduct('threshold')!;
       <li><strong>CMP20</strong> — 3-round threshold ECDSA over P-256 with real Paillier MtA</li>
       <li><strong>GG18</strong> — 4-round threshold ECDSA over P-256</li>
       <li><strong>FROST-P256</strong> — 2-round threshold ECDSA over P-256 (Shamir + Feldman VSS)</li>
-      <li><strong>FROST-Ed25519</strong> — 2-round threshold EdDSA over Ed25519</li>
+      <li><strong>FROST-Ed25519</strong> — 2-round threshold EdDSA over Ed25519, drivable per-party (one session per signer process; the share never leaves)</li>
       <li><strong>MuSig</strong> — 2-round threshold Schnorr signatures</li>
     </ul>
   </section>

@@ -26,7 +26,7 @@ source carries inline rustdoc.
 | `confium-net` | Network transport abstraction for multi-party protocols. |
 | `confium-net-tcp` / `confium-net-quic` / `confium-net-ws` | TCP, QUIC, and WebSocket transports. |
 | `confium-store` | Compartmentalized key and secret persistence. |
-| `confium-store-pkcs11` / `confium-store-tpm` / `confium-store-cloud` / `confium-store-openpgp-card` | PKCS#11, TPM 2.0, cloud KMS, and OpenPGP-card (YubiKey, Nitrokey) backends. |
+| `confium-store-pkcs11` / `confium-store-tpm` / `confium-store-cloud` / `confium-store-openpgp-card` | PKCS#11, TPM 2.0, cloud KMS, and OpenPGP-card (YubiKey, Nitrokey) backends. `confium-store-cloud` builds real clients for AWS KMS, Cloud KMS, and Key Vault, lists KMS key IDs (`ListKeys`), and signs remotely via each provider's Sign API — the sign-with-handle contract (`cfm_keystore_sign`). |
 | `confium-sandbox-wasm` / `confium-sandbox-process` | WASM and out-of-process sandboxes for isolating plugin execution. |
 | `confium-deployment` | Deployment manifest schema and actor identity. |
 
