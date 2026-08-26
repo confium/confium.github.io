@@ -107,8 +107,9 @@ export const collections = {
     schema: adocFrontmatter
       .partial()
       .extend({
+        title: z.string(),
+        upstream_path: z.string(),
         spec_id: z.number().optional(),
-        upstream_path: z.string().optional(),
         status: z.string().optional(),
         implementation: z.string().optional(),
         product: z.string().optional(),
