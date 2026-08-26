@@ -10,10 +10,10 @@ export async function getStaticPaths() {
   for (const sw of software) {
     if (!sw.data.docs_repo) continue;
     const vendorId = sw.id;
-    const docs = allDocs.filter((d) => d.id.includes(`/${vendorId}/docs/`));
+    const docs = allDocs.filter((d) => d.id.startsWith(`${vendorId}/docs/`));
     for (const doc of docs) {
       const slug = doc.id
-        .split(`/${vendorId}/docs/`)[1]
+        .split(`${vendorId}/docs/`)[1]
         ?.replace(/\.(md|mdx)$/, '') || '';
       if (!slug || slug.includes('/')) continue;
       paths.push({
@@ -30,11 +30,11 @@ const { Content, headings } = await render(doc);
 
 const allDocs = await getCollection('softwareDocs');
 const vendorId = sw.id;
-const siblingDocs = allDocs.filter((d) => d.id.includes(`/${vendorId}/docs/`));
+const siblingDocs = allDocs.filter((d) => d.id.startsWith(`${vendorId}/docs/`));
 const sidebar = siblingDocs
   .sort((a, b) => a.id.localeCompare(b.id))
   .map((d) => {
-    const slug = d.id.split(`/${vendorId}/docs/`)[1]?.replace(/\.(md|mdx)$/, '') || '';
+    const slug = d.id.split(`${vendorId}/docs/`)[1]?.replace(/\.(md|mdx)$/, '') || '';
     return {
       label: d.data.title ?? slug,
       href: `/software/${sw.id}/docs/${slug}/`,

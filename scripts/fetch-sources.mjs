@@ -13,7 +13,7 @@
  * build failure (corrupt content) is left for Astro to surface.
  */
 
-import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
@@ -23,6 +23,12 @@ const ROOT = join(__dirname, '..');
 const VENDOR = join(ROOT, 'vendor');
 
 const SPECS_REPO = 'https://github.com/confium/specs.git';
+
+// Vendored doc files the public site must not render. cnml-profile
+// documents the institutional certificate format the site's
+// neutrality policy keeps off www.confium.org (the OIML quality
+// gate enforces it); the page stays in the upstream repo.
+const BLOCKED_DOCS = ['cnml-profile.mdx'];
 const SPECS_REF = process.env.CONFIUM_SPECS_REF || 'main';
 
 /**
@@ -88,6 +94,10 @@ function fetchSoftwareDocs() {
     const subtree = (fm.docs_subtree || 'docs').replace(/^\/+|\/+$/g, '');
     const target = join(VENDOR, id);
     sparseClone(repoHttps, fm.docs_ref || 'main', target, [subtree]);
+    for (const blocked of BLOCKED_DOCS) {
+      const file = join(target, subtree, blocked);
+      if (existsSync(file)) rmSync(file);
+    }
     sanitizeMdxHeaders(target);
   }
 }
