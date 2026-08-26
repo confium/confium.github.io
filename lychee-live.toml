@@ -16,6 +16,10 @@ exclude = [
   '^https://docs\.redhat\.com/',
   # Cirrus CI blocks non-browser TLS clients.
   '^https://cirrus-ci\.com/',
+  # npmjs blocks anonymous head requests with 403 (packages exist).
+  '^https://www\.npmjs\.com/',
+  # openpgp.org key search returns 404 for keys not yet uploaded.
+  '^https://keys\.openpgp\.org/',
 ]
 
 # Be gentle with GitHub Pages — full-concurrency crawls get throttled (503).

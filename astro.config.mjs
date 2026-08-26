@@ -25,6 +25,8 @@ export default defineConfig({
     '/docs/mode3-sovereign-pki': '/pki/',
     '/docs/mode4-keyless-threshold': '/keyless/',
     '/docs/mode-4-keyless-threshold': '/keyless/',
+    // Upstream docs still carry the pre-minisite /crates/ URL shape.
+    '/crates/transparency': '/software/rust/docs/crates/transparency/',
   },
   compressHTML: true,
   integrations: [vue(), sitemap(), mdx()],

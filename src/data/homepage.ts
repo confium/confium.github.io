@@ -86,7 +86,7 @@ export const SPONSORS: readonly Sponsor[] = [
   {
     name: 'NLnet',
     role: 'Project sponsor',
-    href: 'https://nlnet.nl/project/Confium/',
+    href: 'https://nlnet.nl/',
     imageSrc: '/assets/nlnet-banner.svg',
     imageAlt: 'NLnet',
   },

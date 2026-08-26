@@ -3,9 +3,36 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PageHero from '../../components/astro/PageHero.astro';
 
-const specs = (await getCollection('specs')).sort((a, b) =>
+const specs = (await getCollection('specDocs')).sort((a, b) =>
   a.data.upstream_path.localeCompare(b.data.upstream_path),
 );
+
+const categoryOrder = [
+  'index',
+  'architecture',
+  'modes',
+  'threshold',
+  'transparency',
+  'pki',
+  'keyless',
+  'privacy',
+  'verify',
+  'security',
+];
+
+const categoryLabels: Record<string, string> = {
+  index: 'Product index',
+  architecture: 'Architecture',
+  modes: 'Deployment modes',
+  threshold: 'Threshold',
+  transparency: 'Transparency',
+  pki: 'PKI',
+  keyless: 'Keyless',
+  privacy: 'Privacy',
+  verify: 'Verify',
+  security: 'Security',
+  spec: 'Specifications',
+};
 
 const byCategory = specs.reduce((acc, s) => {
   const cat = s.data.category || 'spec';
@@ -14,18 +41,14 @@ const byCategory = specs.reduce((acc, s) => {
   return acc;
 }, {} as Record<string, typeof specs>);
 
-const categoryLabels: Record<string, string> = {
-  architecture: 'Architecture',
-  modes: 'Deployment modes',
-  transparency: 'Transparency',
-  security: 'Security',
-  spec: 'Specifications',
-};
-
-const categories = Object.keys(byCategory).sort();
+const categories = Object.keys(byCategory).sort(
+  (a, b) =>
+    (categoryOrder.indexOf(a) + 1 || categoryOrder.length + 1) -
+    (categoryOrder.indexOf(b) + 1 || categoryOrder.length + 1),
+);
 ---
 
-<BaseLayout title="Specs" description="Authoritative Confium specifications — architecture, deployment modes, transparency log, security model.">
+<BaseLayout title="Specs" description="Authoritative Confium specifications — every spec rendered from github.com/confium/specs, organized by product.">
   <PageHero
     eyebrow="Specs"
     title="Normative specifications"
