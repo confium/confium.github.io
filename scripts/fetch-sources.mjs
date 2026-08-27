@@ -1,16 +1,23 @@
 /**
  * Sparse-checkout vendor sources for per-repo docs and specs.
  *
- * Reads `src/content/software/*.md` for `docs_repo`, `docs_ref`,
- * `docs_subtree`, and clones each into `vendor/<id>/` using a sparse
- * checkout limited to `README*` and `/<docs_subtree>/`.
+ * Software docs: reads `src/content/software/*.md` for `docs_repo`,
+ * `docs_ref`, `docs_subtree`, clones each into `vendor/<id>/` with a
+ * sparse checkout, then rewrites repo-relative links into site URLs.
  *
- * Reads `src/content/specs/*.md` and clones the specs repo into
- * `vendor/specs/` with a sparse checkout of the `specs/` directory.
+ * Specs: clones the specs repo into `vendor/specs/`, converts every
+ * `specs/*.adoc` to a sibling `.md` (pure conversion lives in
+ * scripts/lib/specs-converter.mjs), and copies embeddable diagrams
+ * into `public/specs/images/`. What may render is decided by
+ * scripts/lib/neutrality.mjs.
  *
  * Failures degrade gracefully: a missing repo or unreachable ref
  * logs a warning and the site builds without those docs. A real
  * build failure (corrupt content) is left for Astro to surface.
+ *
+ * Set CONFIUM_REFRESH_SOURCES=1 to fast-forward existing vendor
+ * clones instead of silently reusing them (the default keeps
+ * offline-friendly reuse; CI always fetches fresh).
  */
 
 import { existsSync, readFileSync, mkdirSync, readdirSync, writeFileSync, rmSync, statSync, cpSync } from 'node:fs';
@@ -19,23 +26,17 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execSync } from 'node:child_process';
 
+import { convertSpec, serializeSpec } from './lib/specs-converter.mjs';
+import { BLOCKED_DOCS, isBlockedSpec, isNeutralitySvg } from './lib/neutrality.mjs';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, '..');
 const VENDOR = join(ROOT, 'vendor');
 
 const SPECS_REPO = 'https://github.com/confium/specs.git';
-
-// Vendored doc files the public site must not render. cnml-profile
-// documents the institutional certificate format the site's
-// neutrality policy keeps off www.confium.org (the OIML quality
-// gate enforces it); the page stays in the upstream repo.
-const BLOCKED_DOCS = ['cnml-profile.mdx'];
-// Spec sources kept out of the central site for the same reason:
-// the institutional CNML deployment spec stays in the specs repo.
-const BLOCKED_SPECS = ['80-cnml-deployment.adoc'];
 const SPECS_REF = process.env.CONFIUM_SPECS_REF || 'main';
-const SPECS_RAW_BASE =
-  'https://raw.githubusercontent.com/confium/specs/main';
+
+const REFRESH = process.env.CONFIUM_REFRESH_SOURCES === '1';
 
 /**
  * @param {string} repo
@@ -44,11 +45,23 @@ const SPECS_RAW_BASE =
  * @param {string[]} sparsePaths
  */
 function sparseClone(repo, ref, targetDir, sparsePaths) {
+  mkdirSync(VENDOR, { recursive: true });
   if (existsSync(targetDir)) {
-    console.log(`[fetch-sources] reusing ${targetDir}`);
+    if (!REFRESH) {
+      console.log(`[fetch-sources] reusing ${targetDir}`);
+      return;
+    }
+    console.log(`[fetch-sources] refreshing ${targetDir} to ${ref}`);
+    try {
+      execSync(`git fetch --quiet origin ${ref}`, { cwd: targetDir });
+      execSync('git checkout --quiet FETCH_HEAD', { cwd: targetDir });
+    } catch (err) {
+      console.warn(
+        `[fetch-sources] WARNING: refresh failed for ${targetDir} — ${err.message}`,
+      );
+    }
     return;
   }
-  mkdirSync(VENDOR, { recursive: true });
   console.log(`[fetch-sources] cloning ${repo}@${ref} → ${targetDir}`);
   try {
     execSync(
@@ -129,34 +142,60 @@ function fetchSpecs() {
 }
 
 /**
- * The specs repo is AsciiDoc; the site renders Markdown. Emit one
- * `.md` per vendored `.adoc` (the AsciiDoc sources stay untouched in
- * the vendor tree) with generated frontmatter, then the `specDocs`
- * content collection picks them up. Not a general converter — the
- * specs corpus is the contract.
+ * The fs-backed resolve adapter for the specs converter: it answers
+ * existence/policy questions so the converter itself stays pure.
+ *
+ * @param {string} target - vendor/specs
+ * @param {string[]} skippedImages - diagrams the neutrality policy keeps off-site
+ */
+function specsResolve(target, skippedImages) {
+  const specsDir = join(target, 'specs');
+  const imagesDir = join(target, 'images');
+  return {
+    specHref(leaf) {
+      return existsSync(join(specsDir, `${leaf}.adoc`)) ? `/specs/${leaf}/` : null;
+    },
+    specStatus(leaf) {
+      if (isBlockedSpec(`${leaf}.adoc`)) return 'blocked';
+      return existsSync(join(specsDir, `${leaf}.adoc`)) ? 'page' : 'missing';
+    },
+    imageHref(file) {
+      if (skippedImages.includes(file)) return null;
+      return existsSync(join(imagesDir, file)) ? `/specs/images/${file}` : null;
+    },
+    blobUrl(path) {
+      return `https://github.com/confium/specs/blob/${SPECS_REF}/${path}`;
+    },
+  };
+}
+
+/**
+ * Emit one `.md` per vendored `.adoc`; the AsciiDoc sources stay
+ * untouched in the vendor tree. The `specDocs` content collection
+ * picks up the generated `.md` files.
  */
 function convertSpecs(target, skippedImages) {
   const specsDir = join(target, 'specs');
   if (!existsSync(specsDir)) return;
+  const resolve = specsResolve(target, skippedImages);
   for (const entry of readdirSync(specsDir, { withFileTypes: true })) {
     if (!entry.isFile() || !entry.name.endsWith('.adoc')) continue;
-    if (BLOCKED_SPECS.includes(entry.name)) {
+    if (isBlockedSpec(entry.name)) {
       console.log(`[fetch-sources] skipping blocked spec ${entry.name}`);
       continue;
     }
     const text = readFileSync(join(specsDir, entry.name), 'utf8');
-    const { frontmatter, body } = adocToMarkdown(text, entry.name, specsDir, skippedImages);
-    const out = `---\n${frontmatter}\n---\n\n${body}`;
-    writeFileSync(join(specsDir, entry.name.replace(/\.adoc$/, '.md')), out);
+    const converted = convertSpec(text, entry.name, resolve);
+    writeFileSync(join(specsDir, entry.name.replace(/\.adoc$/, '.md')), serializeSpec(converted));
   }
+  console.log(`[fetch-sources] converted specs to markdown`);
 }
 
 /**
  * Spec diagrams live at the specs repo root; serve them from the
  * site itself rather than hotlinking raw.githubusercontent.com.
- * Diagrams whose text trips the OIML neutrality gate stay on
- * GitHub — they are returned as the skipped set so the converter
- * can link out instead of embedding.
+ * Returns the files the neutrality policy kept off-site so the
+ * converter can link out instead of embedding.
  */
 function copySpecImages(target) {
   const src = join(target, 'images');
@@ -167,7 +206,7 @@ function copySpecImages(target) {
   for (const f of readdirSync(src)) {
     const s = join(src, f);
     if (!statSync(s).isFile()) continue;
-    if (/oiml/i.test(readFileSync(s, 'utf8'))) {
+    if (isNeutralitySvg(readFileSync(s, 'utf8'))) {
       skipped.push(f);
       continue;
     }
@@ -178,203 +217,6 @@ function copySpecImages(target) {
     console.log(`[fetch-sources] kept off-site (neutrality): ${skipped.join(', ')}`);
   }
   return skipped;
-}
-
-function specCategory(id, product) {
-  if (product) return product;
-  if (id === 'PRODUCTS') return 'index';
-  const n = parseInt(id, 10);
-  if (!Number.isNaN(n)) {
-    if (n <= 9) return 'architecture';
-    if (n <= 19) return 'modes';
-  }
-  return 'security';
-}
-
-function extractDescription(body) {
-  const prose = body
-    .split('\n')
-    .map((l) => l.trim())
-    .find(
-      (l) =>
-        l &&
-        !/^[#>|!`={]/.test(l) &&
-        !l.startsWith('['),
-    );
-  if (!prose) return '';
-  const flat = prose.replace(/\s+/g, ' ');
-  const cut = flat.search(/[.!?](\s|$)/);
-  return (cut === -1 ? flat : flat.slice(0, cut + 1)).slice(0, 240);
-}
-
-function yamlQuote(value) {
-  return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
-}
-
-function emitTable(rows) {
-  const cells = rows
-    .filter((r) => r.trim() !== '')
-    .map((r) =>
-      r
-        .replace(/^\|/, '')
-        .split('|')
-        .map((c) => c.trim()),
-    );
-  if (!cells.length) return [];
-  const width = Math.max(...cells.map((c) => c.length));
-  const norm = cells.map((c) => {
-    while (c.length < width) c.push('');
-    return c;
-  });
-  const md = [`| ${norm[0].join(' | ')} |`, `|${' --- |'.repeat(width)}`];
-  for (const r of norm.slice(1)) md.push(`| ${r.join(' | ')} |`);
-  return md;
-}
-
-/**
- * Rewrite `link:` and `image::` macros inline. Relative spec links
- * become site URLs (GitHub blob for specs that do not exist as
- * pages, e.g. unwritten drafts or blocked files); `../images/x.svg`
- * points at the copied `/specs/images/x.svg`.
- */
-function specInline(text, specsDir, skippedImages) {
-  text = text.replace(
-    /link:\+\+(.+?)\+\+\[([^\]]*)\]/g,
-    (_, url, label) => `[${label || url}](${url})`,
-  );
-  text = text.replace(
-    /link:((?:https?:|mailto:)[^\s[]+)\[([^\]]*)\]/g,
-    (_, url, label) => `[${label || url}](${url})`,
-  );
-  text = text.replace(
-    /link:([\w./-]+?\.adoc)\[([^\]]*)\]/g,
-    (_m, target, label) => {
-      const leaf = target.replace(/\.adoc$/, '').split('/').pop();
-      const label2 = label || leaf;
-      // Resolve against the AsciiDoc source, not the generated .md —
-      // conversion order must not decide where a link points.
-      if (BLOCKED_SPECS.includes(`${leaf}.adoc`)) {
-        return `[${label2}](https://github.com/confium/specs/blob/main/specs/${target})`;
-      }
-      if (existsSync(join(specsDir, `${leaf}.adoc`))) {
-        return `[${label2}](/specs/${leaf}/)`;
-      }
-      // Unwritten spec: keep the cross-reference as plain text rather
-      // than linking to a GitHub page that does not exist either.
-      return label2;
-    },
-  );
-  // Bare AsciiDoc URL macro: `https://host/path[label]`.
-  text = text.replace(
-    /(^|[\s(])((?:https?:\/\/)[^\s[]+)\[([^\]\n]{1,80})\]/g,
-    (_m, pre, url, label) => `${pre}[${label}](${url})`,
-  );
-  text = text.replace(/image::([\w./-]+\.\w+)\[([^\]]*)\]/g, (_m, path, alt) => {
-    const file = path.split('/').pop();
-    if (skippedImages.includes(file)) {
-      return `[${alt || 'View diagram'} (SVG)](https://github.com/confium/specs/blob/main/images/${file})`;
-    }
-    const rel = path.replace(/^(\.\.\/)+/, '');
-    return `![${alt}](${rel.startsWith('images/') ? `/specs/${rel}` : `${SPECS_RAW_BASE}/${rel}`})`;
-  });
-  return text;
-}
-
-/**
- * @param {string} text
- * @param {string} adocName
- * @param {string} specsDir
- * @param {string[]} skippedImages
- * @returns {{ frontmatter: string, body: string }}
- */
-function adocToMarkdown(text, adocName, specsDir, skippedImages) {
-  const lines = text.split('\n');
-  const attrs = {};
-  let title = adocName.replace(/\.adoc$/, '');
-  let i = 0;
-  if (lines[0] && /^= /.test(lines[0])) {
-    title = lines[0].replace(/^= +/, '').trim();
-    i = 1;
-  }
-  for (; i < lines.length; i++) {
-    const line = lines[i];
-    if (line === '') break;
-    const attr = line.match(/^:([\w-]+):\s*(.*)$/);
-    if (attr) {
-      attrs[attr[1]] = attr[2].trim();
-      continue;
-    }
-    if (/ <[^>]+>$/.test(line)) continue; // author line
-  }
-  const out = [];
-  let inFence = false;
-  let inListing = false;
-  let pendingLang = null;
-  let table = null;
-  for (; i < lines.length; i++) {
-    let line = lines[i];
-    if (line.startsWith('```')) {
-      out.push(line);
-      inFence = !inFence;
-      continue;
-    }
-    if (inFence) {
-      out.push(line);
-      continue;
-    }
-    if (line === '----') {
-      if (inListing) {
-        out.push('```');
-        inListing = false;
-      } else {
-        out.push('```' + (pendingLang ?? ''));
-        inListing = true;
-      }
-      pendingLang = null;
-      continue;
-    }
-    if (inListing) {
-      out.push(line);
-      continue;
-    }
-    const src = line.match(/^\[source(?:,\s*([\w+.-]+))?\]\s*$/);
-    if (src) {
-      pendingLang = src[1] ?? '';
-      continue;
-    }
-    if (line.trim() === '|===') {
-      if (table) {
-        out.push(...emitTable(table));
-        table = null;
-      } else {
-        table = [];
-      }
-      continue;
-    }
-    if (table) {
-      if (/^\[(cols|frame|grid)/i.test(line.trim())) continue;
-      table.push(line);
-      continue;
-    }
-    line = specInline(line, specsDir, skippedImages);
-    line = line.replace(/^(={1,6}) +(.+?)(?:\s*=*)$/, (_m, eq, txt) => '#'.repeat(eq.length) + ' ' + txt);
-    out.push(line);
-  }
-  if (table) out.push(...emitTable(table));
-
-  const id = adocName.replace(/\.adoc$/, '');
-  const description = extractDescription(out.join('\n'));
-  const fm = [
-    `title: ${yamlQuote(title)}`,
-    description ? `description: ${yamlQuote(description)}` : null,
-    `upstream_path: ${yamlQuote(`specs/${adocName}`)}`,
-    `category: ${specCategory(id, attrs.product)}`,
-    /^\d/.test(id) ? `spec_id: ${parseInt(id, 10)}` : null,
-    attrs.status ? `status: ${yamlQuote(attrs.status)}` : null,
-    attrs.implementation ? `implementation: ${yamlQuote(attrs.implementation)}` : null,
-    attrs.product ? `product: ${yamlQuote(attrs.product)}` : null,
-  ].filter(Boolean);
-  return { frontmatter: fm.join('\n'), body: out.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n' };
 }
 
 /**
@@ -533,6 +375,10 @@ function normalizeRepoUrl(repo) {
 }
 
 console.log('[fetch-sources] starting');
-fetchSoftwareDocs();
-fetchSpecs();
+// Optional scope arg ("software" or "specs") so CI can pull just the
+// corpus the golden converter tests need without cloning every
+// software-docs repo.
+const scope = process.argv[2];
+if (!scope || scope === 'software') fetchSoftwareDocs();
+if (!scope || scope === 'specs') fetchSpecs();
 console.log('[fetch-sources] done');

@@ -20,6 +20,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
 
+    - name: Fetch specs corpus (golden converter tests)
+      run: node scripts/fetch-sources.mjs specs
+
     - name: Run Vitest
       run: npm test
       env:
