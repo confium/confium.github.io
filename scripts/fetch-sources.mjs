@@ -29,6 +29,7 @@ import { execSync } from 'node:child_process';
 import { convertSpec, serializeSpec } from './lib/specs-converter.mjs';
 import { rewriteDocText } from './lib/doc-links.mjs';
 import { sanitizeMdx } from './lib/mdx-sanitize.mjs';
+import { parseFrontmatter } from './lib/frontmatter.mjs';
 import { BLOCKED_DOCS, isBlockedSpec, isNeutralitySvg } from './lib/neutrality.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -82,24 +83,6 @@ function sparseClone(repo, ref, targetDir, sparsePaths) {
   }
 }
 
-/**
- * @param {string} filePath
- * @returns {Record<string, string> | null}
- */
-function loadFrontmatter(filePath) {
-  if (!existsSync(filePath)) return null;
-  const text = readFileSync(filePath, 'utf8');
-  const match = text.match(/^---\n([\s\S]*?)\n---/);
-  if (!match) return null;
-  /** @type {Record<string, string>} */
-  const frontmatter = {};
-  for (const line of match[1].split('\n')) {
-    const m = line.match(/^(\w+):\s*"?(.*?)"?\s*$/);
-    if (m) frontmatter[m[1]] = m[2];
-  }
-  return frontmatter;
-}
-
 function fetchSoftwareDocs() {
   const softwareDir = join(ROOT, 'src/content/software');
   if (!existsSync(softwareDir)) {
@@ -109,7 +92,7 @@ function fetchSoftwareDocs() {
   const vendored = [];
   for (const file of readdirSync(softwareDir)) {
     if (!file.endsWith('.md') && !file.endsWith('.mdx')) continue;
-    const fm = loadFrontmatter(join(softwareDir, file));
+    const fm = parseFrontmatter(readFileSync(join(softwareDir, file), 'utf8'));
     if (!fm || !fm.docs_repo) continue;
     const id = file.replace(/\.(md|mdx)$/, '');
     const repoHttps = normalizeRepoUrl(fm.docs_repo);
@@ -178,11 +161,9 @@ function sanitizeVendorMdx(root) {
 }
 
 function fetchSpecs() {
-  const specsDir = join(ROOT, 'src/content/specs');
-  if (!existsSync(specsDir)) {
-    console.log('[fetch-sources] no src/content/specs/ — skipping specs');
-    return;
-  }
+  // Specs are core content, not opt-in: fetching is unconditional.
+  // (The switch on a source directory could let the whole section
+  // vanish silently — check-gates' spec-page floor backstops this.)
   const target = join(VENDOR, 'specs');
   sparseClone(SPECS_REPO, SPECS_REF, target, ['specs/', 'images/']);
   const skippedImages = copySpecImages(target);
