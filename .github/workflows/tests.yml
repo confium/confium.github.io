@@ -22,6 +22,8 @@ jobs:
 
     - name: Fetch specs corpus (golden converter tests)
       run: node scripts/fetch-sources.mjs specs
+    - name: Verify specs corpus landed
+      run: test -d vendor/specs/specs || (echo "specs corpus missing — fetch degraded silently"; exit 1)
 
     - name: Run Vitest
       run: npm test

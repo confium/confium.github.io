@@ -12,6 +12,9 @@
  *     whose converter output silently came out empty would otherwise
  *     ship with only its hero. Specs have multiple sections upstream,
  *     so two or more <h2> headings is the completeness signal.
+ *  4. dist/specs carries at least `minSpecPages` pages — an empty or
+ *     gutted specs section (failed vendor pull) must fail loudly, not
+ *     pass vacuously.
  */
 
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
@@ -20,6 +23,7 @@ import { pathToFileURL } from 'node:url';
 
 const FORBIDDEN_LANGUAGE = /TODO|coming soon|planned|milestone|roadmap/i;
 const LANGUAGE_EXTENSIONS = new Set(['.html', '.md', '.mdx']);
+const DEFAULT_MIN_SPEC_PAGES = 30;
 
 function walkFiles(root) {
   const out = [];
@@ -33,13 +37,14 @@ function walkFiles(root) {
 
 /**
  * @param {string} distDir - absolute or repo-relative dist directory
+ * @param {{ minSpecPages?: number }} [options] - floor for gate 4 (tests lower it)
  * @returns {{
  *   oiml: string[],
  *   language: string[],
  *   incompleteSpecs: string[],
  * }} violating files per gate; empty arrays = clean
  */
-export function collectGateViolations(distDir) {
+export function collectGateViolations(distDir, { minSpecPages = DEFAULT_MIN_SPEC_PAGES } = {}) {
   const files = walkFiles(distDir);
   const oiml = [];
   const language = [];
@@ -52,12 +57,19 @@ export function collectGateViolations(distDir) {
   }
   const incompleteSpecs = [];
   const specsDir = join(distDir, 'specs');
+  let specPages = 0;
   for (const entry of readdirSync(specsDir, { withFileTypes: true })) {
     if (!entry.isDirectory()) continue;
     const index = join(specsDir, entry.name, 'index.html');
     if (!existsSync(index)) continue;
+    specPages += 1;
     const headings = (readFileSync(index, 'utf8').match(/<h2/g) ?? []).length;
     if (headings < 2) incompleteSpecs.push(index);
+  }
+  if (specPages < minSpecPages) {
+    incompleteSpecs.push(
+      `${specsDir} — only ${specPages} spec pages (expected >= ${minSpecPages}; did the vendor pull fail?)`,
+    );
   }
   return { oiml, language, incompleteSpecs };
 }
@@ -80,7 +92,7 @@ if (isEntry) {
     for (const f of language) console.error(`  ${f}`);
   }
   if (incompleteSpecs.length) {
-    console.error('ERROR: spec pages rendering without content (<2 h2 headings)');
+    console.error('ERROR: incomplete spec pages (missing content, or too few pages)');
     for (const f of incompleteSpecs) console.error(`  ${f}`);
   }
   const total = oiml.length + language.length + incompleteSpecs.length;
