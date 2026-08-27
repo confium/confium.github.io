@@ -41,13 +41,6 @@ const softwareFrontmatter = z.object({
   weight: z.number().default(0),
 });
 
-const specsFrontmatter = z.object({
-  title: z.string(),
-  description: z.string(),
-  upstream_path: z.string(),
-  category: z.string().default('spec'),
-});
-
 export const collections = {
   blog: defineCollection({
     loader: glob({ base: './src/content/blog', pattern: '**/*.mdx' }),
@@ -84,11 +77,6 @@ export const collections = {
   software: defineCollection({
     loader: glob({ base: './src/content/software', pattern: '**/*.md' }),
     schema: softwareFrontmatter,
-  }),
-
-  specs: defineCollection({
-    loader: glob({ base: './src/content/specs', pattern: '**/*.md' }),
-    schema: specsFrontmatter,
   }),
 
   // Vendor-pulled: per-repo implementation docs. Pattern matches both

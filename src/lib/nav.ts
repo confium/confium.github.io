@@ -110,7 +110,7 @@ export { DOC_GROUP_LABELS, DOC_GROUP_ORDER };
  * Map a collection to CardItem for the index-page card grids.
  */
 export function toCardItems<
-  C extends 'docs' | 'concepts' | 'use_cases' | 'glossary' | 'specs',
+  C extends 'docs' | 'concepts' | 'use_cases' | 'glossary',
 >(entries: CollectionEntry<C>[]): CardItem[] {
   return byOrder(entries).map((e) => ({
     title: e.data.title,
