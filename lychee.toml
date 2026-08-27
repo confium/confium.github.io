@@ -18,6 +18,11 @@ exclude = [
   '^https://docs\.redhat\.com/',
   # Cirrus CI blocks non-browser TLS clients.
   '^https://cirrus-ci\.com/',
+  # sigstore.dev (Netlify) intermittently refuses runner connections
+  # ("connection failed" from CI while browsers and local runs get
+  # 301 -> 200). Verified working 2026-08-27.
+  '^https://sigstore\.dev/',
+  '^https://www\.sigstore\.dev/',
   # npmjs blocks anonymous head requests.
   '^https://www\.npmjs\.com/',
   # openpgp.org key search returns 404 for keys not yet uploaded.
