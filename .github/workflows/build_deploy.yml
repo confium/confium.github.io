@@ -52,21 +52,8 @@ jobs:
         env:
           CI: true
 
-      - name: Quality gate — no OIML references
-        run: |
-          if grep -ril OIML dist/; then
-            echo "ERROR: OIML references found in built site"
-            grep -ril OIML dist/
-            exit 1
-          fi
-
-      - name: Quality gate — no TODO / roadmap language
-        run: |
-          if grep -rEi 'TODO|coming soon|planned|milestone|roadmap' dist/ \
-              --include='*.html' --include='*.md' --include='*.mdx'; then
-            echo "ERROR: forbidden language found in built site"
-            exit 1
-          fi
+      - name: Quality gates (OIML, forbidden language, spec completeness)
+        run: npm run check:gates
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v4

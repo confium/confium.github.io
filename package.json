@@ -12,6 +12,7 @@
     "prebuild": "node scripts/fetch-sources.mjs",
     "postbuild": "pagefind --site dist",
     "fetch-sources": "node scripts/fetch-sources.mjs",
+    "check:gates": "node scripts/check-gates.mjs dist",
     "check:links": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'",
     "check:links:external": "lychee --root-dir \"$PWD/dist\" --config lychee.toml --no-progress 'dist/**/*.html'",
     "test": "vitest run",
