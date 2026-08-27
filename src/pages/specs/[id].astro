@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import DocsLayout from '../../layouts/DocsLayout.astro';
 import PageHero from '../../components/astro/PageHero.astro';
+import { groupSpecsByCategory } from '@lib/specs-view';
 
 export async function getStaticPaths() {
   const specs = await getCollection('specDocs');
@@ -9,16 +10,16 @@ export async function getStaticPaths() {
 }
 
 const { spec } = Astro.props;
-const allSpecs = await getCollection('specDocs');
 const { Content } = await render(spec);
 
-const sidebar = allSpecs
-  .sort((a, b) => a.data.upstream_path.localeCompare(b.data.upstream_path))
-  .map((s) => ({
+const sidebar = groupSpecsByCategory(await getCollection('specDocs')).map((group) => ({
+  heading: group.label,
+  items: group.specs.map((s) => ({
     label: s.data.title,
     href: `/specs/${s.id}/`,
     current: s.id === spec.id,
-  }));
+  })),
+}));
 ---
 
 <DocsLayout
