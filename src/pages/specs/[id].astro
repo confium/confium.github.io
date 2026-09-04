@@ -10,7 +10,7 @@ export async function getStaticPaths() {
 }
 
 const { spec } = Astro.props;
-const { Content } = await render(spec);
+const { Content, headings } = await render(spec);
 
 const sidebar = groupSpecsByCategory(await getCollection('specDocs')).map((group) => ({
   heading: group.label,
@@ -27,6 +27,7 @@ const sidebar = groupSpecsByCategory(await getCollection('specDocs')).map((group
   description={spec.data.description}
   sidebar={sidebar}
   sourcePath={`github.com/confium/specs/blob/main/${spec.data.upstream_path}`}
+  headings={headings}
 >
   <PageHero
     eyebrow="Specification"
