@@ -41,6 +41,10 @@ const SPECS_REF = process.env.CONFIUM_SPECS_REF || 'main';
 
 const REFRESH = process.env.CONFIUM_REFRESH_SOURCES === '1';
 
+// One-line end-of-run summary so vendor state is legible without
+// scrolling the clone/rewrite logs.
+const stats = { vendors: 0, rewritten: 0, sanitized: 0, specsConverted: 0, specsBlocked: 0, skippedImages: [] };
+
 /**
  * @param {string} repo
  * @param {string} ref
@@ -104,6 +108,7 @@ function fetchSoftwareDocs() {
       if (existsSync(file)) rmSync(file);
     }
     vendored.push({ target, subtree, id, repo: repoHttps, ref: fm.docs_ref || 'main' });
+    stats.vendors += 1;
   }
   // Second pass: link rewriting needs every vendor present — the
   // per-language docs cross-link into the full tree under `rust`.
@@ -140,6 +145,7 @@ function rewriteVendorDocLinks(v) {
     });
     if (changed) {
       writeFileSync(path, text);
+      stats.rewritten += 1;
       console.log(`[fetch-sources] rewrote links in ${relative(ROOT, path)}`);
     }
   }
@@ -155,6 +161,7 @@ function sanitizeVendorMdx(root) {
     const sanitized = sanitizeMdx(readFileSync(path, 'utf8'));
     if (sanitized !== readFileSync(path, 'utf8')) {
       writeFileSync(path, sanitized);
+      stats.sanitized += 1;
       console.log(`[fetch-sources] sanitized ${relative(ROOT, path)}`);
     }
   }
@@ -167,6 +174,7 @@ function fetchSpecs() {
   const target = join(VENDOR, 'specs');
   sparseClone(SPECS_REPO, SPECS_REF, target, ['specs/', 'images/']);
   const skippedImages = copySpecImages(target);
+  stats.skippedImages = skippedImages;
   convertSpecs(target, skippedImages);
   sanitizeVendorMdx(target);
 }
@@ -211,12 +219,14 @@ function convertSpecs(target, skippedImages) {
   for (const entry of readdirSync(specsDir, { withFileTypes: true })) {
     if (!entry.isFile() || !entry.name.endsWith('.adoc')) continue;
     if (isBlockedSpec(entry.name)) {
+      stats.specsBlocked += 1;
       console.log(`[fetch-sources] skipping blocked spec ${entry.name}`);
       continue;
     }
     const text = readFileSync(join(specsDir, entry.name), 'utf8');
     const converted = convertSpec(text, entry.name, resolve);
     writeFileSync(join(specsDir, entry.name.replace(/\.adoc$/, '.md')), serializeSpec(converted));
+    stats.specsConverted += 1;
   }
   console.log(`[fetch-sources] converted specs to markdown`);
 }
@@ -274,4 +284,9 @@ console.log('[fetch-sources] starting');
 const scope = process.argv[2];
 if (!scope || scope === 'software') fetchSoftwareDocs();
 if (!scope || scope === 'specs') fetchSpecs();
-console.log('[fetch-sources] done');
+console.log(
+  `[fetch-sources] done — ${stats.vendors} docs vendors, ` +
+  `${stats.rewritten} files rewritten, ${stats.sanitized} sanitized, ` +
+  `${stats.specsConverted} specs converted (${stats.specsBlocked} blocked, ` +
+  `${stats.skippedImages.length} diagrams kept off-site)`,
+);
